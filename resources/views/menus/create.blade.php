@@ -1,57 +1,64 @@
 @extends('layouts.dashboard')
 
 @section('content')
-    <div class="max-w-xl mx-auto bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
-        <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-6">Add New Menu</h2>
+<div class="max-w-3xl mx-auto mt-6 bg-white dark:bg-neutral-900 p-6 rounded shadow">
+    <h2 class="text-xl font-semibold mb-4">Create New Menu</h2>
 
-        <form method="POST" action="{{ route('menus.store') }}">
-            @csrf
+    <!-- ✅ Success Message -->
+    @if(session('success'))
+        <div class="mb-4 p-3 bg-green-100 text-green-800 text-sm rounded">
+            {{ session('success') }}
+        </div>
+    @endif
 
-            <div class="mb-4">
-                <label class="block font-medium text-sm text-gray-700 dark:text-gray-200">Title</label>
-                <input type="text" name="title" value="{{ old('title') }}" required
-                    class="w-full mt-1 p-2 border rounded-md bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 focus:outline-none focus:ring focus:ring-blue-500">
+    <!-- ✅ Validation Error Messages -->
+    @if($errors->any())
+        <div class="mb-4 p-3 bg-red-100 text-red-700 text-sm rounded space-y-1">
+            @foreach($errors->all() as $error)
+                <div>{{ $error }}</div>
+            @endforeach
+        </div>
+    @endif
+
+    <form action="{{ route('menus.store') }}" method="POST" class="space-y-4">
+        @csrf
+
+        <div>
+            <label class="block text-sm font-medium">Menu Name</label>
+            <input type="text" name="name" value="{{ old('name') }}" required
+                   class="mt-1 w-full border-gray-300 rounded shadow-sm focus:ring focus:ring-blue-300 dark:bg-neutral-800 dark:text-white">
+        </div>
+
+        <div class="space-y-2">
+            <label class="block text-sm font-medium">Menu Settings</label>
+
+            <div class="flex items-center gap-2">
+                <input type="checkbox" name="auto_add_pages" id="auto_add_pages" class="rounded"
+                       {{ old('auto_add_pages') ? 'checked' : '' }}>
+                <label for="auto_add_pages" class="text-sm">Automatically add new top-level pages to this menu</label>
             </div>
 
-            <div class="mb-4">
-                <label class="block font-medium text-sm text-gray-700 dark:text-gray-200">Slug</label>
-                <input type="text" name="slug" value="{{ old('slug') }}"
-                    class="w-full mt-1 p-2 border rounded-md bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700">
+            <div class="space-y-2">
+                <p class="text-sm font-medium">Display location:</p>
+                <div class="flex gap-4">
+                    <label class="inline-flex items-center gap-2">
+                        <input type="radio" name="location" value="header" class="rounded"
+                               {{ old('location') === 'header' ? 'checked' : '' }}>
+                        Header
+                    </label>
+                    <label class="inline-flex items-center gap-2">
+                        <input type="radio" name="location" value="footer" class="rounded"
+                               {{ old('location') === 'footer' ? 'checked' : '' }}>
+                        Footer
+                    </label>
+                </div>
             </div>
+        </div>
 
-            <div class="mb-4">
-                <label class="block font-medium text-sm text-gray-700 dark:text-gray-200">Parent Menu</label>
-                <select name="parent_id"
-                    class="w-full mt-1 p-2 border rounded-md bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700">
-                    <option value="">None</option>
-                    @foreach($menus as $menu)
-                        <option value="{{ $menu->id }}">{{ $menu->title }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="mb-4">
-                <label class="block font-medium text-sm text-gray-700 dark:text-gray-200">Icon (optional)</label>
-                <input type="text" name="icon" value="{{ old('icon') }}" placeholder="e.g. heroicon name"
-                    class="w-full mt-1 p-2 border rounded-md bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700">
-            </div>
-
-            <div class="mb-6">
-                <label class="block font-medium text-sm text-gray-700 dark:text-gray-200">Position</label>
-                <select name="position"
-                    class="w-full mt-1 p-2 border rounded-md bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700">
-                    <option value="left" {{ old('position') == 'left' ? 'selected' : '' }}>Left</option>
-                    <option value="center" {{ old('position') == 'center' ? 'selected' : '' }}>Center</option>
-                    <option value="right" {{ old('position') == 'right' ? 'selected' : '' }}>Right</option>
-                </select>
-            </div>
-
-            <div class="flex justify-end">
-                <a href="{{ route('menus.index') }}"
-                    class="mr-4 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 border rounded hover:bg-gray-100 dark:hover:bg-gray-700">Cancel</a>
-                <button type="submit"
-                    class="px-5 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded shadow">Save</button>
-            </div>
-        </form>
-    </div>
+        <button type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded text-sm">
+            Create Menu
+        </button>
+    </form>
+</div>
 @endsection

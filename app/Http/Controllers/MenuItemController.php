@@ -28,18 +28,9 @@ class MenuController extends Controller
             'auto_add_pages' => 'nullable|boolean',
         ]);
 
-        // ✅ Ensure unique slug for menu
-        $baseSlug = Str::slug($request->name);
-        $slug = $baseSlug;
-        $counter = 1;
-
-        while (Menu::where('slug', $slug)->exists()) {
-            $slug = $baseSlug . '-' . $counter++;
-        }
-
         $menu = Menu::create([
             'name' => $request->name,
-            'slug' => $slug,
+            'slug' => Str::slug($request->name),
             'location' => $request->location,
             'auto_add_pages' => $request->has('auto_add_pages'),
         ]);
@@ -61,18 +52,9 @@ class MenuController extends Controller
             'auto_add_pages' => 'nullable|boolean',
         ]);
 
-        // ✅ Also update slug if name is changed
-        $baseSlug = Str::slug($request->name);
-        $slug = $baseSlug;
-        $counter = 1;
-
-        while (Menu::where('slug', $slug)->where('id', '!=', $menu->id)->exists()) {
-            $slug = $baseSlug . '-' . $counter++;
-        }
-
         $menu->update([
             'name' => $request->name,
-            'slug' => $slug,
+            'slug' => Str::slug($request->name),
             'location' => $request->location,
             'auto_add_pages' => $request->has('auto_add_pages'),
         ]);

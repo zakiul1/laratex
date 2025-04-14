@@ -52,7 +52,14 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     //Products
     Route::resource('products', ProductController::class);
     Route::delete('/admin/product-images/{id}', [ProductImageController::class, 'destroy'])->name('product-images.destroy');
+    //menu
 
+    Route::resource('menus', MenuController::class);
+    Route::post('/menus/{menu}/structure', [MenuController::class, 'updateStructure'])->name('menus.updateStructure');
+    Route::post('/menus/select', function (Illuminate\Http\Request $request) {
+        return redirect()->route('menus.edit', $request->menu_id);
+    })->name('menus.select');
+    
 });
 
 require __DIR__ . '/auth.php';

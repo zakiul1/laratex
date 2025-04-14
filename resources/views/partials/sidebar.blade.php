@@ -75,6 +75,26 @@
 
             <span>Pages</span>
         </a>
+
+          <!-- menu links  -->
+        @php
+    $isActive = request()->routeIs('menus.*');
+@endphp
+
+<a href="{{ route('menus.index') }}"
+    class="flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium underline-offset-2
+{{ $isActive ? 'bg-primary/10 text-on-surface-strong dark:bg-primary-dark/10 dark:text-on-surface-dark-strong' : 'text-on-surface hover:bg-primary/5 hover:text-on-surface-strong dark:text-on-surface-dark dark:hover:bg-primary-dark/5 dark:hover:text-on-surface-dark-strong' }}">
+
+    <!-- Menu Icon -->
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+        stroke="currentColor" class="size-6 shrink-0">
+        <path stroke-linecap="round" stroke-linejoin="round"
+            d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+
+    <span>Menus</span>
+</a>
+
         <!-- Products links  -->
         <a href="{{ route('products.index') }}"
             class="flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium underline-offset-2 focus-visible:underline focus:outline-hidden

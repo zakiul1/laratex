@@ -19,7 +19,12 @@ class Slider extends Model
         'image_position',
         'show_arrows',
         'show_indicators',
-        'slider_location'
+        'slider_location',
+    ];
+
+    protected $casts = [
+        'show_arrows' => 'boolean',
+        'show_indicators' => 'boolean',
     ];
 
     public function images()

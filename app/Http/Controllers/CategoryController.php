@@ -1,0 +1,101 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Category;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\File;
+
+class CategoryController extends Controller
+{
+    public function index()
+    {
+        $categories = Category::latest()->paginate(10);
+        return view('categories.index', compact('categories'));
+    }
+
+    public function create()
+    {
+        $allCategories = Category::all();
+        return view('categories.create', compact('allCategories'));
+    }
+
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'slug' => 'nullable|string|unique:categories,slug',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'status' => 'required|boolean',
+            'parent_id' => 'nullable|exists:categories,id',
+        ]);
+
+        $baseSlug = $data['slug'] ?? Str::slug($data['name']);
+        $slug = $baseSlug;
+        $counter = 1;
+
+        while (Category::where('slug', $slug)->exists()) {
+            $slug = $baseSlug . '-' . $counter++;
+        }
+
+        $data['slug'] = $slug;
+
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('categories', 'public');
+        }
+
+        Category::create($data);
+
+        return redirect()->route('categories.index')->with('success', 'Category created successfully.');
+    }
+
+    public function edit(Category $category)
+    {
+        $allCategories = Category::where('id', '!=', $category->id)->get();
+        return view('categories.edit', compact('category', 'allCategories'));
+    }
+
+    public function update(Request $request, Category $category)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'slug' => 'nullable|string|unique:categories,slug,' . $category->id,
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'status' => 'required|boolean',
+            'parent_id' => 'nullable|exists:categories,id',
+        ]);
+
+        $baseSlug = $data['slug'] ?? Str::slug($data['name']);
+        $slug = $baseSlug;
+        $counter = 1;
+
+        while (Category::where('slug', $slug)->where('id', '!=', $category->id)->exists()) {
+            $slug = $baseSlug . '-' . $counter++;
+        }
+
+        $data['slug'] = $slug;
+
+        if ($request->hasFile('image')) {
+            if ($category->image) {
+                File::delete(public_path('storage/' . $category->image));
+            }
+            $data['image'] = $request->file('image')->store('categories', 'public');
+        }
+
+        $category->update($data);
+
+        return redirect()->route('categories.index')->with('success', 'Category updated successfully.');
+    }
+
+    public function destroy(Category $category)
+    {
+        if ($category->image) {
+            File::delete(public_path('storage/' . $category->image));
+        }
+
+        $category->delete();
+
+        return redirect()->route('categories.index')->with('success', 'Category deleted successfully.');
+    }
+}

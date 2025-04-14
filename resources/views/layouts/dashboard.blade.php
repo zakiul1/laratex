@@ -23,7 +23,7 @@
             aria-hidden="true" @click="sidebarIsOpen = false" x-transition.opacity></div>
 
         <!-- Sidebar -->
-        @include('layouts.sidebar')
+        @include('partials.sidebar')
 
         <!-- Main Content with Top Navbar -->
         <div class="h-svh w-full overflow-y-auto bg-white dark:bg-neutral-950">

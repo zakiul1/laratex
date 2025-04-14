@@ -19,32 +19,38 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium">Title</label>
-                    <input type="text" name="title" class="w-full border-gray-300 rounded mt-1" />
+                    <input type="text" name="title"
+                        class="w-full border border-gray-300 rounded mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium">Subtitle</label>
-                    <input type="text" name="subtitle" class="w-full border-gray-300 rounded mt-1" />
+                    <input type="text" name="subtitle"
+                        class="w-full border border-gray-300 rounded mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
 
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium">Content</label>
-                    <textarea name="content" rows="3" class="w-full border-gray-300 rounded mt-1"></textarea>
+                    <textarea name="content" rows="3"
+                        class="w-full border border-gray-300 rounded mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium">Button Text</label>
-                    <input type="text" name="button_text" class="w-full border-gray-300 rounded mt-1" />
+                    <input type="text" name="button_text"
+                        class="w-full border border-gray-300 rounded mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium">Button URL</label>
-                    <input type="url" name="button_url" class="w-full border-gray-300 rounded mt-1" />
+                    <input type="url" name="button_url"
+                        class="w-full border border-gray-300 rounded mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium">Layout</label>
-                    <select name="layout" class="w-full border-gray-300 rounded mt-1">
+                    <select name="layout"
+                        class="w-full border border-gray-300 rounded mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="one-column">One Column</option>
                         <option value="two-column">Two Column</option>
                     </select>
@@ -52,28 +58,42 @@
 
                 <div>
                     <label class="block text-sm font-medium">Image Position</label>
-                    <select name="image_position" class="w-full border-gray-300 rounded mt-1">
+                    <select name="image_position"
+                        class="w-full border border-gray-300 rounded mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="left">Left</option>
                         <option value="right">Right</option>
                     </select>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium">Show Arrows</label>
-                    <input type="checkbox" name="show_arrows" value="1" checked />
-                </div>
+        <!-- Show Arrows -->
+        <div>
+            <label class="block text-sm font-medium">Show Arrows</label>
+            <input type="hidden" name="show_arrows" value="0">
+            <input type="checkbox" name="show_arrows" value="1" class="mt-1" @if(old('show_arrows', $slider->show_arrows ?? false)) checked @endif />
+        </div>
 
-                <div>
-                    <label class="block text-sm font-medium">Show Indicators</label>
-                    <input type="checkbox" name="show_indicators" value="1" checked />
-                </div>
+        <!-- Show Indicators -->
+        <div>
+            <label class="block text-sm font-medium">Show Indicators</label>
+            <input type="hidden" name="show_indicators" value="0">
+            <input type="checkbox" name="show_indicators" value="1" class="mt-1" @if(old('show_indicators', $slider->show_indicators ?? false)) checked @endif />
+        </div>
 
+
+
+                <!-- ✅ SLIDER LOCATION: Now dropdown -->
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium">Slider Location</label>
-                    <input type="text" name="slider_location" class="w-full border-gray-300 rounded mt-1" />
+                    <select name="slider_location"
+                        class="w-full border border-gray-300 rounded mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="header">Header</option>
+                        <option value="footer">Footer</option>
+                        <option value="homepage">Homepage</option>
+                        <option value="sidebar">Sidebar</option>
+                    </select>
                 </div>
 
-                <!-- Image Upload with Preview -->
+                <!-- ✅ Image Upload With Preview -->
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium mb-1">Upload Images</label>
                     <input type="file" multiple name="images[]" class="block" @change="handleFiles($event)" />
@@ -116,7 +136,6 @@
                 removeImage(index) {
                     this.previews.splice(index, 1);
                     this.files.splice(index, 1);
-                    // Reset input field (optional)
                     const input = document.querySelector('input[type="file"]');
                     const dataTransfer = new DataTransfer();
                     this.files.forEach(file => dataTransfer.items.add(file));

@@ -19,6 +19,9 @@ return new class extends Migration {
             $table->boolean('show_arrows')->default(true);
             $table->boolean('show_indicators')->default(true);
             $table->string('slider_location')->default('home');
+            $table->boolean('status')->default(true);           // ✅ added
+            $table->integer('order')->default(0);               // ✅ added
+
             $table->timestamps();
         });
     }

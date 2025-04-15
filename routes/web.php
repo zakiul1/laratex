@@ -8,15 +8,15 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductImageController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\RibbonController;
+
+use App\Http\Controllers\SiteSettingController;
 use App\Http\Controllers\SliderController;
 use App\Http\Controllers\SliderImageController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
-});
-
+    return view('home.index');
+})->name('home');
 Route::get('/dashboard', function () {
     return view('layouts.dashboard');
 
@@ -29,10 +29,18 @@ Route::middleware('auth')->group(function () {
 });
 
 
+//Public routes
+Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('category.show');
+Route::get('/product/{slug}', [ProductController::class, 'show'])->name('product.show');
+
+
+
+
+
 
 // Admin routes with auth
 Route::middleware(['auth'])->prefix('admin')->group(function () {
-    Route::resource('ribbons', RibbonController::class)->names('ribbons');
+
     /*  Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard'); */
 
     Route::resource('posts', PostController::class)->names('posts');
@@ -59,7 +67,13 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::post('/menus/select', function (Illuminate\Http\Request $request) {
         return redirect()->route('menus.edit', $request->menu_id);
     })->name('menus.select');
-    
+    //site settings
+    Route::get('/site-settings', [SiteSettingController::class, 'edit'])->name('site-settings.edit');
+    Route::match(['POST', 'PUT'], '/site-settings', [SiteSettingController::class, 'update'])
+        ->name('site-settings.update');
+    Route::delete('/site-settings/logo', [SiteSettingController::class, 'removeLogo'])->name('site-settings.remove-logo');
+
+
 });
 
 require __DIR__ . '/auth.php';

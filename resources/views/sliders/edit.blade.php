@@ -96,6 +96,12 @@
                         <option value="sidebar" @selected($slider->slider_location === 'sidebar')>Sidebar</option>
                     </select>
                 </div>
+                <!-- Status Checkbox -->
+                <div>
+                    <label class="block text-sm font-medium">Active Status</label>
+                    <input type="hidden" name="status" value="0">
+                    <input type="checkbox" name="status" value="1" class="mt-1" @checked(old('status', $slider->status ?? true)) />
+                </div>
 
                 <!-- Existing Images -->
                 @if ($slider->images && count($slider->images))

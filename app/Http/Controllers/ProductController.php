@@ -30,14 +30,20 @@ class ProductController extends Controller
             'slug' => 'nullable|string|unique:products,slug',
             'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string',
-            'price' => 'required|numeric',
-            'stock' => 'required|integer',
+            'price' => 'nullable|numeric',
+            'stock' => 'nullable|integer',
             'status' => 'required|boolean',
             'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
         ]);
 
-        $data['slug'] = $data['slug'] ?? Str::slug($data['name']);
+        $slug = $data['slug'] ?? Str::slug($data['name']);
+        $originalSlug = $slug;
+        $counter = 1;
+        while (Product::where('slug', $slug)->exists()) {
+            $slug = $originalSlug . '-' . $counter++;
+        }
+        $data['slug'] = $slug;
 
         if ($request->hasFile('featured_image')) {
             $data['featured_image'] = $request->file('featured_image')->store('products/featured', 'public');
@@ -72,14 +78,20 @@ class ProductController extends Controller
             'slug' => 'nullable|string|unique:products,slug,' . $product->id,
             'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string',
-            'price' => 'required|numeric',
-            'stock' => 'required|integer',
+            'price' => 'nullable|numeric',
+            'stock' => 'nullable|integer',
             'status' => 'required|boolean',
             'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
         ]);
 
         $data['slug'] = $data['slug'] ?? Str::slug($data['name']);
+        $originalSlug = $data['slug'];
+        $counter = 1;
+
+        while (Product::where('slug', $data['slug'])->where('id', '!=', $product->id)->exists()) {
+            $data['slug'] = $originalSlug . '-' . $counter++;
+        }
 
         if ($request->hasFile('featured_image')) {
             if ($product->featured_image) {
@@ -127,4 +139,13 @@ class ProductController extends Controller
 
         return response()->json(['success' => true]);
     }
+    public function show(Product $product)
+    {
+        $categories = Category::all(); // for sidebar if needed
+        $category = $product->category; // this is what’s missing
+
+        return view('products.show', compact('product', 'categories', 'category'));
+    }
+
+
 }

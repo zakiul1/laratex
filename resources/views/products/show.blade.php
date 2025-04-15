@@ -1,54 +1,81 @@
-@extends('layouts.dashboard')
+@extends('layouts.app')
 
 @section('content')
-    <div class="max-w-5xl mx-auto px-4 py-6 bg-white shadow rounded">
+    <div class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-4 gap-6">
+        <!-- Sidebar: Category List -->
+        <aside class="md:col-span-1">
+            <h2 class="text-lg font-semibold mb-4">Categories</h2>
+            <ul class="space-y-2">
+                @foreach($categories as $cat)
+                    <li>
+                        <a href="{{ route('category.show', $cat->slug) }}" class="block text-sm hover:text-blue-600">
+                            {{ $cat->name }}
+                        </a>
+                        @if($cat->children && $cat->children->count())
+                            <ul class="ml-4 mt-1 space-y-1">
+                                @foreach($cat->children as $sub)
+                                    <li>
+                                        <a href="{{ route('category.show', $sub->slug) }}"
+                                            class="text-xs text-gray-500 hover:text-blue-500">
+                                            → {{ $sub->name }}
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+                    </li>
+                @endforeach
+            </ul>
+        </aside>
 
-        <h2 class="text-2xl font-semibold mb-4">{{ $product->name }}</h2>
+        <!-- Main Product View -->
+        <main class="md:col-span-3">
+            <!-- Breadcrumb -->
+        {{--     <nav class="text-sm text-gray-600 mb-6">
+                <a href="/" class="hover:underline">Home</a> /
+                <a href="{{ route('category.show', $product->category->slug ?? '') }}"
+                    class="hover:underline">{{ $product->category->name }}</a> /
+                <span class="text-gray-800">{{ $product->name }}</span>
+            </nav> --}}
 
-        <div class="mb-6 text-gray-700 space-y-2">
-            <p><strong>Description:</strong></p>
-            <div class="border p-3 rounded text-sm bg-gray-50">
-                {!! nl2br(e($product->description)) !!}
-            </div>
+            <!-- Product Detail -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Featured Image -->
+                <div>
+                    @if($product->featured_image)
+                        <img src="{{ asset('storage/' . $product->featured_image) }}" alt="{{ $product->name }}"
+                            class="w-full h-96 object-cover rounded shadow" />
+                    @endif
 
-            <p><strong>Price:</strong> ${{ number_format($product->price, 2) }}</p>
-            <p><strong>Category:</strong> {{ $product->category->name ?? 'N/A' }}</p>
-            <p><strong>Status:</strong>
-                <span
-                    class="inline-block px-2 py-1 rounded text-xs {{ $product->status ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-700' }}">
-                    {{ $product->status ? 'Active' : 'Inactive' }}
-                </span>
-            </p>
-        </div>
+                    @if($product->images && $product->images->count())
+                        <div class="mt-4 flex flex-wrap gap-3">
+                            @foreach($product->images as $img)
+                                <img src="{{ asset('storage/' . $img->image) }}" class="w-20 h-20 object-cover rounded border" />
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
 
-        <div class="mb-6">
-            <h3 class="font-semibold text-lg mb-2">Product Images</h3>
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                @forelse ($product->images as $image)
-                    <div class="border rounded overflow-hidden">
-                        <img src="{{ asset('storage/' . $image->image) }}" class="w-full h-40 object-cover"
-                            alt="Product Image" />
+                <!-- Product Info -->
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800 mb-2">{{ $product->name }}</h1>
+                    @if($product->price)
+                        <p class="text-xl text-blue-600 font-semibold mb-4">$ {{ number_format($product->price, 2) }}</p>
+                    @endif
+                    <p class="mb-4 text-gray-700">{{ $product->description }}</p>
+
+                    <div class="text-sm text-gray-500">
+                        @if($product->stock !== null)
+                            <p>Stock: <span class="font-medium text-gray-800">{{ $product->stock }}</span></p>
+                        @endif
+                        <p>Status:
+                            <span class="font-medium {{ $product->status ? 'text-green-600' : 'text-red-500' }}">
+                                {{ $product->status ? 'Active' : 'Inactive' }}
+                            </span>
+                        </p>
                     </div>
-                @empty
-                    <p class="text-sm text-gray-500">No images uploaded.</p>
-                @endforelse
+                </div>
             </div>
-        </div>
-
-        <div class="flex justify-end space-x-3">
-            <a href="{{ route('products.edit', $product->id) }}"
-                class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm rounded">
-                Edit
-            </a>
-            <form action="{{ route('products.destroy', $product->id) }}" method="POST"
-                onsubmit="return confirm('Are you sure you want to delete this product?')">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded">
-                    Delete
-                </button>
-            </form>
-        </div>
-
+        </main>
     </div>
 @endsection

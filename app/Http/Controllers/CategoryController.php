@@ -98,4 +98,18 @@ class CategoryController extends Controller
 
         return redirect()->route('categories.index')->with('success', 'Category deleted successfully.');
     }
+
+
+    public function show($slug)
+    {
+        $category = Category::where('slug', $slug)
+            ->with('products') // ensure the relationship is defined
+            ->firstOrFail();
+
+        $allCategories = Category::with('children')->whereNull('parent_id')->get();
+        $products = $category->products;
+
+        return view('categories.view', compact('category', 'products', 'allCategories'));
+    }
+
 }

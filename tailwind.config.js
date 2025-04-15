@@ -1,12 +1,14 @@
 /** @type {import('tailwindcss').Config} */
 export default {
     content: [
-        './resources/**/*.blade.php',
-        './resources/**/*.js',
-        './resources/**/*.vue',
+        './resources/views/**/*.blade.php',  // More specific
+        './resources/js/**/*.js',
+        './resources/js/**/*.vue',
     ],
     theme: {
         extend: {},
     },
-    plugins: [],
+    plugins: [
+        require('@tailwindcss/forms'), // recommended for form styling
+    ],
 }

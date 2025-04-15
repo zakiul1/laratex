@@ -1,7 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('content')
-<div class="max-w-4xl mx-auto mt-6 bg-white dark:bg-neutral-900 shadow rounded p-6">
+<div class=" mx-auto mt-6 bg-white dark:bg-neutral-900 shadow rounded p-6">
     <h2 class="text-xl font-semibold mb-4">All Menus</h2>
 
     @if($menus->count())

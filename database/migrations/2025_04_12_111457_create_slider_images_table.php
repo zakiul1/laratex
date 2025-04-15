@@ -9,7 +9,7 @@ return new class extends Migration {
     {
         Schema::create('slider_images', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('slider_id')->constrained()->onDelete('cascade');
+            $table->foreignId('slider_id')->constrained()->onDelete('cascade')->index();
             $table->string('image');
             $table->timestamps();
         });

@@ -4,7 +4,6 @@
 
 <form method="POST" action="{{ $isEdit ? route('products.update', $product->id) : route('products.store') }}"
     enctype="multipart/form-data" x-data="productForm()" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
     @csrf
     @if($isEdit)
         @method('PUT')
@@ -58,10 +57,11 @@
 
         <div>
             <label class="block text-sm font-medium">Status</label>
-            <select name="status" class="w-full border rounded p-2">
+            <select name="status" class="w-full border rounded p-2 @error('status') border-red-500 @enderror">
                 <option value="1" {{ old('status', $product->status ?? 1) == 1 ? 'selected' : '' }}>Active</option>
                 <option value="0" {{ old('status', $product->status ?? 0) == 0 ? 'selected' : '' }}>Inactive</option>
             </select>
+            @error('status') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
 
         <!-- Featured Image -->
@@ -78,12 +78,14 @@
                     reader.onload = e => image = e.target.result;
                     reader.readAsDataURL(file);
                 }" class="w-full text-sm" />
+            @error('featured_image') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
 
         <!-- Gallery Images -->
         <div>
             <label class="block text-sm font-medium">Upload Gallery Images</label>
-            <input type="file" name="images[]" multiple class="w-full text-sm" @change="handleFiles($event)" />
+            <input type="file" name="images[]" multiple
+                class="w-full text-sm @error('images.*') border-red-500 @enderror" @change="handleFiles($event)" />
             <div class="flex flex-wrap gap-2 mt-3">
                 <template x-for="(img, index) in previews" :key="index">
                     <div class="relative w-24 h-24">
@@ -93,6 +95,7 @@
                     </div>
                 </template>
             </div>
+            @error('images.*') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
 
             @if ($isEdit && $product->images->count())
                 <div class="mt-4">

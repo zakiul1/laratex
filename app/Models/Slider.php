@@ -20,6 +20,9 @@ class Slider extends Model
         'show_arrows',
         'show_indicators',
         'slider_location',
+        'order',
+        'status',
+
     ];
 
     protected $casts = [

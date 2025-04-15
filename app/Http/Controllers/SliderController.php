@@ -19,11 +19,10 @@ class SliderController extends Controller
                 ->orWhere('layout', 'like', "%{$search}%");
         }
 
-        $sliders = $query->paginate(10);
+        $sliders = $query->orderBy('order')->paginate(10);
 
         return view('sliders.index', compact('sliders'));
     }
-
 
     public function create()
     {
@@ -36,6 +35,7 @@ class SliderController extends Controller
         $request->merge([
             'show_arrows' => $request->input('show_arrows', 0),
             'show_indicators' => $request->input('show_indicators', 0),
+            'status' => $request->input('status', 0),
         ]);
 
         $validated = $request->validate([
@@ -49,6 +49,8 @@ class SliderController extends Controller
             'show_arrows' => 'boolean',
             'show_indicators' => 'boolean',
             'slider_location' => 'string',
+            'status' => 'boolean',
+            'order' => 'nullable|integer',
             'images' => 'nullable|array',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
@@ -58,8 +60,7 @@ class SliderController extends Controller
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
                 $path = $image->store('sliders', 'public');
-                SliderImage::create([
-                    'slider_id' => $slider->id,
+                $slider->images()->create([
                     'image' => $path,
                 ]);
             }
@@ -67,7 +68,6 @@ class SliderController extends Controller
 
         return redirect()->route('sliders.index')->with('success', 'Slider created successfully!');
     }
-
 
     public function edit(Slider $slider)
     {
@@ -77,10 +77,10 @@ class SliderController extends Controller
 
     public function update(Request $request, Slider $slider)
     {
-        // ✅ Ensure checkboxes are submitted even if unchecked
         $request->merge([
             'show_arrows' => $request->input('show_arrows', 0),
             'show_indicators' => $request->input('show_indicators', 0),
+            'status' => $request->input('status', 0),
         ]);
 
         $validated = $request->validate([
@@ -94,6 +94,8 @@ class SliderController extends Controller
             'show_arrows' => 'boolean',
             'show_indicators' => 'boolean',
             'slider_location' => 'string',
+            'status' => 'boolean',
+            'order' => 'nullable|integer',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
 
@@ -102,8 +104,7 @@ class SliderController extends Controller
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
                 $path = $image->store('sliders', 'public');
-                SliderImage::create([
-                    'slider_id' => $slider->id,
+                $slider->images()->create([
                     'image' => $path,
                 ]);
             }
@@ -111,9 +112,9 @@ class SliderController extends Controller
 
         return redirect()->route('sliders.index')->with('success', 'Slider updated successfully!');
     }
+
     public function destroy(Slider $slider)
     {
-        // dd($slider);
         $slider->load('images');
 
         foreach ($slider->images as $image) {
@@ -126,16 +127,12 @@ class SliderController extends Controller
         return response()->json(['success' => true]);
     }
 
-
-
     public function deleteImage($id)
     {
         $image = SliderImage::findOrFail($id);
-        \Storage::disk('public')->delete($image->image); // delete file too
+        Storage::disk('public')->delete($image->image);
         $image->delete();
 
         return response()->json(['success' => true]);
     }
-
-
 }

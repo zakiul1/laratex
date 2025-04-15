@@ -12,8 +12,8 @@ return new class extends Migration {
             $table->string('slug')->unique();
             $table->foreignId('category_id')->constrained()->onDelete('cascade');
             $table->text('description')->nullable();
-            $table->decimal('price', 10, 2)->default(0.00);
-            $table->integer('stock')->default(0);
+            $table->decimal('price', 10, 2)->default(0.00)->nullable();
+            $table->integer('stock')->default(0)->nullable();
             $table->boolean('status')->default(true);
             $table->string('featured_image')->nullable();
             $table->timestamps();

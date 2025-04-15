@@ -1,7 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('content')
-<div class="max-w-3xl mx-auto mt-6 bg-white dark:bg-neutral-900 p-6 rounded shadow">
+<div class=" mx-auto mt-6 bg-white dark:bg-neutral-900 p-6 rounded shadow">
     <h2 class="text-xl font-semibold mb-4">Create New Menu</h2>
 
     <!-- ✅ Success Message -->

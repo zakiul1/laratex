@@ -90,9 +90,9 @@
                     <label class="block text-sm font-medium">Slider Location</label>
                     <select name="slider_location"
                         class="w-full border border-gray-300 rounded mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="header" @selected($slider->slider_location === 'header')>Header</option>
-                        <option value="footer" @selected($slider->slider_location === 'footer')>Footer</option>
                         <option value="homepage" @selected($slider->slider_location === 'homepage')>Homepage</option>
+                        <option value="footer" @selected($slider->slider_location === 'footer')>Footer</option>
+                       
                         <option value="sidebar" @selected($slider->slider_location === 'sidebar')>Sidebar</option>
                     </select>
                 </div>

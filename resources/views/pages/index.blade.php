@@ -1,4 +1,3 @@
-
 @extends('layouts.dashboard')
 
 @section('content')
@@ -41,6 +40,7 @@
                                         class="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white text-xs rounded">
                                         Edit
                                     </a>
+
                                     <form action="{{ route('pages.destroy', $page->id) }}" method="POST"
                                         onsubmit="return confirm('Are you sure you want to delete this page?');">
                                         @csrf
@@ -50,6 +50,11 @@
                                             Delete
                                         </button>
                                     </form>
+
+                                    <a href="{{ route('page.show', $page->slug) }}" target="_blank"
+                                        class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded">
+                                        View
+                                    </a>
                                 </div>
                             </td>
                         </tr>

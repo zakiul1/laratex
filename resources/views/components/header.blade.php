@@ -4,7 +4,8 @@ use App\Models\SiteSetting;
 use App\Models\Menu;
 
 
-$headerMenu = Menu::where('location', 'header')->with('items')->first();
+$headerMenu = Menu::where('location', 'header')->with(['items.post'])->first();
+
 
 $site = SiteSetting::first();
 
@@ -76,15 +77,61 @@ $site = SiteSetting::first();
     @if ($headerMenu && $headerMenu->items)
         @foreach ($headerMenu->items as $item)
             <div class="relative group">
-                <a href="{{ $item->type === 'custom' ? $item->url : url('/' . $item->slug) }}" class="hover:text-red-500">
+                @php
+                    $link = '#';
+
+                    if ($item->type === 'custom') {
+                        $link = $item->url;
+                    } elseif ($item->type === 'page' && $item->reference_id) {
+                        $post = \App\Models\Post::find($item->reference_id);
+                        if ($post) {
+                            $link = route('page.show', $post->slug);
+                        }
+                    } elseif ($item->type === 'post' && $item->reference_id) {
+                        $post = \App\Models\Post::find($item->reference_id);
+                        if ($post) {
+                            $link = route('posts.show', $post->slug);
+                        }
+                    } elseif ($item->type === 'category' && $item->reference_id) {
+                        $category = \App\Models\Category::find($item->reference_id);
+                        if ($category) {
+                            $link = route('category.show', $category->slug);
+                        }
+                    }
+                @endphp
+
+                <a href="{{$item->url }}" class="hover:text-red-500">
                     {{ $item->title }}
                 </a>
+
                 @if (!empty($item->children))
                     <div
                         class="absolute left-0 top-full mt-2 w-40 bg-white text-black shadow-lg rounded hidden group-hover:block z-50">
                         @foreach ($item->children as $child)
-                            <a href="{{ $child->type === 'custom' ? $child->url : url('/' . $child->slug) }}"
-                                class="block px-4 py-2 text-sm hover:bg-gray-100">
+                            @php
+                                $childLink = '#';
+
+                                if ($child->type === 'custom') {
+                                    $childLink = $child->url;
+                                } elseif ($child->type === 'page' && $child->reference_id) {
+                                    $post = \App\Models\Post::find($child->reference_id);
+                                    if ($post) {
+                                        $childLink = route('page.show', $post->slug);
+                                    }
+                                } elseif ($child->type === 'post' && $child->reference_id) {
+                                    $post = \App\Models\Post::find($child->reference_id);
+                                    if ($post) {
+                                        $childLink = route('posts.show', $post->slug);
+                                    }
+                                } elseif ($child->type === 'category' && $child->reference_id) {
+                                    $category = \App\Models\Category::find($child->reference_id);
+                                    if ($category) {
+                                        $childLink = route('category.show', $category->slug);
+                                    }
+                                }
+                            @endphp
+
+                            <a href="{{ $childLink }}" class="block px-4 py-2 text-sm hover:bg-gray-100">
                                 {{ $child->title }}
                             </a>
                         @endforeach
@@ -94,6 +141,8 @@ $site = SiteSetting::first();
         @endforeach
     @endif
 </nav>
+
+
         <!-- Actions -->
         <div class="flex items-center gap-4">
             <button class="text-white hover:text-red-500">

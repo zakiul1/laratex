@@ -10,8 +10,18 @@ use Illuminate\Database\Eloquent\Model;
 class MenuItem extends Model
 {
     protected $fillable = [
-        'menu_id', 'parent_id', 'title', 'url', 'type', 'reference_id', 'order',
+        'menu_id',
+        'parent_id',
+        'title',
+        'url',
+        'type',
+        'reference_id',
+        'order',
     ];
+    public function post()
+    {
+        return $this->belongsTo(\App\Models\Post::class, 'reference_id')->where('type', 'page');
+    }
 
     public function menu()
     {

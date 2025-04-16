@@ -25,6 +25,7 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
+
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|unique:products,slug',
@@ -73,6 +74,7 @@ class ProductController extends Controller
 
     public function update(Request $request, Product $product)
     {
+        // dd($request->all());
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|unique:products,slug,' . $product->id,
@@ -139,12 +141,19 @@ class ProductController extends Controller
 
         return response()->json(['success' => true]);
     }
-    public function show(Product $product)
+    public function show($slug, Product $product)
     {
+        $product = Product::where('slug', $slug)->with('category')->firstOrFail();
         $categories = Category::all(); // for sidebar if needed
         $category = $product->category; // this is what’s missing
+        $relatedProducts = Product::where('category_id', $product->category_id)
+            ->where('id', '!=', $product->id)
+            ->where('status', 1)
+            ->latest()
+            ->take(4)
+            ->get();
 
-        return view('products.show', compact('product', 'categories', 'category'));
+        return view('products.show', compact('product', 'categories', 'category', 'relatedProducts'));
     }
 
 

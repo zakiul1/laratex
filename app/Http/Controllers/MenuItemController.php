@@ -1,100 +1,72 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\Menu;
 use App\Models\MenuItem;
+use App\Models\Page;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
-class MenuController extends Controller
+class MenuItemController extends Controller
 {
-    public function index()
+    public function store(Request $request, $menuId)
     {
-        $menus = Menu::all();
-        return view('menus.index', compact('menus'));
-    }
-
-    public function create()
-    {
-        return view('menus.create');
-    }
-
-    public function store(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255|unique:menus,name',
-            'location' => 'nullable|in:header,footer',
-            'auto_add_pages' => 'nullable|boolean',
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'type' => 'required|in:custom,page,post,category',
+            'url' => 'nullable|url',
+            'reference_id' => 'nullable|numeric',
+            'parent_id' => 'nullable|exists:menu_items,id',
+            'order' => 'nullable|integer',
         ]);
 
-        $menu = Menu::create([
-            'name' => $request->name,
-            'slug' => Str::slug($request->name),
-            'location' => $request->location,
-            'auto_add_pages' => $request->has('auto_add_pages'),
+        $menu = Menu::findOrFail($menuId);
+
+        $menuItem = new MenuItem([
+            'title' => $validated['title'],
+            'type' => $validated['type'],
+            'url' => $validated['type'] === 'custom' ? $validated['url'] : null,
+            'reference_id' => $validated['reference_id'] ?? null,
+            'parent_id' => $validated['parent_id'] ?? null,
+            'order' => $validated['order'] ?? 0,
         ]);
 
-        return redirect()->route('menus.edit', $menu)->with('success', 'Menu created!');
+        $menu->items()->save($menuItem);
+
+        return back()->with('success', 'Menu item added.');
     }
 
-    public function edit(Menu $menu)
+    public function edit(MenuItem $menuItem)
     {
-        $menu->load('items.children');
-        return view('menus.edit', compact('menu'));
+        $pages = Page::pluck('title', 'id');
+        return view('menu_items.edit', compact('menuItem', 'pages'));
     }
 
-    public function update(Request $request, Menu $menu)
+    public function update(Request $request, MenuItem $menuItem)
     {
-        $request->validate([
-            'name' => 'required|string|max:255|unique:menus,name,' . $menu->id,
-            'location' => 'nullable|in:header,footer',
-            'auto_add_pages' => 'nullable|boolean',
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'type' => 'required|in:custom,page,post,category',
+            'url' => 'nullable|url',
+            'reference_id' => 'nullable|numeric',
+            'parent_id' => 'nullable|exists:menu_items,id',
+            'order' => 'nullable|integer',
         ]);
 
-        $menu->update([
-            'name' => $request->name,
-            'slug' => Str::slug($request->name),
-            'location' => $request->location,
-            'auto_add_pages' => $request->has('auto_add_pages'),
+        $menuItem->update([
+            'title' => $validated['title'],
+            'type' => $validated['type'],
+            'url' => $validated['type'] === 'custom' ? $validated['url'] : null,
+            'reference_id' => $validated['reference_id'] ?? null,
+            'parent_id' => $validated['parent_id'] ?? null,
+            'order' => $validated['order'] ?? 0,
         ]);
 
-        return redirect()->back()->with('success', 'Menu updated!');
+        return back()->with('success', 'Menu item updated.');
     }
 
-    public function destroy(Menu $menu)
+    public function destroy(MenuItem $menuItem)
     {
-        $menu->delete();
-        return redirect()->route('menus.index')->with('success', 'Menu deleted.');
-    }
-
-    public function updateStructure(Request $request, Menu $menu)
-    {
-        MenuItem::where('menu_id', $menu->id)->delete();
-
-        foreach ($request->items as $index => $item) {
-            $this->createMenuItem($menu->id, $item, null, $index);
-        }
-
-        return response()->json(['success' => true]);
-    }
-
-    private function createMenuItem($menuId, $item, $parentId = null, $order = 0)
-    {
-        $menuItem = MenuItem::create([
-            'menu_id' => $menuId,
-            'parent_id' => $parentId,
-            'title' => $item['title'],
-            'url' => $item['url'] ?? null,
-            'type' => $item['type'] ?? 'custom',
-            'reference_id' => $item['reference_id'] ?? null,
-            'order' => $order,
-        ]);
-
-        if (!empty($item['children'])) {
-            foreach ($item['children'] as $i => $child) {
-                $this->createMenuItem($menuId, $child, $menuItem->id, $i);
-            }
-        }
+        $menuItem->delete();
+        return back()->with('success', 'Menu item deleted.');
     }
 }

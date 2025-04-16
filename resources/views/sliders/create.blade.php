@@ -93,9 +93,9 @@
                         <label class="block text-sm font-medium">Slider Location</label>
                         <select name="slider_location"
                             class="w-full border border-gray-300 rounded mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="header">Header</option>
+                           <option value="homepage">Homepage</option>
                             <option value="footer">Footer</option>
-                            <option value="homepage">Homepage</option>
+                            
                             <option value="sidebar">Sidebar</option>
                         </select>
                     </div>

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\PageController;
@@ -12,15 +13,17 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SiteSettingController;
 use App\Http\Controllers\SliderController;
 use App\Http\Controllers\SliderImageController;
+use App\Http\Controllers\ThemeController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('home.index');
 })->name('home');
+
 Route::get('/dashboard', function () {
     return view('layouts.dashboard');
-
 })->middleware(['auth', 'verified'])->name('dashboard');
+
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -32,8 +35,9 @@ Route::middleware('auth')->group(function () {
 //Public routes
 Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('category.show');
 Route::get('/product/{slug}', [ProductController::class, 'show'])->name('product.show');
-
-
+Route::get('/contact', [ContactController::class, 'index'])->name('contact.page');
+Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit');
+Route::get('/{slug}', [PageController::class, 'show'])->name('page.show');
 
 
 
@@ -67,12 +71,30 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::post('/menus/select', function (Illuminate\Http\Request $request) {
         return redirect()->route('menus.edit', $request->menu_id);
     })->name('menus.select');
+
+    // ✅ NEW: Add Page to Menu Route
+    Route::post('/menus/{menu}/add-page', [MenuController::class, 'addPageToMenu'])->name('menus.addPage');
+
     //site settings
+
     Route::get('/site-settings', [SiteSettingController::class, 'edit'])->name('site-settings.edit');
     Route::match(['POST', 'PUT'], '/site-settings', [SiteSettingController::class, 'update'])
         ->name('site-settings.update');
     Route::delete('/site-settings/logo', [SiteSettingController::class, 'removeLogo'])->name('site-settings.remove-logo');
 
+    //Contact Routes
+    Route::get('/contact', [ContactController::class, 'adminForm'])->name('admin.contact.edit');
+    Route::post('/contact', [ContactController::class, 'adminUpdate'])->name('admin.contact.update');
+
+    //Route for Theme
+    Route::prefix('themes')->name('themes.')->group(function () {
+        Route::get('/', [ThemeController::class, 'index'])->name('index');
+        Route::post('/{theme}/activate', [ThemeController::class, 'activate'])->name('activate');
+        Route::get('/preview/{folder}', [ThemeController::class, 'preview'])->name('preview');
+        Route::post('/duplicate/{folder}', [ThemeController::class, 'duplicate'])->name('duplicate');
+        Route::get('/edit/{folder}', [ThemeController::class, 'edit'])->name('edit');
+        Route::post('/upload', [ThemeController::class, 'upload'])->name('upload');
+    });
 
 });
 

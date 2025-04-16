@@ -32,11 +32,10 @@
                 <tbody class="divide-y divide-gray-100 text-sm text-gray-700">
                     @forelse ($products as $product)
                         <tr>
-                            <td class="px-4 py-2">{{ $loop->iteration + ($products->currentPage() - 1) * $products->perPage() }}
-                            </td>
+                            <td class="px-4 py-2">{{ $loop->iteration + ($products->currentPage() - 1) * $products->perPage() }}</td>
                             <td class="px-4 py-2">
-                                @if ($product->images->first())
-                                    <img src="{{ asset('storage/' . $product->images->first()->image) }}" alt="Image"
+                                @if ($product->featured_image)
+                                    <img src="{{ asset('storage/' . $product->featured_image) }}" alt="Image"
                                         class="w-16 h-16 object-cover rounded border">
                                 @else
                                     <span class="text-gray-400">No Image</span>

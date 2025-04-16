@@ -22,4 +22,9 @@ class SiteSetting extends Model
         'show_ribbon' => 'boolean',
         'extra' => 'array',
     ];
+    public static function activeTheme()
+    {
+        return self::first()?->active_theme ?? 'default';
+    }
+
 }

@@ -46,6 +46,6 @@
     </div>
 
     <div class="bg-neutral-800 text-center text-xs text-gray-400 py-4">
-        &copy; {{ date('Y') }} WORKYIND. All rights reserved.
+        &copy; {{ date('Y') }} Siatex. All rights reserved.
     </div>
 </footer>

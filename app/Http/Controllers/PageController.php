@@ -135,4 +135,23 @@ class PageController extends Controller
 
         return redirect()->route('pages.index')->with('success', 'Page deleted successfully.');
     }
+
+
+
+    public function show($slug)
+    {
+        $page = Post::where('slug', $slug)
+            ->where('type', 'page')
+            ->where('status', 'Published')
+            ->firstOrFail();
+
+        // If using custom templates like "contact.blade.php"
+        if ($page->template && view()->exists('contact.' . $page->template)) {
+            return view('contact.' . $page->template, compact('page'));
+        }
+
+        // Default page view
+        return view('pages.show', compact('page'));
+    }
+
 }

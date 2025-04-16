@@ -26,7 +26,7 @@ class CategoryController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|unique:categories,slug',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'status' => 'required|boolean',
             'parent_id' => 'nullable|exists:categories,id',
         ]);
@@ -41,8 +41,8 @@ class CategoryController extends Controller
 
         $data['slug'] = $slug;
 
-        if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('categories', 'public');
+        if ($request->hasFile('featured_image')) {
+            $data['featured_image'] = $request->file('featured_image')->store('categories', 'public');
         }
 
         Category::create($data);
@@ -61,7 +61,7 @@ class CategoryController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|unique:categories,slug,' . $category->id,
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'status' => 'required|boolean',
             'parent_id' => 'nullable|exists:categories,id',
         ]);
@@ -76,11 +76,11 @@ class CategoryController extends Controller
 
         $data['slug'] = $slug;
 
-        if ($request->hasFile('image')) {
-            if ($category->image) {
-                File::delete(public_path('storage/' . $category->image));
+        if ($request->hasFile('featured_image')) {
+            if ($category->featured_image) {
+                File::delete(public_path('storage/' . $category->featured_image));
             }
-            $data['image'] = $request->file('image')->store('categories', 'public');
+            $data['featured_image'] = $request->file('featured_image')->store('categories', 'public');
         }
 
         $category->update($data);
@@ -90,8 +90,8 @@ class CategoryController extends Controller
 
     public function destroy(Category $category)
     {
-        if ($category->image) {
-            File::delete(public_path('storage/' . $category->image));
+        if ($category->featured_image) {
+            File::delete(public_path('storage/' . $category->featured_image));
         }
 
         $category->delete();
@@ -99,11 +99,10 @@ class CategoryController extends Controller
         return redirect()->route('categories.index')->with('success', 'Category deleted successfully.');
     }
 
-
     public function show($slug)
     {
         $category = Category::where('slug', $slug)
-            ->with('products') // ensure the relationship is defined
+            ->with('products') // make sure this relation exists in Category model
             ->firstOrFail();
 
         $allCategories = Category::with('children')->whereNull('parent_id')->get();
@@ -111,5 +110,4 @@ class CategoryController extends Controller
 
         return view('categories.view', compact('category', 'products', 'allCategories'));
     }
-
 }

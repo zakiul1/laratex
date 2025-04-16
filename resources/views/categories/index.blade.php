@@ -1,4 +1,3 @@
-
 @extends('layouts.dashboard')
 
 @section('content')
@@ -34,8 +33,9 @@
                             <td class="px-4 py-2">{{ $category->name }}</td>
                             <td class="px-4 py-2">{{ $category->slug }}</td>
                             <td class="px-4 py-2">
-                                @if ($category->image)
-                                    <img src="{{ asset('storage/' . $category->image) }}" class="w-12 h-12 object-cover rounded">
+                                @if ($category->featured_image)
+                                    <img src="{{ asset('storage/' . $category->featured_image) }}"
+                                        class="w-12 h-12 object-cover rounded">
                                 @else
                                     <span class="text-gray-400">N/A</span>
                                 @endif
@@ -75,4 +75,3 @@
         </div>
     </div>
 @endsection
-

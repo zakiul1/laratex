@@ -1,4 +1,3 @@
-
 @php
     $isEdit = isset($category);
     $formRoute = $isEdit ? route('categories.update', $category->id) : route('categories.store');
@@ -53,10 +52,11 @@
             @error('status')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
         </div>
 
-        <!-- Image Upload + Preview -->
+        <!-- Featured Image Upload + Preview -->
         <div>
-            <label class="block text-sm font-medium">Image</label>
-            <input type="file" name="image" @change="handleImage($event)" class="w-full mt-1 text-sm border-gray-300">
+            <label class="block text-sm font-medium">Featured Image</label>
+            <input type="file" name="featured_image" @change="handleImage($event)"
+                class="w-full mt-1 text-sm border-gray-300">
 
             <div class="mt-3 relative w-32 h-32" x-show="preview">
                 <img :src="preview" alt="Preview" class="w-full h-full object-cover border rounded">
@@ -64,14 +64,14 @@
                     class="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 text-xs">&times;</button>
             </div>
 
-            @if ($isEdit && $category->image)
+            @if ($isEdit && $category->featured_image)
                 <div class="mt-3 relative w-32 h-32" x-show="!preview">
-                    <img src="{{ asset('storage/' . $category->image) }}" alt="Current"
+                    <img src="{{ asset('storage/' . $category->featured_image) }}" alt="Current"
                         class="w-full h-full object-cover border rounded">
                 </div>
             @endif
 
-            @error('image')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+            @error('featured_image')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
         </div>
 
         <!-- Submit Button -->
@@ -97,7 +97,7 @@
             },
             clearImage() {
                 this.preview = '';
-                document.querySelector('input[type="file"][name="image"]').value = '';
+                document.querySelector('input[type="file"][name="featured_image"]').value = '';
             }
         };
     }

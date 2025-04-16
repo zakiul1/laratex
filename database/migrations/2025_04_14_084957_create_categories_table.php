@@ -12,7 +12,7 @@ return new class extends Migration {
             $table->foreignId('parent_id')->nullable()->constrained('categories')->nullOnDelete();
             $table->string('name');
             $table->string('slug')->unique();
-            $table->string('image')->nullable(); // for category thumbnail
+            $table->string('featured_image')->nullable(); // for category thumbnail
             $table->boolean('status')->default(true); // active/inactive
             $table->timestamps();
         });

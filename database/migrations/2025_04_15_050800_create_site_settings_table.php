@@ -21,7 +21,7 @@ return new class extends Migration {
             $table->string('ribbon_email')->nullable();
             $table->string('ribbon_bg_color')->default('#0a4b78');
             $table->string('ribbon_text_color')->default('#ffffff');
-
+            $table->string('active_theme')->nullable();
             // Extra settings
             $table->json('extra')->nullable();
 

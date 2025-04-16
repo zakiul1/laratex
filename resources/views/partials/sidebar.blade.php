@@ -160,25 +160,52 @@ $currentRoute = request()->routeIs('menus.*');
         <span>Contact Page</span>
     </a>
 
+{{-- Theme settings --}}
+@php
+    $isThemeActive = request()->routeIs('themes.*');
+@endphp
 
-   {{--  Theme Settings --}}
+<div x-data="{ isExpanded: {{ $isThemeActive ? 'true' : 'false' }} }" class="flex flex-col">
+    <button type="button"
+        x-on:click="isExpanded = !isExpanded"
+        id="theme-btn"
+        aria-controls="theme-menu"
+        x-bind:aria-expanded="isExpanded ? 'true' : 'false'"
+        class="flex items-center justify-between rounded-radius gap-2 px-2 py-1.5 text-sm font-medium underline-offset-2 focus:outline-hidden focus-visible:underline"
+        x-bind:class="isExpanded
+            ? 'text-on-surface-strong bg-primary/10 dark:text-on-surface-dark-strong dark:bg-primary-dark/10'
+            : 'text-on-surface hover:bg-primary/5 hover:text-on-surface-strong dark:text-on-surface-dark dark:hover:text-on-surface-dark-strong dark:hover:bg-primary-dark/5'">
+
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="size-5 shrink-0" viewBox="0 0 24 24">
+            <path d="M2 4h20v4H2zM4 10h16v10H4z"/>
+        </svg>
+        <span class="mr-auto text-left">Theme</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="size-5 transition-transform shrink-0" fill="currentColor"
+            viewBox="0 0 20 20" x-bind:class="isExpanded ? 'rotate-180' : 'rotate-0'" aria-hidden="true">
+            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.72-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.27a.75.75 0 01.01-1.06z" clip-rule="evenodd" />
+        </svg>
+    </button>
+
+    <ul x-cloak x-collapse x-show="isExpanded" aria-labelledby="theme-btn" id="theme-menu">
+        <li class="px-1 py-0.5 first:mt-2">
+            <a href="{{ route('themes.index') }}"
+                class="flex items-center gap-2 px-2 py-1.5 text-sm rounded-radius underline-offset-2
+                    {{ request()->routeIs('themes.index') ? 'bg-primary/10 text-on-surface-strong dark:bg-primary-dark/10 dark:text-on-surface-dark-strong' : 'text-on-surface hover:bg-primary/5 hover:text-on-surface-strong dark:text-on-surface-dark dark:hover:bg-primary-dark/5 dark:hover:text-on-surface-dark-strong' }}">
+                All Themes
+            </a>
+        </li>
+        <li class="px-1 py-0.5">
+            <a href="{{ route('themes.customize') }}"
+                class="flex items-center gap-2 px-2 py-1.5 text-sm rounded-radius underline-offset-2
+                    {{ request()->routeIs('themes.customize') ? 'bg-primary/10 text-on-surface-strong dark:bg-primary-dark/10 dark:text-on-surface-dark-strong' : 'text-on-surface hover:bg-primary/5 hover:text-on-surface-strong dark:text-on-surface-dark dark:hover:bg-primary-dark/5 dark:hover:text-on-surface-dark-strong' }}">
+                Customize Theme
+            </a>
+        </li>
+    </ul>
+</div>
 
 
-<a href="{{ route('themes.index') }}"
-    class="flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium underline-offset-2 focus-visible:underline focus:outline-hidden
-        {{ request()->routeIs('themes.*')
-    ? 'bg-primary/10 text-on-surface-strong dark:bg-primary-dark/10 dark:text-on-surface-dark-strong'
-    : 'text-on-surface hover:bg-primary/5 hover:text-on-surface-strong dark:text-on-surface-dark dark:hover:bg-primary-dark/5 dark:hover:text-on-surface-dark-strong' }}">
 
-    <!-- Theme Icon -->
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
-        class="size-6">
-        <path stroke-linecap="round" stroke-linejoin="round"
-            d="M3.75 6.75A2.25 2.25 0 0 1 6 4.5h12a2.25 2.25 0 0 1 2.25 2.25v10.5A2.25 2.25 0 0 1 18 19.5H6a2.25 2.25 0 0 1-2.25-2.25V6.75Z" />
-    </svg>
-
-    <span>Themes</span>
-</a>
         <!-- Site Settings links  -->
 
 <a href="{{ route('site-settings.edit') }}"
@@ -197,6 +224,7 @@ $currentRoute = request()->routeIs('menus.*');
 
     <span>Site Settings</span>
 </a>
+
 
 
     </div>

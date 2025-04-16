@@ -14,11 +14,13 @@ use App\Http\Controllers\SiteSettingController;
 use App\Http\Controllers\SliderController;
 use App\Http\Controllers\SliderImageController;
 use App\Http\Controllers\ThemeController;
+use App\Http\Controllers\ThemeCustomizeController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('home.index');
-})->name('home');
+    return view('home');
+});
+
 
 Route::get('/dashboard', function () {
     return view('layouts.dashboard');
@@ -33,11 +35,10 @@ Route::middleware('auth')->group(function () {
 
 
 //Public routes
-Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('category.show');
-Route::get('/product/{slug}', [ProductController::class, 'show'])->name('product.show');
+
 Route::get('/contact', [ContactController::class, 'index'])->name('contact.page');
 Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit');
-Route::get('/{slug}', [PageController::class, 'show'])->name('page.show');
+
 
 
 
@@ -87,15 +88,24 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::post('/contact', [ContactController::class, 'adminUpdate'])->name('admin.contact.update');
 
     //Route for Theme
-    Route::prefix('themes')->name('themes.')->group(function () {
-        Route::get('/', [ThemeController::class, 'index'])->name('index');
-        Route::post('/{theme}/activate', [ThemeController::class, 'activate'])->name('activate');
-        Route::get('/preview/{folder}', [ThemeController::class, 'preview'])->name('preview');
-        Route::post('/duplicate/{folder}', [ThemeController::class, 'duplicate'])->name('duplicate');
-        Route::get('/edit/{folder}', [ThemeController::class, 'edit'])->name('edit');
-        Route::post('/upload', [ThemeController::class, 'upload'])->name('upload');
-    });
+ 
+    Route::post('/themes/{folder}/activate', [ThemeController::class, 'activate'])->name('themes.activate');
+    Route::delete('/themes/{folder}', [ThemeController::class, 'destroy'])->name('themes.destroy');
+    Route::post('/themes/upload', [ThemeController::class, 'upload'])->name('themes.upload');
+    Route::get('/themes', [ThemeController::class, 'index'])->name('themes.index');
+    Route::get('/themes/{folder}/preview', [ThemeController::class, 'preview'])->name('themes.preview');
 
+   // Theme Customization
+   Route::get('/themes/customize', [ThemeCustomizeController::class, 'edit'])->name('themes.customize');
+Route::post('/themes/customize', [ThemeCustomizeController::class, 'update'])->name('themes.customize.update');
+Route::delete('/themes/customize/reset', [ThemeCustomizeController::class, 'reset'])->name('themes.customize.reset');
+Route::get('/themes/customize/export', [ThemeCustomizeController::class, 'export'])->name('themes.customize.export');
+Route::post('/themes/customize/import', [ThemeCustomizeController::class, 'import'])->name('themes.customize.import'); // ✅ This is the missing one
 });
 
 require __DIR__ . '/auth.php';
+
+
+Route::get('/{slug}', [PageController::class, 'show'])->name('page.show');
+Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('category.show');
+Route::get('/product/{slug}', [ProductController::class, 'show'])->name('product.show');

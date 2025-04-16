@@ -5,19 +5,29 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\FileViewFinder;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Facades\Schema;
+use App\Models\SiteSetting;
 
 class ThemeServiceProvider extends ServiceProvider
 {
     public function register()
     {
-        // Bind custom view finder for theming
         $this->app->singleton('view.finder', function ($app) {
             $paths = $app['config']['view.paths'];
-            $theme = env('ACTIVE_THEME', 'default');
+            $theme = 'default';
 
-            // Prepend the active theme folder path
+            if (Schema::hasTable('site_settings')) {
+                $settings = SiteSetting::first();
+                if ($settings && !empty($settings->active_theme)) {
+                    $theme = $settings->active_theme;
+                }
+            }
+
             $themePath = resource_path("views/themes/{$theme}");
-            array_unshift($paths, $themePath);
+
+            if (is_dir($themePath)) {
+                array_unshift($paths, $themePath);
+            }
 
             return new FileViewFinder(new Filesystem, $paths);
         });
@@ -25,6 +35,6 @@ class ThemeServiceProvider extends ServiceProvider
 
     public function boot()
     {
-        // You may put boot logic here later if needed
+        //
     }
 }

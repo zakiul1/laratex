@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Contact;
 use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
@@ -17,11 +18,9 @@ class PageController extends Controller
 
     public function create()
     {
-        $templateFiles = collect(File::files(resource_path('views/templates')))
-            ->map(fn($file) => str_replace('.blade.php', '', $file->getFilename()));
-
-        $initialImage = ''; // ✅ required for Alpine.js featured image preview
-        return view('pages.create', compact('templateFiles', 'initialImage'));
+        $templates = getThemeTemplates(); // ✅ from theme.json
+        $initialImage = '';
+        return view('pages.create', compact('templates', 'initialImage'));
     }
 
     public function store(Request $request)
@@ -61,6 +60,7 @@ class PageController extends Controller
                 }
             }
         }
+
         $data['metas'] = $metaData;
         $data['author_id'] = auth()->id();
 
@@ -71,11 +71,9 @@ class PageController extends Controller
 
     public function edit(Post $page)
     {
-        $templateFiles = collect(File::files(resource_path('views/templates')))
-            ->map(fn($file) => str_replace('.blade.php', '', $file->getFilename()));
-
+        $templates = getThemeTemplates(); // ✅ from theme.json
         $initialImage = $page->featured_image ? asset('storage/' . $page->featured_image) : '';
-        return view('pages.edit', compact('page', 'templateFiles', 'initialImage'));
+        return view('pages.edit', compact('page', 'templates', 'initialImage'));
     }
 
     public function update(Request $request, Post $page)
@@ -137,7 +135,6 @@ class PageController extends Controller
     }
 
 
-
     public function show($slug)
     {
         $page = Post::where('slug', $slug)
@@ -145,13 +142,27 @@ class PageController extends Controller
             ->where('status', 'Published')
             ->firstOrFail();
 
-        // If using custom templates like "contact.blade.php"
-        if ($page->template && view()->exists('contact.' . $page->template)) {
-            return view('contact.' . $page->template, compact('page'));
+        $theme = getActiveTheme();
+        $templateView = "themes.$theme.templates.{$page->template}";
+        $defaultView = "themes.$theme.page";
+
+        $site = site_settings();
+        $themeSettings = theme_settings();
+
+        // If contact template, inject contact model
+        if ($page->template === 'contact' && view()->exists($templateView)) {
+            $contact = Contact::first();
+            return view($templateView, compact('page', 'site', 'themeSettings', 'contact'));
         }
 
-        // Default page view
-        return view('pages.show', compact('page'));
+        // General custom template support
+        if ($page->template && view()->exists($templateView)) {
+            return view($templateView, compact('page', 'site', 'themeSettings'));
+        }
+
+        // Fallback to default page view
+        return view($defaultView, compact('page', 'site', 'themeSettings'));
     }
+
 
 }

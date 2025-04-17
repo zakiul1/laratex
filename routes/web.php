@@ -15,6 +15,7 @@ use App\Http\Controllers\SliderController;
 use App\Http\Controllers\SliderImageController;
 use App\Http\Controllers\ThemeController;
 use App\Http\Controllers\ThemeCustomizeController;
+use App\Http\Controllers\WidgetController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -36,7 +37,7 @@ Route::middleware('auth')->group(function () {
 
 //Public routes
 
-Route::get('/contact', [ContactController::class, 'index'])->name('contact.page');
+//Route::get('/contact', [ContactController::class, 'index'])->name('contact.page');
 Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit');
 
 
@@ -57,7 +58,7 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::delete('/slider-images/{id}', [SliderImageController::class, 'destroy'])->name('slider-images.destroy');
     Route::delete('/sliders/{slider}', [SliderController::class, 'destroy'])->name('sliders.destroy');
     //pages
-    Route::resource('pages', PageController::class);
+    Route::resource('pages', PageController::class)->except('show');
 
     //Category
     Route::resource('categories', CategoryController::class);
@@ -88,19 +89,25 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::post('/contact', [ContactController::class, 'adminUpdate'])->name('admin.contact.update');
 
     //Route for Theme
- 
+
     Route::post('/themes/{folder}/activate', [ThemeController::class, 'activate'])->name('themes.activate');
     Route::delete('/themes/{folder}', [ThemeController::class, 'destroy'])->name('themes.destroy');
     Route::post('/themes/upload', [ThemeController::class, 'upload'])->name('themes.upload');
     Route::get('/themes', [ThemeController::class, 'index'])->name('themes.index');
     Route::get('/themes/{folder}/preview', [ThemeController::class, 'preview'])->name('themes.preview');
 
-   // Theme Customization
-   Route::get('/themes/customize', [ThemeCustomizeController::class, 'edit'])->name('themes.customize');
-Route::post('/themes/customize', [ThemeCustomizeController::class, 'update'])->name('themes.customize.update');
-Route::delete('/themes/customize/reset', [ThemeCustomizeController::class, 'reset'])->name('themes.customize.reset');
-Route::get('/themes/customize/export', [ThemeCustomizeController::class, 'export'])->name('themes.customize.export');
-Route::post('/themes/customize/import', [ThemeCustomizeController::class, 'import'])->name('themes.customize.import'); // ✅ This is the missing one
+    // Theme Customization
+    Route::get('/themes/customize', [ThemeCustomizeController::class, 'edit'])->name('themes.customize');
+    Route::post('/themes/customize', [ThemeCustomizeController::class, 'update'])->name('themes.customize.update');
+    Route::delete('/themes/customize/reset', [ThemeCustomizeController::class, 'reset'])->name('themes.customize.reset');
+    Route::get('/themes/customize/export', [ThemeCustomizeController::class, 'export'])->name('themes.customize.export');
+    Route::post('/themes/customize/import', [ThemeCustomizeController::class, 'import'])->name('themes.customize.import'); // ✅ This is the missing one
+
+    // Widgets Routes
+
+    Route::resource('widgets', WidgetController::class);
+    Route::post('/widgets/reorder', [WidgetController::class, 'reorder'])->name('widgets.reorder');
+
 });
 
 require __DIR__ . '/auth.php';

@@ -11,7 +11,7 @@
 
     {{-- Inject Theme Customization --}}
     @php
-        $themeSettings = \App\Models\ThemeSetting::where('theme', getActiveTheme())->first();
+$themeSettings = \App\Models\ThemeSetting::where('theme', getActiveTheme())->first();
     @endphp
 
     @if ($themeSettings && $themeSettings->custom_css)
@@ -44,21 +44,15 @@
 
         <!-- Page Content -->
         <main class="flex-grow">
-            @php
-                $sections = \App\Models\ThemeSection::where('theme', getActiveTheme())->orderBy('order')->get();
-            @endphp
-
-            @foreach ($sections as $section)
-                @includeIf('themes.' . getActiveTheme() . '.sections.' . $section->key)
-            @endforeach
+            @yield('content')
         </main>
 
         <!-- Global Footer Component -->
-        @include('includes.footer')
+@include('themes.classic.includes.footer')
+
 
     </div>
 
     @stack('scripts')
 </body>
-
 </html>

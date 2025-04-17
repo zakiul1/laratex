@@ -1,7 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('content')
-    <div class="max-w-4xl mx-auto px-4 py-6">
+    <div class=" mx-auto px-4 py-6">
         <h2 class="text-xl font-semibold mb-6">Edit Contact Info</h2>
 
         @if(session('success'))

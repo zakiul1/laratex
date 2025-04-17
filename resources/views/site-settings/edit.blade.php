@@ -1,7 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('content')
-    <div class="max-w-3xl mx-auto p-6 bg-white rounded shadow">
+    <div class=" mx-auto p-6 bg-white rounded shadow">
         <h2 class="text-lg font-semibold mb-4">Edit Site Settings</h2>
 
         <div id="successMessage" class="hidden mb-4 p-4 bg-green-100 text-green-800 rounded"></div>
@@ -12,7 +12,7 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- Site Name -->
-                <div>
+          {{--       <div>
                     <label class="block text-sm font-medium">Site Name</label>
                     <input type="text" name="site_name" value="{{ $setting->site_name }}"
                         class="w-full border rounded px-3 py-2 mt-1" />
@@ -35,7 +35,7 @@
                         </div>
                     </template>
                 </div>
-
+ --}}
                 <!-- Show Ribbon -->
                 <div class="md:col-span-2">
                     <label class="flex items-center mt-2">

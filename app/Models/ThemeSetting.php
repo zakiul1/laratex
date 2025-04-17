@@ -8,8 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 class ThemeSetting extends Model
 {
     protected $fillable = [
-        'theme', 'logo', 'primary_color', 'custom_css',
-        'font_family', 'footer_text',
+        'theme',
+        'logo',
+        'primary_color',
+        'custom_css',
+        'font_family',
+        'footer_text',
+        'show_slider',   // ✅ NEW
+        'show_ribbon',   // ✅ NEW
     ];
-    
+
 }

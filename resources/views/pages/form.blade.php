@@ -14,6 +14,7 @@ if (old('meta_keys')) {
 } else {
     $metaDefaults = [['key' => '', 'value' => '']];
 }
+$templates = $templates ?? getThemeTemplates();
 @endphp
 
 <div class="max-w-7xl mx-auto px-4 py-6">
@@ -49,10 +50,11 @@ if (old('meta_keys')) {
             <div class="border rounded p-4 shadow bg-white">
                 <h3 class="font-semibold text-sm mb-2">Status</h3>
                 <select name="status" class="w-full border rounded p-2">
-                    <option value="draft" {{ old('status', $page->status ?? 'draft') === 'draft' ? 'selected' : '' }}>
-                        Draft</option>
-                    <option value="published" {{ old('status', $page->status ?? '') === 'published' ? 'selected' : '' }}>
+                    <option value="published" {{ old('status', $page->status ?? 'published') === 'published' ? 'selected' : '' }}>
                         Published</option>
+                    <option value="draft" {{ old('status', $page->status ?? '') === 'draft' ? 'selected' : '' }}>
+                        Draft</option>
+                   
                 </select>
                 @error('status')
                     <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
@@ -64,9 +66,9 @@ if (old('meta_keys')) {
                 <h3 class="font-semibold text-sm mb-2">Template</h3>
                 <select name="template" class="w-full border rounded p-2">
                     <option value="">Default</option>
-                    @foreach ($templateFiles as $template)
-                        <option value="{{ $template }}" {{ old('template', $page->template ?? '') === $template ? 'selected' : '' }}>
-                            {{ ucfirst($template) }}
+                    @foreach ($templates as $key => $label)
+                        <option value="{{ $key }}" {{ old('template', $page->template ?? '') === $key ? 'selected' : '' }}>
+                            {{ $label }}
                         </option>
                     @endforeach
                 </select>
@@ -107,19 +109,20 @@ if (old('meta_keys')) {
             </div>
 
             <!-- Meta Fields -->
-        <div x-data="{ metas: [{ key: '', value: '' }] }" class="border rounded p-4 shadow bg-white">
-            <h3 class="font-semibold text-sm mb-3">Meta Fields</h3>
-            <template x-for="(meta, index) in metas" :key="index">
-                <div class="flex gap-2 mb-2">
-                    <input type="text" :name="`meta_keys[]`" x-model="meta.key" placeholder="Key"
-                        class="w-1/2 border rounded p-2 text-sm" />
-                    <input type="text" :name="`meta_values[]`" x-model="meta.value" placeholder="Value"
-                        class="w-1/2 border rounded p-2 text-sm" />
-                </div>
-            </template>
-            <button type="button" @click="metas.push({ key: '', value: '' })" class="text-xs text-blue-600 hover:underline">+
-                Add Meta Field</button>
-        </div>
+            <div x-data="{ metas: @json($metaDefaults) }" class="border rounded p-4 shadow bg-white">
+                <h3 class="font-semibold text-sm mb-3">Meta Fields</h3>
+                <template x-for="(meta, index) in metas" :key="index">
+                    <div class="flex gap-2 mb-2">
+                        <input type="text" :name="`meta_keys[]`" x-model="meta.key" placeholder="Key"
+                            class="w-1/2 border rounded p-2 text-sm" />
+                        <input type="text" :name="`meta_values[]`" x-model="meta.value" placeholder="Value"
+                            class="w-1/2 border rounded p-2 text-sm" />
+                    </div>
+                </template>
+                <button type="button" @click="metas.push({ key: '', value: '' })"
+                    class="text-xs text-blue-600 hover:underline">+
+                    Add Meta Field</button>
+            </div>
 
             <!-- Submit -->
             <div>

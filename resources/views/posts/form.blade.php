@@ -17,6 +17,7 @@ if (old('meta_keys')) {
 
 $formAction = isset($post) ? route('posts.update', $post->id) : route('posts.store');
 $formMethod = isset($post) ? 'PUT' : 'POST';
+$templates = $templates ?? getThemeTemplates();
 @endphp
 
 <form method="POST" action="{{ $formAction }}" enctype="multipart/form-data"
@@ -26,12 +27,11 @@ $formMethod = isset($post) ? 'PUT' : 'POST';
 
     <!-- Left: Title and Content -->
     <div class="lg:col-span-2 space-y-6">
-    <div>
-        <input type="text" name="title" value="{{ old('title', $post->title ?? '') }}" placeholder="Add title"
-            class="w-full text-3xl font-semibold border border-gray-300 focus:border-primary focus:ring-0 placeholder:text-gray-400"
-            required />
-    </div>
-
+        <div>
+            <input type="text" name="title" value="{{ old('title', $post->title ?? '') }}" placeholder="Add title"
+                class="w-full text-3xl font-semibold border border-gray-300 focus:border-primary focus:ring-0 placeholder:text-gray-400"
+                required />
+        </div>
 
         <div>
             <textarea name="content" rows="12" placeholder="Type / to choose a block"
@@ -46,25 +46,22 @@ $formMethod = isset($post) ? 'PUT' : 'POST';
         <div class="border rounded p-4 shadow bg-white">
             <h3 class="font-semibold text-sm mb-2">Status & Visibility</h3>
             <select name="status" class="w-full border rounded p-2">
-                <option value="draft" {{ old('status', $post->status ?? '') === 'draft' ? 'selected' : '' }}>Draft
-                </option>
                 <option value="published" {{ old('status', $post->status ?? '') === 'published' ? 'selected' : '' }}>
                     Published</option>
+                <option value="draft" {{ old('status', $post->status ?? '') === 'draft' ? 'selected' : '' }}>Draft
+                </option>
+               
             </select>
         </div>
 
         <!-- Template Selection -->
         <div class="border rounded p-4 shadow bg-white">
             <h3 class="font-semibold text-sm mb-2">Template</h3>
-            @php
-$templateFiles = collect(File::files(resource_path('views/templates')))
-    ->map(fn($file) => str_replace('.blade.php', '', $file->getFilename()));
-            @endphp
             <select name="template" class="w-full border rounded p-2">
                 <option value="">Default</option>
-                @foreach ($templateFiles as $template)
-                    <option value="{{ $template }}" {{ old('template', $post->template ?? '') === $template ? 'selected' : '' }}>
-                        {{ ucfirst($template) }}
+                @foreach ($templates as $key => $label)
+                    <option value="{{ $key }}" {{ old('template', $post->template ?? '') === $key ? 'selected' : '' }}>
+                        {{ $label }}
                     </option>
                 @endforeach
             </select>
@@ -104,7 +101,7 @@ $templateFiles = collect(File::files(resource_path('views/templates')))
         </div>
 
         <!-- Meta Fields -->
-        <div x-data="{ metas: [{ key: '', value: '' }] }" class="border rounded p-4 shadow bg-white">
+        <div x-data="{ metas: @json($metaDefaults) }" class="border rounded p-4 shadow bg-white">
             <h3 class="font-semibold text-sm mb-3">Meta Fields</h3>
             <template x-for="(meta, index) in metas" :key="index">
                 <div class="flex gap-2 mb-2">
@@ -114,7 +111,8 @@ $templateFiles = collect(File::files(resource_path('views/templates')))
                         class="w-1/2 border rounded p-2 text-sm" />
                 </div>
             </template>
-            <button type="button" @click="metas.push({ key: '', value: '' })" class="text-xs text-blue-600 hover:underline">+
+            <button type="button" @click="metas.push({ key: '', value: '' })"
+                class="text-xs text-blue-600 hover:underline">+
                 Add Meta Field</button>
         </div>
 

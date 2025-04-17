@@ -17,20 +17,26 @@ class ThemeCustomizeController extends Controller
 
     public function update(Request $request)
     {
-        $theme = getActiveTheme();
-        $settings = ThemeSetting::firstOrCreate(['theme' => $theme]);
+        // dd($request->all());
+        $settings = ThemeSetting::firstOrCreate([]);
 
+        $settings->update([
+            'primary_color' => $request->primary_color,
+            'font_family' => $request->font_family,
+            'footer_text' => $request->footer_text,
+            'custom_css' => $request->custom_css,
+            'show_slider' => $request->has('show_slider'),
+            'show_ribbon' => $request->has('show_ribbon'),
+        ]);
+
+
+        // Save uploaded logo
         if ($request->hasFile('logo')) {
-            $settings->logo = $request->file('logo')->store('theme_logos', 'public');
+            $logoPath = $request->file('logo')->store('logos', 'public');
+            $settings->update(['logo' => $logoPath]);
         }
 
-        $settings->primary_color = $request->primary_color ?? '#0d6efd';
-        $settings->custom_css = $request->custom_css;
-        $settings->font_family = $request->font_family ?? 'sans-serif';
-        $settings->footer_text = $request->footer_text;
-        $settings->save();
-
-        return redirect()->back()->with('success', 'Theme settings updated.');
+        return redirect()->back()->with('success', 'Theme settings updated successfully!');
     }
 
     public function reset()
@@ -44,7 +50,8 @@ class ThemeCustomizeController extends Controller
         $theme = getActiveTheme();
         $settings = ThemeSetting::where('theme', $theme)->first();
 
-        if (!$settings) return back()->with('error', 'Nothing to export.');
+        if (!$settings)
+            return back()->with('error', 'Nothing to export.');
 
         $json = json_encode($settings->toArray(), JSON_PRETTY_PRINT);
         $filename = $theme . '_settings.json';

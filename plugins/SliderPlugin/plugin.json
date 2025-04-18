@@ -1,0 +1,27 @@
+{
+  "name": "Slider Plugin",
+  "slug": "slider-plugin",
+  "version": "1.0.0",
+  "description": "Adds slider management with image uploads.",
+  "provider": "Plugins\\SliderPlugin\\SliderPluginServiceProvider",
+  "autoload": {
+    "psr-4": {
+      "Plugins\\SliderPlugin\\": ""
+    }
+  },
+  "menu": {
+    "label": "Sliders",
+    "icon": "lucide-images",
+    "route": "slider-plugin.sliders.index",
+    "children": [
+      {
+        "label": "All Sliders",
+        "route": "slider-plugin.sliders.index"
+      },
+      {
+        "label": "Add New",
+        "route": "slider-plugin.sliders.create"
+      }
+    ]
+  }
+}

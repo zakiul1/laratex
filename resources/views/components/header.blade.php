@@ -8,6 +8,7 @@ $headerMenu = Menu::where('location', 'header')->with(['items.post'])->first();
 
 
 $site = SiteSetting::first();
+  
 
 
 @endphp
@@ -61,14 +62,7 @@ $site = SiteSetting::first();
 <div class="bg-gray-100 text-gray-800 ">
     <div class="container mx-auto px-4 py-4 flex items-center justify-between">
     <!-- Logo -->
- 
-    <a href="{{ url('/') }}" class="text-white font-bold text-lg flex items-center">
-        @if ($site && $site->logo && Storage::disk('public')->exists($site->logo))
-            <img src="{{ asset('storage/' . $site->logo) }}" alt="{{ $site->site_name }} Logo" class="h-10">
-        @else
-            <span>{{ $site->site_name ?? config('app.name', 'WORKYIND') }}</span>
-        @endif
-    </a>
+
 
 
         <!-- Navigation -->
@@ -78,26 +72,26 @@ $site = SiteSetting::first();
         @foreach ($headerMenu->items as $item)
             <div class="relative group">
                 @php
-                    $link = '#';
+        $link = '#';
 
-                    if ($item->type === 'custom') {
-                        $link = $item->url;
-                    } elseif ($item->type === 'page' && $item->reference_id) {
-                        $post = \App\Models\Post::find($item->reference_id);
-                        if ($post) {
-                            $link = route('page.show', $post->slug);
-                        }
-                    } elseif ($item->type === 'post' && $item->reference_id) {
-                        $post = \App\Models\Post::find($item->reference_id);
-                        if ($post) {
-                            $link = route('posts.show', $post->slug);
-                        }
-                    } elseif ($item->type === 'category' && $item->reference_id) {
-                        $category = \App\Models\Category::find($item->reference_id);
-                        if ($category) {
-                            $link = route('category.show', $category->slug);
-                        }
-                    }
+        if ($item->type === 'custom') {
+            $link = $item->url;
+        } elseif ($item->type === 'page' && $item->reference_id) {
+            $post = \App\Models\Post::find($item->reference_id);
+            if ($post) {
+                $link = route('page.show', $post->slug);
+            }
+        } elseif ($item->type === 'post' && $item->reference_id) {
+            $post = \App\Models\Post::find($item->reference_id);
+            if ($post) {
+                $link = route('posts.show', $post->slug);
+            }
+        } elseif ($item->type === 'category' && $item->reference_id) {
+            $category = \App\Models\Category::find($item->reference_id);
+            if ($category) {
+                $link = route('category.show', $category->slug);
+            }
+        }
                 @endphp
 
                 <a href="{{$item->url }}" class="hover:text-red-500">
@@ -109,26 +103,26 @@ $site = SiteSetting::first();
                         class="absolute left-0 top-full mt-2 w-40 bg-white text-black shadow-lg rounded hidden group-hover:block z-50">
                         @foreach ($item->children as $child)
                             @php
-                                $childLink = '#';
+                $childLink = '#';
 
-                                if ($child->type === 'custom') {
-                                    $childLink = $child->url;
-                                } elseif ($child->type === 'page' && $child->reference_id) {
-                                    $post = \App\Models\Post::find($child->reference_id);
-                                    if ($post) {
-                                        $childLink = route('page.show', $post->slug);
-                                    }
-                                } elseif ($child->type === 'post' && $child->reference_id) {
-                                    $post = \App\Models\Post::find($child->reference_id);
-                                    if ($post) {
-                                        $childLink = route('posts.show', $post->slug);
-                                    }
-                                } elseif ($child->type === 'category' && $child->reference_id) {
-                                    $category = \App\Models\Category::find($child->reference_id);
-                                    if ($category) {
-                                        $childLink = route('category.show', $category->slug);
-                                    }
-                                }
+                if ($child->type === 'custom') {
+                    $childLink = $child->url;
+                } elseif ($child->type === 'page' && $child->reference_id) {
+                    $post = \App\Models\Post::find($child->reference_id);
+                    if ($post) {
+                        $childLink = route('page.show', $post->slug);
+                    }
+                } elseif ($child->type === 'post' && $child->reference_id) {
+                    $post = \App\Models\Post::find($child->reference_id);
+                    if ($post) {
+                        $childLink = route('posts.show', $post->slug);
+                    }
+                } elseif ($child->type === 'category' && $child->reference_id) {
+                    $category = \App\Models\Category::find($child->reference_id);
+                    if ($category) {
+                        $childLink = route('category.show', $category->slug);
+                    }
+                }
                             @endphp
 
                             <a href="{{ $childLink }}" class="block px-4 py-2 text-sm hover:bg-gray-100">

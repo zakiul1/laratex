@@ -1,5 +1,11 @@
 <?php
 
+use App\Http\Controllers\Admin\HookController;
+use App\Http\Controllers\Admin\PluginController;
+use App\Http\Controllers\Admin\PluginExportController;
+use App\Http\Controllers\Admin\PluginImportController;
+use App\Http\Controllers\Admin\PluginSettingController;
+use App\Http\Controllers\Admin\PluginUpdateController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
@@ -16,11 +22,20 @@ use App\Http\Controllers\SliderImageController;
 use App\Http\Controllers\ThemeController;
 use App\Http\Controllers\ThemeCustomizeController;
 use App\Http\Controllers\WidgetController;
+use App\Models\ThemeSetting;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('home');
-});
+    $theme = ThemeSetting::first()?->theme ?? 'default';
+
+    $viewPath = "themes.$theme.home";
+
+    if (view()->exists($viewPath)) {
+        return view($viewPath);
+    }
+
+    abort(404, "Theme view '$viewPath' not found.");
+})->name('home');
 
 
 Route::get('/dashboard', function () {
@@ -108,7 +123,30 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::resource('widgets', WidgetController::class);
     Route::post('/widgets/reorder', [WidgetController::class, 'reorder'])->name('widgets.reorder');
 
+    //Plugin Routes
+    Route::get('/plugins', [PluginController::class, 'index'])->name('admin.plugins.index');
+    Route::post('/plugins/{id}/toggle', [PluginController::class, 'toggle'])->name('admin.plugins.toggle');
+
+    Route::get('/hooks', [HookController::class, 'index'])->name('admin.hooks.index');
+
+    Route::get('/plugins/{slug}/settings', [PluginSettingController::class, 'edit'])->name('admin.plugins.settings.edit');
+    Route::post('/plugins/{slug}/settings', [PluginSettingController::class, 'update'])->name('admin.plugins.settings.update');
+    Route::get('/plugins/{slug}/export', [PluginExportController::class, 'export'])
+        ->middleware('auth')
+        ->name('admin.plugins.export');
 });
+
+//Plugin Import Routes
+Route::get('/plugins/import', [PluginImportController::class, 'showForm'])->name('admin.plugins.import.form');
+Route::post('/plugins/import', [PluginImportController::class, 'upload'])->name('admin.plugins.import.upload');
+Route::delete('/plugins/{plugin}', [PluginController::class, 'destroy'])->name('admin.plugins.destroy');
+
+
+//Plugin Update Routes
+
+Route::post('/plugins/{slug}/update', [PluginUpdateController::class, 'update'])
+    ->middleware('auth')
+    ->name('admin.plugins.update');
 
 require __DIR__ . '/auth.php';
 

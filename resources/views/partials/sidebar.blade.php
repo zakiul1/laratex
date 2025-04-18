@@ -1,12 +1,12 @@
 <nav x-cloak
     class="fixed left-0 z-30 flex h-svh w-60 shrink-0 flex-col border-r border-outline bg-surface-alt p-4 transition-transform duration-300 md:w-64 md:translate-x-0 md:relative dark:border-outline-dark dark:bg-surface-dark-alt"
     x-bind:class="sidebarIsOpen ? 'translate-x-0' : '-translate-x-60'" aria-label="sidebar navigation">
+
     <!-- logo  -->
     <a href="{{ route('dashboard') }}"
         class="ml-2 w-fit text-2xl font-bold text-on-surface-strong dark:text-on-surface-dark-strong">
         Siatex
     </a>
-
 
     <!-- search  -->
     <div class="relative my-4 flex w-full max-w-xs flex-col gap-1 text-on-surface dark:text-on-surface-dark">
@@ -23,215 +23,60 @@
 
     <!-- sidebar links  -->
     <div class="flex flex-col gap-2 overflow-y-auto pb-6">
-        <!-- Dashboard links  -->
-        <a href="{{ route('dashboard') }}"
-            class="flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium underline-offset-2 focus-visible:underline focus:outline-hidden
-    {{ request()->routeIs('dashboard')
-    ? 'bg-slate-300 text-on-surface-strong dark:bg-primary-dark/10 dark:text-on-surface-dark-strong'
-    : 'text-on-surface hover:bg-primary/5 hover:text-on-surface-strong dark:text-on-surface-dark dark:hover:bg-primary-dark/5 dark:hover:text-on-surface-dark-strong' }}">
+        {{-- Static items --}}
+        @include('partials.sidebar-static')
 
-            <!-- updated icon -->
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                stroke="currentColor" class="size-6">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                    d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
-            </svg>
-
-            <span>Dashboard</span>
-        </a>
-
-        <!-- Posts links  -->
+        {{-- Plugin-injected menu --}}
         @php
-$isActive = request()->routeIs('posts.*');
+$pluginMenus = apply_filters('admin_sidebar_menu', []);
         @endphp
 
-        <a href="{{ route('posts.index') }}"
-            class="flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium underline-offset-2
-        {{ $isActive ? 'bg-slate-300 text-on-surface-strong dark:bg-primary-dark/10 dark:text-on-surface-dark-strong' : 'text-on-surface hover:bg-primary/5 hover:text-on-surface-strong dark:text-on-surface-dark dark:hover:bg-primary-dark/5 dark:hover:text-on-surface-dark-strong' }}">
+        @foreach ($pluginMenus as $menu)
+            <div x-data="{ open: true }" class="flex flex-col">
+                <button @click="open = !open"
+                    class="flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium text-on-surface hover:bg-primary/5 dark:text-on-surface-dark dark:hover:bg-primary-dark/5">
+                    @if (!empty($menu['icon']))
+                        <x-dynamic-component :component="$menu['icon']" class="size-5 shrink-0" />
+                    @endif
+                    <span class="mr-auto">{{ $menu['label'] }}</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="size-5 transition-transform shrink-0" fill="currentColor"
+                        viewBox="0 0 20 20" :class="open ? 'rotate-180' : 'rotate-0'">
+                        <path fill-rule="evenodd"
+                            d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.72-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.27a.75.75 0 01.01-1.06z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </button>
 
-            <!-- New Icon -->
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                stroke="currentColor" class="size-6 shrink-0">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                    d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-            </svg>
+                @if (!empty($menu['children']))
+                    <ul x-show="open" x-transition class="ml-6 mt-1 text-sm space-y-1">
+                        @foreach ($menu['children'] as $child)
+                            <li>
+                                <a href="{{ route($child['route']) }}"
+                                    class="block px-2 py-1 rounded hover:bg-primary/5 dark:hover:bg-primary-dark/5">
+                                    {{ $child['label'] }}
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </div>
+        @endforeach
 
-            <span>Posts</span>
-        </a>
-
-        <!-- Pages links  -->
-        <a href="{{ route('pages.index') }}"
+        <a href="{{ route('site-settings.edit') }}"
             class="flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium underline-offset-2 focus-visible:underline focus:outline-hidden
-    {{ request()->routeIs('pages.*')
+                {{ request()->routeIs('site-settings.*')
     ? 'bg-slate-300 text-on-surface-strong dark:bg-primary-dark/10 dark:text-on-surface-dark-strong'
     : 'text-on-surface hover:bg-primary/5 hover:text-on-surface-strong dark:text-on-surface-dark dark:hover:bg-primary-dark/5 dark:hover:text-on-surface-dark-strong' }}">
-
-            <!-- updated icon -->
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                stroke="currentColor" class="size-6">
+        
+            <!-- Site Settings Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                class="size-6">
                 <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                    d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
             </svg>
-
-            <span>Pages</span>
+        
+            <span>Site Settings</span>
         </a>
-
-          <!-- menu links  -->
-        @php
-$isActive = request()->routeIs('menus.*');
-@endphp
-
-<a href="{{ route('menus.index') }}"
-    class="flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium underline-offset-2
-{{ $isActive ? 'bg-slate-300 text-on-surface-strong dark:bg-primary-dark/10 dark:text-on-surface-dark-strong' : 'text-on-surface hover:bg-primary/5 hover:text-on-surface-strong dark:text-on-surface-dark dark:hover:bg-primary-dark/5 dark:hover:text-on-surface-dark-strong' }}">
-
-    <!-- Menu Icon -->
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-        stroke="currentColor" class="size-6 shrink-0">
-        <path stroke-linecap="round" stroke-linejoin="round"
-            d="M4 6h16M4 12h16M4 18h16" />
-    </svg>
-
-    <span>Menus</span>
-</a>
-
-        <!-- Products links  -->
-        <a href="{{ route('products.index') }}"
-            class="flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium underline-offset-2 focus-visible:underline focus:outline-hidden
-        {{ request()->routeIs('products.*')
-    ? 'bg-slate-300 text-on-surface-strong dark:bg-primary-dark/10 dark:text-on-surface-dark-strong'
-    : 'text-on-surface hover:bg-primary/5 hover:text-on-surface-strong dark:text-on-surface-dark dark:hover:bg-primary-dark/5 dark:hover:text-on-surface-dark-strong' }}">
-
-            <!-- Icon: Box / Package -->
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                stroke="currentColor" class="size-6">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M3.75 3h16.5a.75.75 0 0 1 .75.75V20.25a.75.75 0 0 1-.75.75H3.75a.75.75 0 0 1-.75-.75V3.75A.75.75 0 0 1 3.75 3ZM12 9.75v10.5m0-10.5L4.5 6m7.5 3.75L19.5 6" />
-            </svg>
-
-            <span>Products</span>
-        </a>
-
-        <!-- Menu links  -->
-        @php
-$currentRoute = request()->routeIs('menus.*');
-        @endphp
-
-        <a href="{{ route('categories.index') }}"
-            class="{{ request()->routeIs('categories.*') ? 'bg-slate-300 text-on-surface-strong dark:bg-primary-dark/10 dark:text-on-surface-dark-strong' : 'text-on-surface hover:bg-primary/5 hover:text-on-surface-strong dark:text-on-surface-dark dark:hover:bg-primary-dark/5 dark:hover:text-on-surface-dark-strong' }} flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium">
-
-            <!-- icon -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="size-5 shrink-0" fill="none" viewBox="0 0 24 24"
-                stroke-width="1.5" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 6.75h15M4.5 12h15m-15 5.25h15" />
-            </svg>
-
-            <span>Categories</span>
-        </a>
-
-        <!-- Slider Settings links  -->
-        <a href="{{ route('sliders.index') }}"
-            class="{{ request()->routeIs('sliders.*') ? 'bg-slate-300 dark:bg-primary-dark/10 text-on-surface-strong dark:text-on-surface-dark-strong' : 'text-on-surface dark:text-on-surface-dark' }} flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium hover:bg-primary/5 hover:text-on-surface-strong dark:hover:bg-primary-dark/5 dark:hover:text-on-surface-dark-strong">
-
-            <!-- updated icon -->
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                stroke="currentColor" class="size-6">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                    d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
-            </svg>
-
-            <span>Sliders</span>
-        </a>
-        <!-- Contact Settings links  -->
-    
-    <a href="{{ route('admin.contact.edit') }}"
-        class="flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium underline-offset-2 focus-visible:underline focus:outline-hidden
-            {{ request()->routeIs('admin.contact.*')
-    ? 'bg-slate-300 text-on-surface-strong dark:bg-primary-dark/10 dark:text-on-surface-dark-strong'
-    : 'text-on-surface hover:bg-primary/5 hover:text-on-surface-strong dark:text-on-surface-dark dark:hover:bg-primary-dark/5 dark:hover:text-on-surface-dark-strong' }}">
-    
-        <!-- Contact Icon -->
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
-            class="size-6">
-            <path stroke-linecap="round" stroke-linejoin="round"
-                d="M21.75 7.5v9a2.25 2.25 0 0 1-2.25 2.25H4.5A2.25 2.25 0 0 1 2.25 16.5v-9A2.25 2.25 0 0 1 4.5 5.25h15a2.25 2.25 0 0 1 2.25 2.25Zm-1.5.75L12 13.5 3.75 8.25" />
-        </svg>
-    
-        <span>Contact Page</span>
-    </a>
-
-{{-- Theme settings --}}
-@php
-    $isThemeActive = request()->routeIs('themes.*') || request()->routeIs('widgets.*');
-@endphp
-
-<div x-data="{ isExpanded: {{ $isThemeActive ? 'true' : 'false' }} }" class="flex flex-col">
-    <button type="button" x-on:click="isExpanded = !isExpanded" id="theme-btn" aria-controls="theme-menu"
-        x-bind:aria-expanded="isExpanded ? 'true' : 'false'"
-        class="flex items-center justify-between rounded-radius gap-2 px-2 py-1.5 text-sm font-medium underline-offset-2 focus:outline-hidden focus-visible:underline"
-        x-bind:class="isExpanded
-            ? 'text-on-surface-strong bg-slate-300 dark:text-on-surface-dark-strong dark:bg-primary-dark/10'
-            : 'text-on-surface hover:bg-primary/5 hover:text-on-surface-strong dark:text-on-surface-dark dark:hover:text-on-surface-dark-strong dark:hover:bg-primary-dark/5'">
-
-        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="size-5 shrink-0" viewBox="0 0 24 24">
-            <path d="M2 4h20v4H2zM4 10h16v10H4z" />
-        </svg>
-        <span class="mr-auto text-left">Theme</span>
-        <svg xmlns="http://www.w3.org/2000/svg" class="size-5 transition-transform shrink-0" fill="currentColor"
-            viewBox="0 0 20 20" x-bind:class="isExpanded ? 'rotate-180' : 'rotate-0'" aria-hidden="true">
-            <path fill-rule="evenodd"
-                d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.72-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.27a.75.75 0 01.01-1.06z"
-                clip-rule="evenodd" />
-        </svg>
-    </button>
-
-    <ul class="ml-6" x-cloak x-collapse x-show="isExpanded" aria-labelledby="theme-btn" id="theme-menu">
-        <li class="px-1 py-0.5 first:mt-2">
-            <a href="{{ route('themes.index') }}"
-                class="flex items-center gap-2 px-2 py-1.5 text-sm rounded-radius underline-offset-2
-                    {{ request()->routeIs('themes.index') ? 'bg-slate-300 text-on-surface-strong dark:bg-primary-dark/10 dark:text-on-surface-dark-strong' : 'text-on-surface hover:bg-primary/5 hover:text-on-surface-strong dark:text-on-surface-dark dark:hover:bg-primary-dark/5 dark:hover:text-on-surface-dark-strong' }}">
-                All Themes
-            </a>
-        </li>
-        <li class="px-1 py-0.5">
-            <a href="{{ route('themes.customize') }}"
-                class="flex items-center gap-2 px-2 py-1.5 text-sm rounded-radius underline-offset-2
-                    {{ request()->routeIs('themes.customize') ? 'bg-slate-300 text-on-surface-strong dark:bg-primary-dark/10 dark:text-on-surface-dark-strong' : 'text-on-surface hover:bg-primary/5 hover:text-on-surface-strong dark:text-on-surface-dark dark:hover:bg-primary-dark/5 dark:hover:text-on-surface-dark-strong' }}">
-                Customize Theme
-            </a>
-        </li>
-        <li class="px-1 py-0.5">
-            <a href="{{ route('widgets.index') }}"
-                class="flex items-center gap-2 px-2 py-1.5 text-sm rounded-radius underline-offset-2
-                    {{ request()->routeIs('widgets.*') ? 'bg-slate-300 text-on-surface-strong dark:bg-primary-dark/10 dark:text-on-surface-dark-strong' : 'text-on-surface hover:bg-primary/5 hover:text-on-surface-strong dark:text-on-surface-dark dark:hover:bg-primary-dark/5 dark:hover:text-on-surface-dark-strong' }}">
-                Widgets
-            </a>
-        </li>
-    </ul>
-</div>
-
-
-
-        <!-- Site Settings links  -->
-
-<a href="{{ route('site-settings.edit') }}"
-    class="flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium underline-offset-2 focus-visible:underline focus:outline-hidden
-        {{ request()->routeIs('site-settings.*')
-    ? 'bg-slate-300 text-on-surface-strong dark:bg-primary-dark/10 dark:text-on-surface-dark-strong'
-    : 'text-on-surface hover:bg-primary/5 hover:text-on-surface-strong dark:text-on-surface-dark dark:hover:bg-primary-dark/5 dark:hover:text-on-surface-dark-strong' }}">
-
-    <!-- Site Settings Icon -->
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
-        class="size-6">
-        <path stroke-linecap="round" stroke-linejoin="round"
-            d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
-        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-    </svg>
-
-    <span>Site Settings</span>
-</a>
-
-
-
     </div>
 </nav>

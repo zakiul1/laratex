@@ -1,13 +1,15 @@
 <!-- Top Ribbon -->
 @php
-use App\Models\SiteSetting;
-use App\Models\Menu;
+    use App\Models\SiteSetting;
+    use App\Models\Menu;
+    use App\Models\ThemeSection;
 
 
-$headerMenu = Menu::where('location', 'header')->with(['items.post'])->first();
+    $headerMenu = Menu::where('location', 'header')->with(['items.post'])->first();
 
 
-$site = SiteSetting::first();
+    $site = SiteSetting::first();
+    $logofrom = ThemeSection::first();
 
 
 @endphp
@@ -29,8 +31,8 @@ $themeSettings = getThemeSetting();
 @endphp
 
 <a href="/" class="inline-block">
-    @if ($site && $site->logo && Storage::disk('public')->exists($site->logo))
-        <img src="{{ asset('storage/' . $site->logo) }}" alt="Site Logo" class="h-10">
+    @if ($site && $themeSettings->logo && Storage::disk('public')->exists($themeSettings->logo))
+        <img src="{{ asset('storage/' . $themeSettings->logo) }}" alt="Site Logo" class="h-10">
     @else
         <span class="text-xl font-bold">{{ $site->site_name ?? config('app.name', 'Siatex') }}</span>
     @endif

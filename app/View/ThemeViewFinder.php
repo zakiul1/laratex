@@ -3,17 +3,21 @@
 namespace App\View;
 
 use Illuminate\View\FileViewFinder;
-use App\Models\SiteSetting;
+use Illuminate\Support\Facades\Schema;
 
 class ThemeViewFinder extends FileViewFinder
 {
     public function find($view)
     {
-        $theme = SiteSetting::activeTheme();
-        $themePath = resource_path("themes/{$theme}/views");
+        // ✅ SAFELY get active theme from helper instead of direct model call
+        $theme = function_exists('getActiveTheme') ? getActiveTheme() : 'default';
 
-        // Prepend the theme path so Laravel will look here first
-        $this->prependLocation($themePath);
+        // ✅ Check if path exists before prepending
+        $themePath = resource_path("views/themes/{$theme}");
+
+        if (is_dir($themePath)) {
+            $this->prependLocation($themePath);
+        }
 
         return parent::find($view);
     }

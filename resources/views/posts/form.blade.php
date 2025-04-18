@@ -21,7 +21,7 @@ $templates = $templates ?? getThemeTemplates();
 @endphp
 
 <form method="POST" action="{{ $formAction }}" enctype="multipart/form-data"
-    class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      class="grid grid-cols-1 lg:grid-cols-3 gap-4">
     @csrf
     @if ($formMethod === 'PUT') @method('PUT') @endif
 
@@ -29,13 +29,16 @@ $templates = $templates ?? getThemeTemplates();
     <div class="lg:col-span-2 space-y-6">
         <div>
             <input type="text" name="title" value="{{ old('title', $post->title ?? '') }}" placeholder="Add title"
-                class="w-full text-3xl font-semibold border border-gray-300 focus:border-primary focus:ring-0 placeholder:text-gray-400"
-                required />
+                   class="w-full text-3xl font-semibold border border-gray-300 focus:border-primary focus:ring-0 placeholder:text-gray-400"
+                   required />
         </div>
 
         <div>
-            <textarea name="content" rows="12" placeholder="Type / to choose a block"
-                class="w-full border rounded p-4 text-sm text-gray-800">{{ old('content', $post->content ?? '') }}</textarea>
+            <input type="hidden" name="content" value="{{ old('content', $post->content ?? '') }}">
+            <div id="block-editor"
+                 data-content="{{ old('content', $post->content ?? '') }}"
+                 style="min-height:300px">
+            </div>
         </div>
     </div>
 
@@ -48,9 +51,9 @@ $templates = $templates ?? getThemeTemplates();
             <select name="status" class="w-full border rounded p-2">
                 <option value="published" {{ old('status', $post->status ?? '') === 'published' ? 'selected' : '' }}>
                     Published</option>
-                <option value="draft" {{ old('status', $post->status ?? '') === 'draft' ? 'selected' : '' }}>Draft
+                <option value="draft" {{ old('status', $post->status ?? '') === 'draft' ? 'selected' : '' }}>
+                    Draft
                 </option>
-               
             </select>
         </div>
 
@@ -71,7 +74,7 @@ $templates = $templates ?? getThemeTemplates();
         <div class="border rounded p-4 shadow bg-white">
             <h3 class="font-semibold text-sm mb-2">Permalink</h3>
             <input type="text" name="slug" value="{{ old('slug', $post->slug ?? '') }}"
-                class="w-full border rounded p-2" placeholder="Optional. Auto-generated if blank." />
+                   class="w-full border rounded p-2" placeholder="Optional. Auto-generated if blank." />
         </div>
 
         <!-- Post Type -->
@@ -85,7 +88,7 @@ $templates = $templates ?? getThemeTemplates();
         </div>
 
         <!-- Featured Image -->
-        <div x-data="{ imagePreview: '{{ $initialImage }}' }" class="border rounded p-4 shadow bg-white">
+        <div x-data='{"imagePreview": "{{ $initialImage }}"}' class="border rounded p-4 shadow bg-white">
             <h3 class="font-semibold text-sm mb-2">Featured Image</h3>
             <template x-if="imagePreview">
                 <img :src="imagePreview" class="w-full h-32 object-cover rounded border mb-2" />
@@ -101,25 +104,26 @@ $templates = $templates ?? getThemeTemplates();
         </div>
 
         <!-- Meta Fields -->
-        <div x-data="{ metas: @json($metaDefaults) }" class="border rounded p-4 shadow bg-white">
+        <div x-data='{"metas": @json($metaDefaults)}' class="border rounded p-4 shadow bg-white">
             <h3 class="font-semibold text-sm mb-3">Meta Fields</h3>
             <template x-for="(meta, index) in metas" :key="index">
                 <div class="flex gap-2 mb-2">
                     <input type="text" :name="`meta_keys[]`" x-model="meta.key" placeholder="Key"
-                        class="w-1/2 border rounded p-2 text-sm" />
+                           class="w-1/2 border rounded p-2 text-sm" />
                     <input type="text" :name="`meta_values[]`" x-model="meta.value" placeholder="Value"
-                        class="w-1/2 border rounded p-2 text-sm" />
+                           class="w-1/2 border rounded p-2 text-sm" />
                 </div>
             </template>
             <button type="button" @click="metas.push({ key: '', value: '' })"
-                class="text-xs text-blue-600 hover:underline">+
-                Add Meta Field</button>
+                    class="text-xs text-blue-600 hover:underline">+
+                Add Meta Field
+            </button>
         </div>
 
         <!-- Publish -->
         <div>
             <button type="submit"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm px-6 py-3 rounded shadow">
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm px-6 py-3 rounded shadow">
                 {{ isset($post) ? 'Update Post' : 'Publish Post' }}
             </button>
         </div>

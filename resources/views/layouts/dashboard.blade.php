@@ -10,8 +10,9 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    
+   
+     {{-- Prevent FOUC for any x-cloak'd elements --}}
+     <style>[x-cloak] { display: none !important; }</style>
 
 </head>
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\Menu;
 use App\Models\MenuItem;
 use App\Models\Post;
@@ -99,43 +100,52 @@ class MenuController extends Controller
         return response()->json(['success' => true]);
     }
 
-    private function createMenuItem($menuId, $item, $parentId = null, $order = 0)
+    /**
+     * Recursively create menu items (and children) with correct URLs.
+     */
+    private function createMenuItem(int $menuId, array $item, int $parentId = null, int $order = 0)
     {
-        // Automatically resolve URL based on type and reference_id
-        $resolvedUrl = $item['url'] ?? null;
-
-        if (empty($resolvedUrl)) {
-            if ($item['type'] === 'page' && !empty($item['reference_id'])) {
-                $page = \App\Models\Post::where('id', $item['reference_id'])->where('type', 'page')->first();
-                if ($page) {
-                    $resolvedUrl = '/' . $page->slug;
-                }
-            } elseif ($item['type'] === 'category' && !empty($item['reference_id'])) {
-                $category = \App\Models\Category::find($item['reference_id']);
-                if ($category) {
-                    $resolvedUrl = route('category.show', $category->slug);
-                }
-            }
+        // 1) Force‐resolve page URLs via the page.show route
+        if (($item['type'] ?? '') === 'page' && !empty($item['reference_id'])) {
+            $page = Post::where('id', $item['reference_id'])
+                ->where('type', 'page')
+                ->first();
+            $resolvedUrl = $page
+                ? route('page.show', ['slug' => $page->slug])
+                : ($item['url'] ?? '#');
         }
 
+        // 2) Resolve categories the same way
+        elseif (($item['type'] ?? '') === 'category' && !empty($item['reference_id'])) {
+            $cat = Category::find($item['reference_id']);
+            $resolvedUrl = $cat
+                ? route('category.show', $cat->slug)
+                : ($item['url'] ?? '#');
+        }
+
+        // 3) Otherwise fall back to any explicit URL from the UI
+        else {
+            $resolvedUrl = $item['url'] ?? '#';
+        }
+
+        // 4) Create the record
         $menuItem = MenuItem::create([
             'menu_id' => $menuId,
             'parent_id' => $parentId,
-            'title' => $item['title'],
+            'title' => $item['title'] ?? '',
             'type' => $item['type'] ?? 'custom',
             'reference_id' => $item['reference_id'] ?? null,
             'url' => $resolvedUrl,
             'order' => $order,
         ]);
 
-        // Recursively add children
-        if (!empty($item['children'])) {
+        // 5) Recurse into children
+        if (!empty($item['children']) && is_array($item['children'])) {
             foreach ($item['children'] as $i => $child) {
                 $this->createMenuItem($menuId, $child, $menuItem->id, $i);
             }
         }
     }
-
 
     public function addPageToMenu(Request $request, Menu $menu)
     {

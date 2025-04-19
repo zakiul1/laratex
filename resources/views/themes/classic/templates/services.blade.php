@@ -17,7 +17,7 @@
         @endif
 
         <div class="prose max-w-none">
-            {!! nl2br(e($page->content)) !!}
+            {!! $pageOutput !!}
         </div>
     </div>
 @endsection

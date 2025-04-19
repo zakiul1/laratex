@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\PluginUpdateController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\MediaController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PostController;
@@ -80,7 +81,7 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
 
     //Products
     Route::resource('products', ProductController::class);
-    Route::delete('/admin/product-images/{id}', [ProductImageController::class, 'destroy'])->name('product-images.destroy');
+    Route::delete('/product-images/{id}', [ProductImageController::class, 'destroy'])->name('product-images.destroy');
     //menu
 
     Route::resource('menus', MenuController::class);
@@ -134,23 +135,36 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::get('/plugins/{slug}/export', [PluginExportController::class, 'export'])
         ->middleware('auth')
         ->name('admin.plugins.export');
+
+
+    // Media Library
+    // web.php
+    Route::resource('media', MediaController::class);
+
+
+
+    //Plugin Import Routes
+    Route::get('/plugins/import', [PluginImportController::class, 'showForm'])->name('admin.plugins.import.form');
+    Route::post('/plugins/import', [PluginImportController::class, 'upload'])->name('admin.plugins.import.upload');
+    Route::delete('/plugins/{plugin}', [PluginController::class, 'destroy'])->name('admin.plugins.destroy');
+
+
+    //Plugin Update Routes
+
+    Route::post('/plugins/{slug}/update', [PluginUpdateController::class, 'update'])
+        ->middleware('auth')
+        ->name('admin.plugins.update');
+
 });
 
-//Plugin Import Routes
-Route::get('/plugins/import', [PluginImportController::class, 'showForm'])->name('admin.plugins.import.form');
-Route::post('/plugins/import', [PluginImportController::class, 'upload'])->name('admin.plugins.import.upload');
-Route::delete('/plugins/{plugin}', [PluginController::class, 'destroy'])->name('admin.plugins.destroy');
 
-
-//Plugin Update Routes
-
-Route::post('/plugins/{slug}/update', [PluginUpdateController::class, 'update'])
-    ->middleware('auth')
-    ->name('admin.plugins.update');
 
 require __DIR__ . '/auth.php';
 
 
-Route::get('/{slug}', [PageController::class, 'show'])->name('page.show');
+Route::get('/posts/{slug}', [PostController::class, 'show'])
+    ->name('posts.show');
+
 Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('category.show');
 Route::get('/product/{slug}', [ProductController::class, 'show'])->name('product.show');
+Route::get('/pages/{slug}', [PageController::class, 'show'])->name('page.show');

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Aponahmed\HtmlBuilder\ElementFactory;
 use App\Models\Post;
 use App\Models\PostMeta;
 use Illuminate\Http\Request;
@@ -10,10 +11,23 @@ use Illuminate\Support\Str;
 
 class PostController extends Controller
 {
-    public function index()
+    // app/Http/Controllers/PostsController.php
+
+    public function index(Request $request)
     {
-        $posts = Post::latest()->paginate(10);
-        return view('posts.index', compact('posts'));
+        // server‑side paginator (we’ll no longer use these links)
+        $postsPaged = Post::orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        // full collection for client‑side use
+        $postsAll = Post::select('id', 'title', 'slug', 'type', 'status', 'featured_image', 'created_at')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $types = ['post' => 'Post', 'page' => 'Page', 'custom' => 'Custom'];
+        $statuses = ['published' => 'Published', 'draft' => 'Draft'];
+
+        return view('posts.index', compact('postsAll', 'types', 'statuses'));
     }
 
     public function create()
@@ -24,6 +38,7 @@ class PostController extends Controller
 
     public function store(Request $request)
     {
+        // dd($request->all());
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'slug' => 'nullable|string|unique:posts,slug',
@@ -109,4 +124,47 @@ class PostController extends Controller
 
         return redirect()->route('posts.index')->with('success', 'Post deleted successfully.');
     }
+    /**
+     * Display a single “page” by slug.
+     */
+    public function show($slug)
+    {
+        $page = Post::where('slug', $slug)
+            ->where('type', 'post')
+            ->where('status', 'Published')
+            ->firstOrFail();
+
+        $theme = getActiveTheme();
+        $templateView = "themes.{$theme}.templates.{$page->template}";
+        $defaultView = "themes.{$theme}.page";
+
+        $pageOutput = $this->buildPageOutput($page);
+        $site = site_settings();
+        $themeSettings = theme_settings();
+
+        // if a custom template exists for this page…
+        if ($page->template && view()->exists($templateView)) {
+            return view($templateView, compact('page', 'site', 'themeSettings', 'pageOutput'));
+        }
+
+        // otherwise fall back to the default page.blade.php
+        return view($defaultView, compact('page', 'site', 'themeSettings', 'pageOutput'));
+    }
+
+    /**
+     * Convert the stored JSON in the `block` field to HTML.
+     */
+    private function buildPageOutput(Post $page)
+    {
+        // use the `block` column instead of `content`
+        $json = $page->block;
+
+        // ensure we always pass a valid JSON array string
+        if (!is_string($json) || trim($json) === '') {
+            $json = '[]';
+        }
+
+        return ElementFactory::json2html($json);
+    }
+
 }

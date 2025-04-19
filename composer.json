@@ -10,6 +10,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "aponahmed/blockeditor-php-client": "^1.0",
         "blade-ui-kit/blade-icons": "^1.8",
         "guzzlehttp/guzzle": "^7.9",
         "laravel/framework": "^12.0",

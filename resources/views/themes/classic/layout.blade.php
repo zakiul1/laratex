@@ -6,16 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'Laravel') }}</title>
-
+    <link rel="stylesheet" href="{{ asset('blockeditor/layout-frontend.css') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     {{-- Inject Theme Customization --}}
     @php
-$themeSettings = \App\Models\ThemeSetting::where('theme', getActiveTheme())->first();
+        $themeSettings = \App\Models\ThemeSetting::where('theme', getActiveTheme())->first();
     @endphp
 
     @if ($themeSettings && $themeSettings->custom_css)
-        <style>{!! $themeSettings->custom_css !!}</style>
+        <style>
+            {!! $themeSettings->custom_css !!}
+        </style>
     @endif
 
     @if ($themeSettings && $themeSettings->primary_color)
@@ -48,11 +50,12 @@ $themeSettings = \App\Models\ThemeSetting::where('theme', getActiveTheme())->fir
         </main>
 
         <!-- Global Footer Component -->
-@include('themes.classic.includes.footer')
+        @include('themes.classic.includes.footer')
 
 
     </div>
 
     @stack('scripts')
 </body>
+
 </html>

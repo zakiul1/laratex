@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Aponahmed\HtmlBuilder\ElementFactory;
 use App\Models\Contact;
 use App\Models\Post;
 use Illuminate\Http\Request;
@@ -12,8 +13,20 @@ class PageController extends Controller
 {
     public function index()
     {
-        $pages = Post::where('type', 'page')->latest()->paginate(10);
-        return view('pages.index', compact('pages'));
+        // Grab *all* pages (for client‐side table)
+        $pagesAll = Post::where('type', 'page')
+            ->select('id', 'slug', 'title', 'status', 'template', 'featured_image', 'created_at')
+            ->latest()
+            ->get();
+
+        // Options for the “Status” filter
+        $statuses = [
+            'published' => 'Published',
+            'draft' => 'Draft',
+        ];
+
+        // Pass into the view for Alpine
+        return view('pages.index', compact('pagesAll', 'statuses'));
     }
 
     public function create()
@@ -143,26 +156,41 @@ class PageController extends Controller
             ->firstOrFail();
 
         $theme = getActiveTheme();
-        $templateView = "themes.$theme.templates.{$page->template}";
-        $defaultView = "themes.$theme.page";
-
+        $templateView = "themes.{$theme}.templates.{$page->template}";
+        $defaultView = "themes.{$theme}.page";
+        $pageOutput = $this->buildPageOutput($page);
         $site = site_settings();
         $themeSettings = theme_settings();
 
-        // If contact template, inject contact model
+        // if “contact” template and view exists
         if ($page->template === 'contact' && view()->exists($templateView)) {
             $contact = Contact::first();
             return view($templateView, compact('page', 'site', 'themeSettings', 'contact'));
         }
 
-        // General custom template support
+        // if custom template exists
         if ($page->template && view()->exists($templateView)) {
-            return view($templateView, compact('page', 'site', 'themeSettings'));
+            return view($templateView, compact('page', 'site', 'themeSettings', 'pageOutput'));
         }
 
-        // Fallback to default page view
-        return view($defaultView, compact('page', 'site', 'themeSettings'));
+        // fallback
+        return view($defaultView, compact('page', 'site', 'themeSettings', 'pageOutput'));
     }
 
+    /**
+     * Decode your block‐builder JSON (stored in `block`),  
+     * or default to an empty array if it’s missing or invalid.
+     */
+    private function buildPageOutput(Post $page)
+    {
+        // ← switch to the 'block' field, not `content`
+        $json = $page->block;
 
+        // if it’s null, non‐string, or empty, force “[]”
+        if (!is_string($json) || trim($json) === '') {
+            $json = '[]';
+        }
+
+        return ElementFactory::json2html($json);
+    }
 }

@@ -1,0 +1,10 @@
+/*!
+ * TOAST UI Color Picker
+ * @version 2.2.8
+ * @author NHN Cloud FE Development Team <dl_javascript@nhn.com>
+ * @license MIT
+ */
+
+/*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */
+
+// @license RGB <-> HSV conversion utilities based off of http://www.cs.rit.edu/~ncs/color/t_convert.html

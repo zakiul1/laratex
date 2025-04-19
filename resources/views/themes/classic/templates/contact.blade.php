@@ -92,7 +92,7 @@
                 <div>
                     <h3 class="text-lg font-bold mb-4">Got Any Questions?</h3>
 
-                    @if(session('success'))
+                    @if (session('success'))
                         <div class="mb-4 text-green-600">{{ session('success') }}</div>
                     @endif
 
@@ -100,7 +100,8 @@
                         @csrf
                         <div>
                             <label class="block text-sm font-medium">Name *</label>
-                            <input type="text" name="name" required class="w-full mt-1 p-2 border border-gray-300 rounded">
+                            <input type="text" name="name" required
+                                class="w-full mt-1 p-2 border border-gray-300 rounded">
                         </div>
                         <div>
                             <label class="block text-sm font-medium">Email *</label>
@@ -109,8 +110,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium">Comment or Message *</label>
-                            <textarea name="message" required rows="4"
-                                class="w-full mt-1 p-2 border border-gray-300 rounded"></textarea>
+                            <textarea name="message" required rows="4" class="w-full mt-1 p-2 border border-gray-300 rounded"></textarea>
                         </div>
                         <button type="submit" class="bg-black text-white px-6 py-2 rounded hover:bg-gray-800 text-sm">
                             SUBMIT

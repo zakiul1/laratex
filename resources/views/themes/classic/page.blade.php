@@ -9,11 +9,12 @@
 @endsection
 
 @section('content')
-    <div class="max-w-4xl mx-auto px-4 py-12">
-        <h1 class="text-3xl font-bold mb-4">{{ $page->title }}</h1>
+    <div class=" container mx-auto px-4 py-8">
+        <h1 class="text-3xl mx-auto text-center font-bold mb-4">{{ $page->title }}</h1>
 
-        <div class="prose max-w-none">
-            {!! nl2br(e($page->content)) !!}
+        <div class="prose max-w-none text-justify">
+            {!! $pageOutput !!}
+
         </div>
     </div>
 @endsection

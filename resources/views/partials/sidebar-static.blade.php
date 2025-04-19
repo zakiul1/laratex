@@ -1,7 +1,7 @@
 @php
-$route = fn($name) => request()->routeIs($name)
-    ? 'bg-slate-300 text-on-surface-strong dark:bg-primary-dark/10 dark:text-on-surface-dark-strong'
-    : 'text-on-surface hover:bg-primary/5 hover:text-on-surface-strong dark:text-on-surface-dark dark:hover:bg-primary-dark/5 dark:hover:text-on-surface-dark-strong';
+    $route = fn($name) => request()->routeIs($name)
+        ? 'bg-slate-300 text-on-surface-strong dark:bg-primary-dark/10 dark:text-on-surface-dark-strong'
+        : 'text-on-surface hover:bg-primary/5 hover:text-on-surface-strong dark:text-on-surface-dark dark:hover:bg-primary-dark/5 dark:hover:text-on-surface-dark-strong';
 @endphp
 
 <a href="{{ route('dashboard') }}"
@@ -57,7 +57,11 @@ $route = fn($name) => request()->routeIs($name)
     <x-lucide-settings class="size-6" />
     <span>Site Settings</span>
 </a> --}}
-
+<a href="{{ route('media.index') }}"
+    class="flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium {{ request()->routeIs('media.*') ? 'bg-gray-200' : '' }}">
+    <x-lucide-image class="size-6" />
+    <span>Media Library</span>
+</a>
 <a href="{{ route('admin.plugins.index') }}"
     class="flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium {{ $route('admin.plugins.*') }}">
     <x-lucide-plug class="size-6" />
@@ -67,7 +71,7 @@ $route = fn($name) => request()->routeIs($name)
 {{-- Theme nested menu --}}
 @php $isThemeActive = request()->routeIs('themes.*') || request()->routeIs('widgets.*'); @endphp
 
-<div x-data='@json(["isExpanded" => (bool) $isThemeActive])' class="flex flex-col">
+<div x-data='@json(['isExpanded' => (bool) $isThemeActive])' class="flex flex-col">
     <button type="button" @click="isExpanded = !isExpanded" id="theme-btn" aria-controls="theme-menu"
         x-bind:aria-expanded="isExpanded ? 'true' : 'false'"
         class="flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium 

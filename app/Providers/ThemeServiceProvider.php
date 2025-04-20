@@ -35,6 +35,20 @@ class ThemeServiceProvider extends ServiceProvider
 
     public function boot()
     {
-        //
+
+        add_filter('front_header_menu', function(){
+            // grab the “header” menu container
+            $menu = \App\Models\Menu::where('location','header')->first();
+        
+            if (! $menu) {
+                return collect();
+            }
+        
+            // eager‑load first level + children
+            return $menu->items()->with('children')->get();
+        });
+        
+
+
     }
 }

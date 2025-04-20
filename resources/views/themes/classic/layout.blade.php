@@ -40,9 +40,10 @@
 <body class="bg-gray-100 text-gray-900 dark:bg-neutral-950 dark:text-white">
 
     <div class="min-h-screen flex flex-col">
-
+   {{-- Ribbon injected by any active plugin --}}
+   {!! apply_filters('frontend_ribbon', '') !!}
         <!-- Global Header Component -->
-        @include('includes.header')
+        @include('partials.header')
 
         <!-- Page Content -->
         <main class="flex-grow">
@@ -50,7 +51,8 @@
         </main>
 
         <!-- Global Footer Component -->
-        @include('themes.classic.includes.footer')
+       
+        @include('partials.footer')
 
 
     </div>

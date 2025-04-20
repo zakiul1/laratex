@@ -25,42 +25,54 @@
     <div class="flex flex-col gap-2 overflow-y-auto pb-6">
         {{-- Static items --}}
         @include('partials.sidebar-static')
+{{-- resources/views/partials/admin_sidebar_plugins.blade.php --}}
+@php
+    $pluginMenus = apply_filters('admin_sidebar_menu', []);
+@endphp
 
-        {{-- Plugin-injected menu --}}
-        @php
-$pluginMenus = apply_filters('admin_sidebar_menu', []);
-        @endphp
-
-        @foreach ($pluginMenus as $menu)
-            <div x-data="{ open: true }" class="flex flex-col">
-                <button @click="open = !open"
-                    class="flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium text-on-surface hover:bg-primary/5 dark:text-on-surface-dark dark:hover:bg-primary-dark/5">
-                    @if (!empty($menu['icon']))
-                        <x-dynamic-component :component="$menu['icon']" class="size-5 shrink-0" />
-                    @endif
-                    <span class="mr-auto">{{ $menu['label'] }}</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="size-5 transition-transform shrink-0" fill="currentColor"
-                        viewBox="0 0 20 20" :class="open ? 'rotate-180' : 'rotate-0'">
-                        <path fill-rule="evenodd"
-                            d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.72-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.27a.75.75 0 01.01-1.06z"
-                            clip-rule="evenodd" />
-                    </svg>
-                </button>
-
-                @if (!empty($menu['children']))
-                    <ul x-show="open" x-transition class="ml-6 mt-1 text-sm space-y-1">
-                        @foreach ($menu['children'] as $child)
-                            <li>
-                                <a href="{{ route($child['route']) }}"
-                                    class="block px-2 py-1 rounded hover:bg-primary/5 dark:hover:bg-primary-dark/5">
-                                    {{ $child['label'] }}
-                                </a>
-                            </li>
-                        @endforeach
-                    </ul>
+@foreach ($pluginMenus as $menu)
+    @if (empty($menu['children']))
+        {{-- Single link (no children) --}}
+        <a href="{{ route($menu['route']) }}"
+           class="flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium text-on-surface hover:bg-primary/5 dark:text-on-surface-dark dark:hover:bg-primary-dark/5">
+            @if (!empty($menu['icon']))
+                <x-dynamic-component :component="$menu['icon']" class="size-5 shrink-0" />
+            @endif
+            <span>{{ $menu['label'] }}</span>
+        </a>
+    @else
+        {{-- Collapsible parent with children --}}
+        <div x-data="{ open: true }" class="flex flex-col">
+            <button @click="open = !open"
+                class="flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium text-on-surface hover:bg-primary/5 dark:text-on-surface-dark dark:hover:bg-primary-dark/5">
+                @if (!empty($menu['icon']))
+                    <x-dynamic-component :component="$menu['icon']" class="size-5 shrink-0" />
                 @endif
-            </div>
-        @endforeach
+                <span class="mr-auto">{{ $menu['label'] }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="size-5 transition-transform shrink-0"
+                     fill="currentColor" viewBox="0 0 20 20"
+                     :class="open ? 'rotate-180' : 'rotate-0'">
+                    <path fill-rule="evenodd"
+                          d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.72-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.27a.75.75 0 01.01-1.06z"
+                          clip-rule="evenodd" />
+                </svg>
+            </button>
+
+            <ul x-show="open" x-transition class="ml-6 mt-1 text-sm space-y-1">
+                @foreach ($menu['children'] as $child)
+                    <li>
+                        <a href="{{ route($child['route']) }}"
+                           class="block px-2 py-1 rounded hover:bg-primary/5 dark:hover:bg-primary-dark/5">
+                            {{ $child['label'] }}
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+@endforeach
+
 
         <a href="{{ route('site-settings.edit') }}"
             class="flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium underline-offset-2 focus-visible:underline focus:outline-hidden

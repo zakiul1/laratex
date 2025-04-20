@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +10,7 @@ class Plugin extends Model
         'slug',
         'description',
         'version',
-        'enabled'
+        'provider',  // ← add this
+        'enabled',
     ];
 }

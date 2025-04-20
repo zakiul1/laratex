@@ -1,8 +1,0 @@
-{
-  "name": "SEO Plugin",
-  "slug": "seo-plugin",
-  "description": "Adds SEO enhancements",
-  "version": "1.0.0",
-  "author": "Jakiul Islam",
-  "provider": "Plugins\\SeoPlugin\\SeoPluginServiceProvider"
-}

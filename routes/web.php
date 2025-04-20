@@ -24,13 +24,16 @@ use App\Http\Controllers\ThemeController;
 use App\Http\Controllers\ThemeCustomizeController;
 use App\Http\Controllers\WidgetController;
 use App\Models\ThemeSetting;
+use App\Models\SiteSetting;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    $theme = ThemeSetting::first()?->theme ?? 'default';
-
+    // dd( SiteSetting::first());
+    $theme = SiteSetting::first()?->active_theme ?? 'default';
+   
     $viewPath = "themes.$theme.home";
 
+    
     if (view()->exists($viewPath)) {
         return view($viewPath);
     }

@@ -4,42 +4,53 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\File;
 use App\View\ThemeViewFinder;
 use App\Services\PluginLoader;
+use App\Models\Plugin;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
-        // Bind our ThemeViewFinder so Blade will look in themes/… first.
-        $this->app->singleton('view.finder', function ($app) {
+        // 1) Override the view finder for theming
+        $this->app->singleton('view.finder', function($app) {
             return new ThemeViewFinder(
                 $app['files'],
                 $app['config']['view.paths']
             );
         });
 
-        // Do not call PluginLoader here.
+        // DON'T touch plugins here—no DB calls in register()
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        // If the plugins table isn't yet migrated, bail out entirely.
-        if (!Schema::hasTable('plugins')) {
+        // If the plugins table doesn't exist yet, bail out
+        if (! Schema::hasTable('plugins')) {
             return;
         }
 
-        // 1) Sync any newly‐detected plugin manifests into the DB:
+        // 1) Discover any new plugin.json → plugins table
         app(PluginLoader::class)->sync();
 
-        // 2) Only in HTTP (non‐Artisan) contexts, actually boot up enabled plugins:
-        if (!app()->runningInConsole()) {
+        // 2) Register each enabled plugin's service provider
+        Plugin::where('enabled', true)->pluck('slug')->each(function($slug) {
+            $path     = base_path("plugins/{$slug}/plugin.json");
+            if (! File::exists($path)) {
+                return;
+            }
+            $meta     = json_decode(File::get($path), true);
+            $provider = $meta['provider'] ?? null;
+
+            if ($provider && class_exists($provider)) {
+                // Laravel will run both register() and boot() on this provider immediately
+                $this->app->register($provider);
+            }
+        });
+
+        // 3) In console only: run plugin migrations & publish assets
+        if ($this->app->runningInConsole()) {
             app(PluginLoader::class)->bootEnabled();
         }
     }

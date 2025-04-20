@@ -20,8 +20,6 @@
     "dependencies": {
         "@alpinejs/collapse": "^3.14.9",
         "@alpinejs/focus": "^3.14.9",
-        "@ckeditor/ckeditor5-build-classic": "^44.3.0",
-        "@ckeditor/ckeditor5-html-embed": "^45.0.0",
         "sortablejs": "^1.15.6"
     }
 }

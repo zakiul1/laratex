@@ -1,9 +1,0 @@
-{
-    "name": "Ribbon Plugin",
-    "slug": "ribbon-plugin",
-    "description": "Displays a top ribbon with contact info and RFQ link",
-    "version": "1.0.0",
-    "provider": "Plugins\\RibbonPlugin\\Providers\\RibbonPluginServiceProvider",
-    "requires": []
-  }
-  

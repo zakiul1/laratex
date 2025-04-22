@@ -101,13 +101,30 @@ class CategoryController extends Controller
 
     public function show($slug)
     {
+        // 1) Load the category and its products
         $category = Category::where('slug', $slug)
-            ->with('products') // make sure this relation exists in Category model
+            ->with('products')   // make sure Category has a products() relation
             ->firstOrFail();
 
-        $allCategories = Category::with('children')->whereNull('parent_id')->get();
         $products = $category->products;
+        $allCategories = Category::with('children')
+            ->whereNull('parent_id')
+            ->get();
 
-        return view('categories.view', compact('category', 'products', 'allCategories'));
+        // 2) Determine the active theme (use whatever helper your app provides)
+        $theme = getActiveTheme();
+        // e.g. returns "default" or "myTheme"
+
+        // 3) Construct the theme template name
+        $themeView = "themes.{$theme}.templates.category";
+
+        // 4) If the theme provides its own category.blade.php, use it...
+        if (view()->exists($themeView)) {
+            return view($themeView, compact('category', 'products', 'allCategories'));
+        }
+
+        /*   // 5) Otherwise fall back to our plugin/module view
+          return view('categories.view', compact('category', 'products', 'allCategories')); */
     }
+
 }

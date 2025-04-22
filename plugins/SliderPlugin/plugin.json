@@ -1,0 +1,20 @@
+{
+  "name": "slider-plugin",
+  "title": "Slider Plugin",
+  "description": "Manage sliders with images, content & dynamic buttons via hooks",
+  "version": "1.0.0",
+  "author": {
+    "name": "Md Jakiul Islam",
+    "email": "you@example.com"
+  },
+  "provider": "Plugins\\SliderPlugin\\SliderPluginServiceProvider",
+  "migrations": [
+    "database/migrations/2025_04_22_000000_create_sliders_table.php",
+    "database/migrations/2025_04_22_000001_create_slider_items_table.php"
+  ],
+  "hooks": {
+    "admin_sidebar_menu": true,
+    "theme.sections": true,
+    "plugin.activate.slider-plugin": true
+  }
+}

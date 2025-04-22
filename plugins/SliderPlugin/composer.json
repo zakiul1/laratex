@@ -1,0 +1,21 @@
+{
+  "name": "your-vendor/slider-plugin",
+  "description": "Slider Plugin for your hook‑based system",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    { "name": "Md Jakiul Islam", "email": "you@example.com" }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Plugins\\SliderPlugin\\": ""
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Plugins\\SliderPlugin\\SliderPluginServiceProvider"
+      ]
+    }
+  }
+}

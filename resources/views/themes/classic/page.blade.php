@@ -13,6 +13,7 @@
         <h1 class="text-3xl mx-auto text-center font-bold mb-4">{{ $page->title }}</h1>
 
         <div class="prose max-w-none text-justify">
+
             {!! $pageOutput !!}
 
         </div>

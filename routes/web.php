@@ -28,17 +28,17 @@ use App\Models\SiteSetting;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    // dd( SiteSetting::first());
-    $theme = SiteSetting::first()?->active_theme ?? 'default';
-   
-    $viewPath = "themes.$theme.home";
+    // 1) Grab whatever theme is set in the DB
+    $settings = SiteSetting::first();
+    $active = $settings?->active_theme;
 
-    
-    if (view()->exists($viewPath)) {
-        return view($viewPath);
+    // 2) If that theme has its own home view, use it…
+    if ($active && view()->exists("themes.{$active}.home")) {
+        return view("themes.{$active}.home");
     }
 
-    abort(404, "Theme view '$viewPath' not found.");
+    // 3) Otherwise fall back to our “default” theme
+    return view('themes.default.home');
 })->name('home');
 
 
@@ -72,15 +72,12 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     // Slider main CRUD
     Route::resource('sliders', SliderController::class);
 
-    // Image upload and delete
-    Route::post('/slider-images/upload/{slider}', [SliderImageController::class, 'upload'])->name('slider-images.upload');
-    Route::delete('/slider-images/{id}', [SliderImageController::class, 'destroy'])->name('slider-images.destroy');
-    Route::delete('/sliders/{slider}', [SliderController::class, 'destroy'])->name('sliders.destroy');
+
     //pages
     Route::resource('pages', PageController::class)->except('show');
 
     //Category
-    Route::resource('categories', CategoryController::class);
+
 
     //Products
     Route::resource('products', ProductController::class);
@@ -160,6 +157,29 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
 
 });
 
+// in routes/web.php, inside the admin group:
+
+Route::middleware(['auth'])
+    ->prefix('admin')
+    ->group(function () {
+        // … other resources …
+    
+        // Products CRUD (admin.products.index/show/create/…)
+        Route::resource('products', ProductController::class)
+            ->names('products');
+
+        // … the rest …
+    });
+
+
+Route::prefix('admin')
+    // ← add this name prefix
+    ->middleware('auth')
+    ->group(function () {
+        Route::resource('categories', CategoryController::class)
+            ->names('categories');  // → now becomes admin.categories.show, etc.
+        // …
+    });
 
 
 require __DIR__ . '/auth.php';
@@ -168,6 +188,12 @@ require __DIR__ . '/auth.php';
 Route::get('/posts/{slug}', [PostController::class, 'show'])
     ->name('posts.show');
 
-Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('category.show');
-Route::get('/product/{slug}', [ProductController::class, 'show'])->name('product.show');
+
+
+
+Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('categories.show');
+// Public product page (outside the admin group)
+Route::get('/product/{slug}', [ProductController::class, 'show'])
+    ->name('products.show');
+
 Route::get('/pages/{slug}', [PageController::class, 'show'])->name('page.show');

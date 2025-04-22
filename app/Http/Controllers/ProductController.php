@@ -141,19 +141,46 @@ class ProductController extends Controller
 
         return response()->json(['success' => true]);
     }
-    public function show($slug, Product $product)
+    public function show($slug)
     {
-        $product = Product::where('slug', $slug)->with('category')->firstOrFail();
-        $categories = Category::all(); // for sidebar if needed
-        $category = $product->category; // this is what’s missing
-        $relatedProducts = Product::where('category_id', $product->category_id)
+        // 1) Load the product and its category
+        $product = Product::where('slug', $slug)
+            ->with('category')
+            ->firstOrFail();
+
+        // 2) Sidebar (all categories), current category, related products
+        $categories = Category::all();
+        $category = $product->category;
+        $relatedProducts = Product::where('category_id', $category->id)
             ->where('id', '!=', $product->id)
             ->where('status', 1)
             ->latest()
             ->take(4)
             ->get();
 
-        return view('products.show', compact('product', 'categories', 'category', 'relatedProducts'));
+        // 3) Detect active theme
+        $theme = getActiveTheme(); // your helper for “classic”, “modern”, etc.
+
+        // 4) Construct the theme‐specific view name
+        $themeView = "themes.{$theme}.templates.product";
+
+        // 5) If the theme provides its own product template, use it
+        if (view()->exists($themeView)) {
+            return view($themeView, compact(
+                'product',
+                'categories',
+                'category',
+                'relatedProducts'
+            ));
+        }
+
+        // 6) Otherwise fall back to the module’s default
+        return view('products.show', compact(
+            'product',
+            'categories',
+            'category',
+            'relatedProducts'
+        ));
     }
 
 

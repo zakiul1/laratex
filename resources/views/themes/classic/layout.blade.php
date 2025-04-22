@@ -40,8 +40,7 @@
 <body class="bg-gray-100 text-gray-900 dark:bg-neutral-950 dark:text-white">
 
     <div class="min-h-screen flex flex-col">
-   {{-- Ribbon injected by any active plugin --}}
-   {!! apply_filters('frontend_ribbon', '') !!}
+        {{-- Ribbon injected by any active plugin --}}
         <!-- Global Header Component -->
         @include('partials.header')
 
@@ -51,7 +50,7 @@
         </main>
 
         <!-- Global Footer Component -->
-       
+
         @include('partials.footer')
 
 

@@ -15,7 +15,9 @@
             <label class="block text-sm font-medium">Name</label>
             <input type="text" name="name" value="{{ old('name', $category->name ?? '') }}" required
                 class="w-full border border-gray-300 rounded mt-1 p-2 @error('name') border-red-500 @enderror">
-            @error('name')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+            @error('name')
+                <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+            @enderror
         </div>
 
         <!-- Slug -->
@@ -23,7 +25,9 @@
             <label class="block text-sm font-medium">Slug</label>
             <input type="text" name="slug" value="{{ old('slug', $category->slug ?? '') }}"
                 class="w-full border border-gray-300 rounded mt-1 p-2 @error('slug') border-red-500 @enderror">
-            @error('slug')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+            @error('slug')
+                <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+            @enderror
         </div>
 
         <!-- Parent Category -->
@@ -38,7 +42,9 @@
                     </option>
                 @endforeach
             </select>
-            @error('parent_id')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+            @error('parent_id')
+                <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+            @enderror
         </div>
 
         <!-- Status -->
@@ -49,7 +55,9 @@
                 <option value="1" @selected(old('status', $category->status ?? '1') == '1')>Active</option>
                 <option value="0" @selected(old('status', $category->status ?? '') == '0')>Inactive</option>
             </select>
-            @error('status')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+            @error('status')
+                <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+            @enderror
         </div>
 
         <!-- Featured Image Upload + Preview -->
@@ -71,7 +79,9 @@
                 </div>
             @endif
 
-            @error('featured_image')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+            @error('featured_image')
+                <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+            @enderror
         </div>
 
         <!-- Submit Button -->

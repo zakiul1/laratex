@@ -159,6 +159,7 @@ class PageController extends Controller
         $templateView = "themes.{$theme}.templates.{$page->template}";
         $defaultView = "themes.{$theme}.page";
         $pageOutput = $this->buildPageOutput($page);
+        // dd($pageOutput);
         $site = site_settings();
         $themeSettings = theme_settings();
 
@@ -184,7 +185,8 @@ class PageController extends Controller
     private function buildPageOutput(Post $page)
     {
         // ← switch to the 'block' field, not `content`
-        $json = $page->block;
+        //dd($page->content);
+        $json = $page->content;
 
         // if it’s null, non‐string, or empty, force “[]”
         if (!is_string($json) || trim($json) === '') {

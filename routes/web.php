@@ -16,10 +16,7 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductImageController;
 use App\Http\Controllers\ProfileController;
-
 use App\Http\Controllers\SiteSettingController;
-use App\Http\Controllers\SliderController;
-use App\Http\Controllers\SliderImageController;
 use App\Http\Controllers\ThemeController;
 use App\Http\Controllers\ThemeCustomizeController;
 use App\Http\Controllers\WidgetController;
@@ -27,25 +24,14 @@ use App\Models\ThemeSetting;
 use App\Models\SiteSetting;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    // 1) Grab whatever theme is set in the DB
-    $settings = SiteSetting::first();
-    $active = $settings?->active_theme;
-
-    // 2) If that theme has its own home view, use it…
-    if ($active && view()->exists("themes.{$active}.home")) {
-        return view("themes.{$active}.home");
-    }
-
-    // 3) Otherwise fall back to our “default” theme
-    return view('themes.default.home');
-})->name('home');
+// Static front page (WordPress-style)
+Route::get('/', [PageController::class, 'home'])
+    ->name('home');
 
 
-Route::get('/dashboard', function () {
-    return view('layouts.dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
-
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -69,8 +55,7 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     /*  Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard'); */
 
     Route::resource('posts', PostController::class)->names('posts');
-    // Slider main CRUD
-    Route::resource('sliders', SliderController::class);
+
 
 
     //pages
@@ -138,8 +123,7 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
 
 
     // Media Library
-    // web.php
-    Route::resource('media', MediaController::class);
+
 
 
 
@@ -170,7 +154,11 @@ Route::middleware(['auth'])
 
         // … the rest …
     });
-
+Route::middleware(['auth', 'web'])->group(function () {
+    Route::get('/media', [MediaController::class, 'index'])->name('media.index');
+    Route::post('/media', [MediaController::class, 'store'])->name('media.store');
+    Route::delete('/media/{media}', [MediaController::class, 'destroy'])->name('media.destroy');
+});
 
 Route::prefix('admin')
     // ← add this name prefix
@@ -196,4 +184,6 @@ Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('categ
 Route::get('/product/{slug}', [ProductController::class, 'show'])
     ->name('products.show');
 
-Route::get('/pages/{slug}', [PageController::class, 'show'])->name('page.show');
+Route::get('/pages/{slug}', [PageController::class, 'show'])
+    ->where('slug', '[A-Za-z0-9\-]+')
+    ->name('page.show');

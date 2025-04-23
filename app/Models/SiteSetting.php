@@ -16,6 +16,7 @@ class SiteSetting extends Model
         'ribbon_bg_color',
         'ribbon_text_color',
         'extra',
+        'home_page_slug',
     ];
 
     protected $casts = [

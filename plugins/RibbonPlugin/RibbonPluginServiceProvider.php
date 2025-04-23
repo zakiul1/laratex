@@ -1,13 +1,24 @@
 <?php
 
 namespace Plugins\RibbonPlugin;
-
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Artisan;
+
 
 class RibbonPluginServiceProvider extends ServiceProvider
 {
     public function boot()
     {
+         // only run your plugin’s migrations if the table doesn’t exist
+         if (! Schema::hasTable('ribbon_settings')) {
+            Artisan::call('migrate', [
+                // point at the real migrations folder inside your plugin
+                '--path'     => realpath(__DIR__ . '/database/migrations'),
+                '--realpath' => true,
+                '--force'    => true,
+            ]);
+        }
         // 1) Auto‑load migrations
         $this->loadMigrationsFrom(__DIR__ . '/database/migrations');
 

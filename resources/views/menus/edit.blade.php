@@ -55,7 +55,7 @@
                                         🏷️ {{ $category->name }}
                                     </span>
                                     <button type="button"
-                                        @click="addItem({ title: '{{ $category->name }}', type: 'category', reference_id: {{ $category->id }}, url: '{{ route('category.show', $category->slug) }}' })"
+                                        @click="addItem({ title: '{{ $category->name }}', type: 'category', reference_id: {{ $category->id }}, url: '{{ route('categories.show', $category->slug) }}' })"
                                         class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 cursor-pointer">Add</button>
                                 </div>
                             </template>

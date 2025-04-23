@@ -1,44 +1,50 @@
 @php
     use Plugins\RibbonPlugin\Models\HeaderRibbon;
-    // 1) Fetch once
     $ribbon = HeaderRibbon::first();
 @endphp
 
-{{-- 2) Only render if we actually have a record and it’s active --}}
-@if ($ribbon !== null && $ribbon->is_active)
-    <div style="background: {{ $ribbon->bg_color }};
-               color:      {{ $ribbon->text_color }};
-               height:     {{ $ribbon->height }}px;"
-        class="w-full  flex justify-center items-center">
-        <div class="container mx-auto px-4  flex items-center justify-between">
-            <div class="flex space-x-4 ">
+@if ($ribbon && $ribbon->is_active)
+    <div style="background: {{ $ribbon->bg_color }}; color: {{ $ribbon->text_color }}; height: {{ $ribbon->height }}px;"
+        class="w-full">
+        <div
+            class="container mx-auto  sm:px-6 md:px-4 lg:px-4
+                        flex flex-col sm:flex-row items-center justify-between
+                        py-2">
+            {{-- Left & Center Text --}}
+            <div
+                class="flex flex-col sm:flex-row items-center
+                            space-y-1 sm:space-y-0 sm:space-x-4
+                            text-xs sm:text-sm text-center sm:text-left">
                 @if ($ribbon->left_text)
-                    <span>{{ $ribbon->left_text }}</span>
+                    <span class="block">{{ $ribbon->left_text }}</span>
                 @endif
 
                 @if ($ribbon->center_text)
-                    <span>{{ $ribbon->center_text }}</span>
+                    <span class="block">{{ $ribbon->center_text }}</span>
                 @endif
             </div>
 
-            <div class="flex items-center space-x-6">
+            {{-- Contact Links --}}
+            <div
+                class="flex flex-col sm:flex-row items-center
+                            space-y-1 sm:space-y-0 sm:space-x-6
+                            mt-2 sm:mt-0 text-xs sm:text-sm">
                 @if ($ribbon->phone)
-                    <a href="tel:{{ $ribbon->phone }}" class="flex items-center space-x-1">
-                        {{-- use the blade‑icon component instead of inline SVG --}}
+                    <a href="tel:{{ $ribbon->phone }}"
+                        class="flex items-center justify-center sm:justify-start space-x-1">
                         <x-lucide-phone class="w-4 h-4" />
-                        <span class="text-sm leading-none">{{ $ribbon->phone }}</span>
+                        <span class="leading-none">{{ $ribbon->phone }}</span>
                     </a>
                 @endif
 
                 @if ($ribbon->email)
-                    <a href="mailto:{{ $ribbon->email }}" class="flex  items-center space-x-1">
+                    <a href="mailto:{{ $ribbon->email }}"
+                        class="flex items-center justify-center sm:justify-start space-x-1">
                         <x-lucide-mail class="w-4 h-4" />
-                        <span class="text-sm leading-none mb-1">{{ $ribbon->email }}</span>
+                        <span class="leading-none">{{ $ribbon->email }}</span>
                     </a>
                 @endif
             </div>
-
         </div>
-
     </div>
 @endif

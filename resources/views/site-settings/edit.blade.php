@@ -12,7 +12,7 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- Site Name -->
-          {{--       <div>
+                {{--       <div>
                     <label class="block text-sm font-medium">Site Name</label>
                     <input type="text" name="site_name" value="{{ $setting->site_name }}"
                         class="w-full border rounded px-3 py-2 mt-1" />
@@ -36,47 +36,25 @@
                     </template>
                 </div>
  --}}
-                <!-- Show Ribbon -->
-                <div class="md:col-span-2">
-                    <label class="flex items-center mt-2">
-                        <input type="hidden" name="show_ribbon" value="0">
-                        <input type="checkbox" name="show_ribbon" value="1" {{ $setting->show_ribbon ? 'checked' : '' }}>
-                        <span class="ml-2 text-sm">Show Ribbon on Frontend</span>
-                    </label>
-                </div>
+
 
                 <!-- Ribbon Settings -->
-                <div class="md:col-span-2 border-t pt-4 mt-4">
-                    <h3 class="font-semibold text-sm mb-2">Ribbon Settings</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium">Left Text</label>
-                            <input type="text" name="ribbon_left_text" value="{{ $setting->ribbon_left_text }}"
-                                class="w-full border rounded px-3 py-2 mt-1" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium">Phone</label>
-                            <input type="text" name="ribbon_phone" value="{{ $setting->ribbon_phone }}"
-                                class="w-full border rounded px-3 py-2 mt-1" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium">Email</label>
-                            <input type="email" name="ribbon_email" value="{{ $setting->ribbon_email }}"
-                                class="w-full border rounded px-3 py-2 mt-1" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium">Background Color</label>
-                            <input type="color" name="ribbon_bg_color" value="{{ $setting->ribbon_bg_color ?? '#0a4b78' }}"
-                                class="w-16 h-10 border rounded cursor-pointer" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium">Text Color</label>
-                            <input type="color" name="ribbon_text_color"
-                                value="{{ $setting->ribbon_text_color ?? '#ffffff' }}"
-                                class="w-16 h-10 border rounded cursor-pointer" />
-                        </div>
-                    </div>
+                <div class="mb-4">
+                    <label for="home_page_slug" class="block text-sm font-medium">Home Page</label>
+                    <select name="home_page_slug" id="home_page_slug" class="mt-1 block w-full border rounded p-2">
+                        <option value="">— select a page —</option>
+                        @foreach ($pages as $page)
+                            <option value="{{ $page->slug }}"
+                                {{ old('home_page_slug', $setting->home_page_slug) === $page->slug ? 'selected' : '' }}>
+                                {{ $page->title }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('home_page_slug')
+                        <p class="text-sm text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
+
             </div>
 
             <!-- Submit -->
@@ -89,7 +67,7 @@
             function logoControl() {
                 return {
                     preview: null,
-                    existingLogo: '{{ $setting->logo ? asset("storage/" . $setting->logo) : '' }}',
+                    existingLogo: '{{ $setting->logo ? asset('storage/' . $setting->logo) : '' }}',
                     previewImage(event) {
                         const file = event.target.files[0];
                         if (!file) return;
@@ -99,13 +77,15 @@
                     },
                     deleteLogo() {
                         if (!confirm('Delete this logo?')) return;
-                        fetch('{{ route("site-settings.remove-logo") }}', {
+                        fetch('{{ route('site-settings.remove-logo') }}', {
                             method: 'POST',
                             headers: {
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
                                 'Accept': 'application/json'
                             },
-                            body: new URLSearchParams({ _method: 'DELETE' })
+                            body: new URLSearchParams({
+                                _method: 'DELETE'
+                            })
                         }).then(res => {
                             if (res.ok) {
                                 this.preview = null;
@@ -126,15 +106,16 @@
                 submitBtn.addEventListener('click', () => {
                     const formData = new FormData(form);
                     fetch("{{ route('site-settings.update') }}", {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
-                        },
-                        body: formData
-                    })
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                            },
+                            body: formData
+                        })
                         .then(async res => {
                             if (!res.ok) {
-                                const errorHtml = await res.text();  // this will be your rendered HTML error
+                                const errorHtml = await res
+                                    .text(); // this will be your rendered HTML error
                                 throw new Error(errorHtml); // This goes to .catch
                             }
 
@@ -156,5 +137,4 @@
             });
         </script>
     @endpush
-
 @endsection

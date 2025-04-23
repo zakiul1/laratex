@@ -70,23 +70,23 @@
                 ->values()
                 ->toArray();
 
-            // safely JSON‑encode for JavaScript
             $jsonSlides = json_encode($slides, JSON_UNESCAPED_SLASHES);
-            $layout = json_encode($slider->layout); // e.g. "with-content"
+            $layout = json_encode($slider->layout);
             $autoplay = $slider->autoplay ? 'true' : 'false';
             $showArrows = $slider->show_arrows ? 'true' : 'false';
             $showIndicators = $slider->show_indicators ? 'true' : 'false';
         @endphp
 
         <div x-data='sliderComponent({
-        slides: {!! $jsonSlides !!},
-        layout: {!! $layout !!},
-        showArrows: {{ $showArrows }},
-        showIndicators: {{ $showIndicators }},
-        interval: 3000
-      })'
+            slides: {!! $jsonSlides !!},
+            layout: {!! $layout !!},
+            autoplay: {{ $autoplay }},
+            showArrows: {{ $showArrows }},
+            showIndicators: {{ $showIndicators }},
+            interval: 3000
+        })'
             x-init="init()" @mouseenter="pause()" @mouseleave="start()"
-            class="relative w-full h-screen overflow-hidden mb-8">
+            class="relative w-full h-64 sm:h-80 md:h-screen overflow-hidden">
             {{-- Slides --}}
             <template x-for="(s,i) in slides" :key="i">
                 <div x-show="current === i" x-transition.opacity.duration.700ms
@@ -101,15 +101,15 @@
                                 'md:w-1/2 h-full object-cover' :
                                 'w-full h-full object-cover'" />
 
-                        {{-- Content (only for with-content) --}}
+                        {{-- Content --}}
                         <div x-show="layout==='with-content'"
-                            class="md:w-1/2 bg-black/50 p-6 flex flex-col justify-center text-white">
-                            <h3 class="text-2xl font-bold" x-text="s.title"></h3>
-                            <p class="mt-2" x-text="s.description"></p>
+                            class="md:w-1/2 bg-black/50 p-4 sm:p-6 md:p-8 flex flex-col justify-center text-white">
+                            <h3 class="text-lg sm:text-xl md:text-2xl font-bold" x-text="s.title"></h3>
+                            <p class="mt-2 text-sm sm:text-base" x-text="s.description"></p>
                             <div class="mt-4 space-x-2">
                                 <template x-for="(btn,bi) in s.buttons" :key="bi">
                                     <a :href="btn.url"
-                                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
+                                        class="px-3 py-1 sm:px-4 sm:py-2 bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm md:text-base rounded transition"
                                         x-text="btn.text"></a>
                                 </template>
                             </div>
@@ -119,22 +119,22 @@
             </template>
 
             {{-- Prev/Next Arrows --}}
-            {{-- Prev/Next Arrows --}}
             <button x-show="showArrows" @click="prev()"
-                class="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 p-2 rounded-full" x-transition>
+                class="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/70 p-1 sm:p-2 rounded-full transition opacity-75 hover:opacity-100"
+                x-transition>
                 ‹
             </button>
-
             <button x-show="showArrows" @click="next()"
-                class="absolute right-2 top-1/2 -translate-y-1/2 bg-white/70 p-2 rounded-full" x-transition>
+                class="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/70 p-1 sm:p-2 rounded-full transition opacity-75 hover:opacity-100"
+                x-transition>
                 ›
             </button>
 
-
-            {{-- Indicators as dashes --}}
-            <div x-show="showIndicators" class="absolute bottom-2 left-1/2 -translate-x-1/2 flex space-x-2">
+            {{-- Indicators --}}
+            <div x-show="showIndicators"
+                class="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 flex space-x-1 sm:space-x-2">
                 <template x-for="(_, idx) in slides" :key="idx">
-                    <button @click="goTo(idx)" class="w-6 h-1 rounded-full transition"
+                    <button @click="goTo(idx)" class="w-4 sm:w-6 h-1 rounded-full transition"
                         :class="current === idx ? 'bg-white' : 'bg-white/50'"></button>
                 </template>
             </div>

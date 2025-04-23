@@ -8,6 +8,7 @@ use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use App\Models\SiteSetting;
 
 class PageController extends Controller
 {
@@ -27,6 +28,19 @@ class PageController extends Controller
 
         // Pass into the view for Alpine
         return view('pages.index', compact('pagesAll', 'statuses'));
+    }
+
+    public function home()
+    {
+        // 1) Ensure we have a settings record
+        $settings = SiteSetting::firstOrCreate([]);
+
+        // 2) Use the admin’s chosen slug, or fall back to 'home'
+        $slug = $settings->home_page_slug ?: 'home';
+
+        // 3) Delegate everything (page lookup, block‐builder rendering,
+        //    template resolution) to your `show()` method
+        return $this->show($slug);
     }
 
     public function create()
@@ -148,51 +162,67 @@ class PageController extends Controller
     }
 
 
-    public function show($slug)
+    public function show(string $slug)
     {
+        // 1) Fetch the page record
         $page = Post::where('slug', $slug)
             ->where('type', 'page')
             ->where('status', 'Published')
             ->firstOrFail();
 
-        $theme = getActiveTheme();
-        $templateView = "themes.{$theme}.templates.{$page->template}";
-        $defaultView = "themes.{$theme}.page";
+        // 2) Build your block-builder or shortcode output
         $pageOutput = $this->buildPageOutput($page);
-        // dd($pageOutput);
+
+        // 3) Site-wide settings and theme settings
         $site = site_settings();
         $themeSettings = theme_settings();
+        $theme = getActiveTheme();
 
-        // if “contact” template and view exists
-        if ($page->template === 'contact' && view()->exists($templateView)) {
-            $contact = Contact::first();
-            return view($templateView, compact('page', 'site', 'themeSettings', 'contact'));
+        // 4) If this is the front-page slug and your theme has a special home view...
+        if (
+            $slug === ($site->home_page_slug ?? 'home')
+            && view()->exists("themes.{$theme}.home")
+        ) {
+            return view(
+                "themes.{$theme}.home",
+                compact('page', 'pageOutput', 'site', 'themeSettings')
+            );
         }
 
-        // if custom template exists
+        // 5) Otherwise, check for a custom template view...
+        $templateView = "themes.{$theme}.templates.{$page->template}";
         if ($page->template && view()->exists($templateView)) {
-            return view($templateView, compact('page', 'site', 'themeSettings', 'pageOutput'));
+            // Contact template gets the Contact model injected
+            if ($page->template === 'contact') {
+                $contact = Contact::first();
+                return view(
+                    $templateView,
+                    compact('page', 'pageOutput', 'site', 'themeSettings', 'contact')
+                );
+            }
+            return view(
+                $templateView,
+                compact('page', 'pageOutput', 'site', 'themeSettings')
+            );
         }
 
-        // fallback
-        return view($defaultView, compact('page', 'site', 'themeSettings', 'pageOutput'));
+        // 6) Fallback to your generic theme page view
+        $defaultView = "themes.{$theme}.page";
+        return view(
+            $defaultView,
+            compact('page', 'pageOutput', 'site', 'themeSettings')
+        );
     }
 
     /**
-     * Decode your block‐builder JSON (stored in `block`),  
-     * or default to an empty array if it’s missing or invalid.
+     * Turn your JSON/block-builder data into HTML
      */
     private function buildPageOutput(Post $page)
     {
-        // ← switch to the 'block' field, not `content`
-        //dd($page->content);
         $json = $page->content;
-
-        // if it’s null, non‐string, or empty, force “[]”
         if (!is_string($json) || trim($json) === '') {
             $json = '[]';
         }
-
         return ElementFactory::json2html($json);
     }
 }

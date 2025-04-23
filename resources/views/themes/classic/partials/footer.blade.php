@@ -3,11 +3,7 @@
     use App\Models\Category;
     use App\Models\Menu;
 
-    $footerWidgets = Widget::where('widget_area', 'footer')
-        ->where('status', true)
-        ->orderBy('order')
-        ->take(4)
-        ->get();
+    $footerWidgets = Widget::where('widget_area', 'footer')->where('status', true)->orderBy('order')->take(4)->get();
 @endphp
 
 @if ($footerWidgets->isNotEmpty())
@@ -23,7 +19,7 @@
                     @if ($widget->widget_type === 'menu')
                         @php
                             $menu = Menu::with('items')->find($widget->content);
-                           @dd($widget);
+
                         @endphp
                         @if ($menu && $menu->items->count())
                             <ul class="space-y-2 text-sm">
@@ -50,6 +46,7 @@
                         @php
                             $category = Category::where('slug', $widget->content)->with('children')->first();
                         @endphp
+
                         @if ($category && $category->children->count())
                             <ul class="space-y-2 text-sm">
                                 @foreach ($category->children as $child)

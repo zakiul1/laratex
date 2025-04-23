@@ -1,6 +1,6 @@
 @php
     $route = fn($name) => request()->routeIs($name)
-        ? 'bg-slate-300 text-on-surface-strong dark:bg-primary-dark/10 dark:text-on-surface-dark-strong'
+        ? 'bg-white/10 text-blue-800 ring-1 ring-white/20 shadow-md dark:from-primary-dark dark:to-primary-dark/70 dark:text-white dark:bg-primary-dark/10 dark:text-on-surface-dark-strong'
         : 'text-on-surface hover:bg-primary/5 hover:text-on-surface-strong dark:text-on-surface-dark dark:hover:bg-primary-dark/5 dark:hover:text-on-surface-dark-strong';
 @endphp
 

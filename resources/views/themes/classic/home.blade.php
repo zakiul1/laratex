@@ -4,62 +4,57 @@
     <div class="">
         {!! apply_filters('slider.header', '') !!}
     </div>
+    <section class="bg-[#bf0b2c] py-3">
+        <div class="container mx-auto flex justify-around  text-white">
+
+            <!-- Money Back Guarantee -->
+            <div class="flex flex-col items-center space-y-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 1.75l6.16 3.42v5.66c0 4.05-2.53 7.83-6.16 9.33
+                                                                                                                                     c-3.63-1.5-6.16-5.28-6.16-9.33V5.17L12 1.75z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2l4-4" />
+                </svg>
+                <span class="font-medium">Money Back Guarantee</span>
+            </div>
+
+            <!-- Easy Returns -->
+            <div class="flex flex-col items-center space-y-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M3 7v5h5m0 0l-2-2m2 2l-2 2M21 17v-5h-5m0 0l2 2m-2-2l2-2" />
+                </svg>
+                <span class="font-medium">Easy Returns</span>
+            </div>
+
+            <!-- Customer Support 24/7 -->
+            <div class="flex flex-col items-center space-y-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M7 8h10M7 12h4m-9 8v-2a2 2 0 0 1 2-2h1
+                                                                                                                                     a10 10 0 0 1 10-10V5a2 2 0 0 1 2-2h.01
+                                                                                                                                     A2 2 0 0 1 22 5v9a2 2 0 0 1-2 2h-3l-4 4v-4H7z" />
+                </svg>
+                <span class="font-medium">Customer Support 24/7</span>
+            </div>
+
+        </div>
+    </section>
 
 
 
     {{-- Category Section View --}}
 
-    @php
-        use Illuminate\Support\Facades\Schema;
-        use App\Models\Category;
-
-        $categories = collect();
-
-        if (Schema::hasTable('categories')) {
-            $query = Category::query();
-
-            // only filter by `is_active` if that column exists
-            if (Schema::hasColumn('categories', 'is_active')) {
-                $query->where('is_active', true);
-            }
-
-            // only order by `sort_order` if that column exists
-            if (Schema::hasColumn('categories', 'sort_order')) {
-                $query->orderBy('sort_order', 'asc');
-            }
-
-            // finally limit to 3
-            $categories = $query->take(3)->get();
-        }
-    @endphp
-
-    @if ($categories->isNotEmpty())
-        <section class="py-12 bg-gray-50">
-            <div class="max-w-7xl mx-auto px-4">
-                <h2 class="text-3xl font-bold mb-8 text-center">Shop by Category</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    @foreach ($categories as $category)
-                        {{-- Check if the category has a featured image --}}
-                        <a href="{{ route('categories.show', $category->slug) }}"
-                            class="group block relative overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-shadow">
-                            <img src="{{ asset('storage/' . $category->featured_image) }}" alt="{{ $category->name }}"
-                                class="w-full h-auto object-cover group-hover:scale-105 transform transition-transform duration-500" />
-                            <div class="absolute inset-0 bg-black bg-opacity-30 flex items-end p-4">
-                                <h3 class="text-white text-xl font-semibold">{{ $category->name }}</h3>
-                            </div>
-                        </a>
-                    @endforeach
-                </div>
-            </div>
-        </section>
-    @endif
 
     {{-- Featured Products Section --}}
+    {{-- 1) Any block-builder / page output you have --}}
 
-    {!! apply_filters('the_content', $page->content) !!}
-
-
-
+    <div class="container mx-auto ">
+        {!! apply_filters('the_content', $pageOutput) !!}
+    </div>
 @endsection
 
 

@@ -8,6 +8,9 @@ use App\Models\MenuItem;
 use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class MenuController extends Controller
 {
@@ -30,13 +33,12 @@ class MenuController extends Controller
             'auto_add_pages' => 'nullable|boolean',
         ]);
 
-        // ✅ Ensure unique slug for menu
         $baseSlug = Str::slug($request->name);
         $slug = $baseSlug;
         $counter = 1;
-
         while (Menu::where('slug', $slug)->exists()) {
-            $slug = $baseSlug . '-' . $counter++;
+            $slug = $baseSlug . '-' . $counter;
+            $counter++;
         }
 
         $menu = Menu::create([
@@ -46,7 +48,8 @@ class MenuController extends Controller
             'auto_add_pages' => $request->has('auto_add_pages'),
         ]);
 
-        return redirect()->route('menus.edit', $menu)->with('success', 'Menu created!');
+        return redirect()->route('menus.edit', $menu)
+            ->with('success', 'Menu created!');
     }
 
     public function edit(Menu $menu)
@@ -63,13 +66,16 @@ class MenuController extends Controller
             'auto_add_pages' => 'nullable|boolean',
         ]);
 
-        // ✅ Also update slug if name is changed
         $baseSlug = Str::slug($request->name);
         $slug = $baseSlug;
         $counter = 1;
-
-        while (Menu::where('slug', $slug)->where('id', '!=', $menu->id)->exists()) {
-            $slug = $baseSlug . '-' . $counter++;
+        while (
+            Menu::where('slug', $slug)
+                ->where('id', '!=', $menu->id)
+                ->exists()
+        ) {
+            $slug = $baseSlug . '-' . $counter;
+            $counter++;
         }
 
         $menu->update([
@@ -85,19 +91,43 @@ class MenuController extends Controller
     public function destroy(Menu $menu)
     {
         $menu->delete();
-        return redirect()->route('menus.index')->with('success', 'Menu deleted.');
+        return redirect()->route('menus.index')
+            ->with('success', 'Menu deleted.');
     }
 
     public function updateStructure(Request $request, Menu $menu)
     {
-        // dd($request->all());
-        MenuItem::where('menu_id', $menu->id)->delete();
+        // Validate that 'items' is an array; skip individual item fields
+        $validator = Validator::make($request->all(), [
+            'items' => 'required|array',
+        ]);
 
-        foreach ($request->items as $index => $item) {
-            $this->createMenuItem($menu->id, $item, null, $index);
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors(),
+            ], 422);
         }
 
-        return response()->json(['success' => true]);
+        try {
+            DB::transaction(function () use ($menu, $request) {
+                MenuItem::where('menu_id', $menu->id)->delete();
+                foreach ($request->items as $index => $item) {
+                    $this->createMenuItem(
+                        $menu->id,
+                        (array) $item,
+                        null,
+                        $index
+                    );
+                }
+            });
+
+            return response()->json(['success' => true], 200);
+        } catch (\Throwable $e) {
+            Log::error("Menu structure update failed for menu {$menu->id}: {$e->getMessage()}");
+            return response()->json([
+                'error' => 'Unable to save menu structure.',
+            ], 500);
+        }
     }
 
     /**
@@ -105,30 +135,22 @@ class MenuController extends Controller
      */
     private function createMenuItem(int $menuId, array $item, int $parentId = null, int $order = 0)
     {
-        // 1) Force‐resolve page URLs via the page.show route
+        $resolvedUrl = $item['url'] ?? '#';
+
         if (($item['type'] ?? '') === 'page' && !empty($item['reference_id'])) {
             $page = Post::where('id', $item['reference_id'])
                 ->where('type', 'page')
                 ->first();
-            $resolvedUrl = $page
-                ? route('page.show', ['slug' => $page->slug])
-                : ($item['url'] ?? '#');
-        }
-
-        // 2) Resolve categories the same way
-        elseif (($item['type'] ?? '') === 'category' && !empty($item['reference_id'])) {
+            if ($page) {
+                $resolvedUrl = route('page.show', ['slug' => $page->slug]);
+            }
+        } elseif (($item['type'] ?? '') === 'category' && !empty($item['reference_id'])) {
             $cat = Category::find($item['reference_id']);
-            $resolvedUrl = $cat
-                ? route('category.show', $cat->slug)
-                : ($item['url'] ?? '#');
+            if ($cat) {
+                $resolvedUrl = route('category.show', $cat->slug);
+            }
         }
 
-        // 3) Otherwise fall back to any explicit URL from the UI
-        else {
-            $resolvedUrl = $item['url'] ?? '#';
-        }
-
-        // 4) Create the record
         $menuItem = MenuItem::create([
             'menu_id' => $menuId,
             'parent_id' => $parentId,
@@ -139,10 +161,14 @@ class MenuController extends Controller
             'order' => $order,
         ]);
 
-        // 5) Recurse into children
         if (!empty($item['children']) && is_array($item['children'])) {
             foreach ($item['children'] as $i => $child) {
-                $this->createMenuItem($menuId, $child, $menuItem->id, $i);
+                $this->createMenuItem(
+                    $menuId,
+                    (array) $child,
+                    $menuItem->id,
+                    $i
+                );
             }
         }
     }
@@ -153,8 +179,9 @@ class MenuController extends Controller
             'post_id' => 'required|exists:posts,id',
         ]);
 
-        // Get the post with type = page
-        $post = Post::where('id', $request->post_id)->where('type', 'page')->firstOrFail();
+        $post = Post::where('id', $request->post_id)
+            ->where('type', 'page')
+            ->firstOrFail();
 
         MenuItem::create([
             'menu_id' => $menu->id,
@@ -164,6 +191,7 @@ class MenuController extends Controller
             'order' => $menu->items()->count(),
         ]);
 
-        return redirect()->route('menus.edit', $menu->id)->with('success', 'Page added to menu.');
+        return redirect()->route('menus.edit', $menu)
+            ->with('success', 'Page added to menu.');
     }
 }

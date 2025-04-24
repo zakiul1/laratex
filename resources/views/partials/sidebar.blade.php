@@ -95,5 +95,9 @@
 
             <span>Site Settings</span>
         </a>
+        {{-- test window.ntfy --}}
+
+
+
     </div>
 </nav>

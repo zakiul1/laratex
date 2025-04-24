@@ -9,16 +9,31 @@ use Illuminate\Support\Facades\File;
 
 class CategoryController extends Controller
 {
+    // app/Http/Controllers/CategoryController.php
+
     public function index()
     {
-        $categories = Category::latest()->paginate(10);
-        return view('categories.index', compact('categories'));
+        // 1) Paginate server-side
+        $paginated = Category::orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        // 2) Pass the current page’s items as plain array for Alpine
+        $categories = $paginated->items();
+
+        return view('categories.index', [
+            'categories' => $categories,
+            'paginated' => $paginated,
+        ]);
     }
+
 
     public function create()
     {
         $allCategories = Category::all();
-        return view('categories.create', compact('allCategories'));
+        // provide an empty Category for the SEO form
+        $category = new Category();
+
+        return view('categories.create', compact('allCategories', 'category'));
     }
 
     public function store(Request $request)
@@ -29,30 +44,49 @@ class CategoryController extends Controller
             'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'status' => 'required|boolean',
             'parent_id' => 'nullable|exists:categories,id',
+
+            // ─── SEO fields ────────────────────────────────────────────────
+            'seo.title' => 'nullable|string|max:255',
+            'seo.robots' => 'nullable|string|in:Index & Follow,NoIndex & Follow,NoIndex & NoFollow,No Archive,No Snippet',
+            'seo.description' => 'nullable|string',
+            'seo.keywords' => 'nullable|string',
         ]);
 
+        // slug generation
         $baseSlug = $data['slug'] ?? Str::slug($data['name']);
         $slug = $baseSlug;
-        $counter = 1;
+        $i = 1;
 
         while (Category::where('slug', $slug)->exists()) {
-            $slug = $baseSlug . '-' . $counter++;
+            $slug = "{$baseSlug}-{$i}";
+            $i++;
         }
-
         $data['slug'] = $slug;
 
+        // featured image
         if ($request->hasFile('featured_image')) {
-            $data['featured_image'] = $request->file('featured_image')->store('categories', 'public');
+            $data['featured_image'] = $request
+                ->file('featured_image')
+                ->store('categories', 'public');
         }
 
-        Category::create($data);
+        // create the category
+        /** @var Category $category */
+        $category = Category::create($data);
 
-        return redirect()->route('categories.index')->with('success', 'Category created successfully.');
+        // sync SEO JSON
+        $category->seoMeta()
+            ->updateOrCreate([], ['meta' => $data['seo']]);
+
+        return redirect()
+            ->route('categories.index')
+            ->with('success', 'Category created successfully.');
     }
 
     public function edit(Category $category)
     {
         $allCategories = Category::where('id', '!=', $category->id)->get();
+
         return view('categories.edit', compact('category', 'allCategories'));
     }
 
@@ -64,46 +98,68 @@ class CategoryController extends Controller
             'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'status' => 'required|boolean',
             'parent_id' => 'nullable|exists:categories,id',
+
+            // ─── SEO fields ────────────────────────────────────────────────
+            'seo.title' => 'nullable|string|max:255',
+            'seo.robots' => 'nullable|string|in:Index & Follow,NoIndex & Follow,NoIndex & NoFollow,No Archive,No Snippet',
+            'seo.description' => 'nullable|string',
+            'seo.keywords' => 'nullable|string',
         ]);
 
+        // slug regeneration if needed
         $baseSlug = $data['slug'] ?? Str::slug($data['name']);
         $slug = $baseSlug;
-        $counter = 1;
+        $i = 1;
 
-        while (Category::where('slug', $slug)->where('id', '!=', $category->id)->exists()) {
-            $slug = $baseSlug . '-' . $counter++;
+        while (
+            Category::where('slug', $slug)
+                ->where('id', '!=', $category->id)
+                ->exists()
+        ) {
+            $slug = "{$baseSlug}-{$i}";
+            $i++;
         }
-
         $data['slug'] = $slug;
 
+        // handle new image upload
         if ($request->hasFile('featured_image')) {
             if ($category->featured_image) {
-                File::delete(public_path('storage/' . $category->featured_image));
+                File::delete(public_path("storage/{$category->featured_image}"));
             }
-            $data['featured_image'] = $request->file('featured_image')->store('categories', 'public');
+            $data['featured_image'] = $request
+                ->file('featured_image')
+                ->store('categories', 'public');
         }
 
+        // update the category
         $category->update($data);
 
-        return redirect()->route('categories.index')->with('success', 'Category updated successfully.');
+        // update SEO JSON
+        $category->seoMeta()
+            ->updateOrCreate([], ['meta' => $data['seo']]);
+
+        return redirect()
+            ->route('categories.index')
+            ->with('success', 'Category updated successfully.');
     }
 
     public function destroy(Category $category)
     {
         if ($category->featured_image) {
-            File::delete(public_path('storage/' . $category->featured_image));
+            File::delete(public_path("storage/{$category->featured_image}"));
         }
 
         $category->delete();
 
-        return redirect()->route('categories.index')->with('success', 'Category deleted successfully.');
+        return redirect()
+            ->route('categories.index')
+            ->with('success', 'Category deleted successfully.');
     }
 
     public function show($slug)
     {
-        // 1) Load the category and its products
         $category = Category::where('slug', $slug)
-            ->with('products')   // make sure Category has a products() relation
+            ->with('products')
             ->firstOrFail();
 
         $products = $category->products;
@@ -111,20 +167,18 @@ class CategoryController extends Controller
             ->whereNull('parent_id')
             ->get();
 
-        // 2) Determine the active theme (use whatever helper your app provides)
         $theme = getActiveTheme();
-        // e.g. returns "default" or "myTheme"
-
-        // 3) Construct the theme template name
         $themeView = "themes.{$theme}.templates.category";
 
-        // 4) If the theme provides its own category.blade.php, use it...
         if (view()->exists($themeView)) {
-            return view($themeView, compact('category', 'products', 'allCategories'));
+            return view($themeView, compact(
+                'category',
+                'products',
+                'allCategories'
+            ));
         }
 
-        /*   // 5) Otherwise fall back to our plugin/module view
-          return view('categories.view', compact('category', 'products', 'allCategories')); */
+        // fallback
+        abort(404);
     }
-
 }

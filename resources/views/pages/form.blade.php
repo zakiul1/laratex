@@ -1,35 +1,23 @@
 @php
-    $initialImage = old('featured_image')
-        ? asset('storage/' . old('featured_image'))
-        : (isset($page->featured_image)
-            ? asset('storage/' . $page->featured_image)
-            : '');
+    // true only if this is an existing Page (edit)
+    $isEdit = isset($page) && $page->exists;
 
-    $metaDefaults = [];
-
-    if (old('meta_keys')) {
-        foreach (old('meta_keys') as $i => $key) {
-            $metaDefaults[] = ['key' => $key, 'value' => old('meta_values')[$i] ?? ''];
-        }
-    } elseif (isset($page) && $page->metas) {
-        $metaDefaults = $page->metas;
-    } else {
-        $metaDefaults = [['key' => '', 'value' => '']];
-    }
+    // ensure we have templates array
     $templates = $templates ?? getThemeTemplates();
 @endphp
 
-<div class=" mx-auto ">
-    <form method="POST" action="{{ isset($page) ? route('pages.update', $page->id) : route('pages.store') }}"
+<div class="mx-auto">
+    <link rel="stylesheet" href="{{ asset('blockeditor/styles.css') }}">
+    <form method="POST" action="{{ $isEdit ? route('pages.update', $page) : route('pages.store') }}"
         enctype="multipart/form-data" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         @csrf
-        @if (isset($page))
+        @if ($isEdit)
             @method('PUT')
         @endif
-        <link rel="stylesheet" href="{{ asset('blockeditor/styles.css') }}">
-        <!-- Left Panel -->
+
+        {{-- Left Panel --}}
         <div class="lg:col-span-2 space-y-6">
-            <!-- Title -->
+            {{-- Title --}}
             <div>
                 <input type="text" name="title" value="{{ old('title', $page->title ?? '') }}"
                     placeholder="Add title"
@@ -40,9 +28,9 @@
                 @enderror
             </div>
 
-            <!-- Content -->
+            {{-- Content (block-builder) --}}
             <div>
-                <div id="customAreaBuilder" class="w-full border rounded bg-white" style="min-height:500px;"></div>
+                <div id="customAreaBuilder" class="w-full   bg-white"></div>
                 <!-- hidden JSON payload -->
                 <textarea id="layoutData" name="content" class="hidden">{{ old('content', $page->content ?? '') }}</textarea>
                 @error('content')
@@ -50,11 +38,16 @@
                 @enderror
 
             </div>
+
+
+
+            {{-- SEO Meta Fields --}}
+            @include('components.seo-fields', ['model' => $page])
         </div>
 
-        <!-- Right Panel -->
+        {{-- Right Panel --}}
         <div class="space-y-6">
-            <!-- Status -->
+            {{-- Status --}}
             <div class="border rounded p-4 shadow bg-white">
                 <h3 class="font-semibold text-sm mb-2">Status</h3>
                 <select name="status" class="w-full border rounded p-2">
@@ -71,11 +64,10 @@
                 @enderror
             </div>
 
-            <!-- Template -->
+            {{-- Template --}}
             <div class="border rounded p-4 shadow bg-white">
                 <h3 class="font-semibold text-sm mb-2">Template</h3>
                 <select name="template" class="w-full border rounded p-2">
-
                     @foreach ($templates as $key => $label)
                         <option value="{{ $key }}"
                             {{ old('template', $page->template ?? '') === $key ? 'selected' : '' }}>
@@ -88,7 +80,7 @@
                 @enderror
             </div>
 
-            <!-- Slug -->
+            {{-- Permalink --}}
             <div class="border rounded p-4 shadow bg-white">
                 <h3 class="font-semibold text-sm mb-2">Permalink</h3>
                 <input type="text" name="slug" value="{{ old('slug', $page->slug ?? '') }}"
@@ -98,10 +90,17 @@
                 @enderror
             </div>
 
-            <!-- Hidden type -->
+            {{-- Hidden type field --}}
             <input type="hidden" name="type" value="page" />
 
-            <!-- Featured Image -->
+            {{-- Featured Image --}}
+            @php
+                $initialImage = old('featured_image')
+                    ? asset('storage/' . old('featured_image'))
+                    : (isset($page->featured_image)
+                        ? asset('storage/' . $page->featured_image)
+                        : '');
+            @endphp
             <div x-data="{ imagePreview: '{{ $initialImage }}' }" class="border rounded p-4 shadow bg-white">
                 <h3 class="font-semibold text-sm mb-2">Featured Image</h3>
                 <template x-if="imagePreview">
@@ -109,44 +108,31 @@
                 </template>
                 <input type="file" name="featured_image"
                     @change="
-                    const file = $event.target.files[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onload = e => imagePreview = e.target.result;
-                        reader.readAsDataURL(file);
-                    }"
+                        const file = $event.target.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = e => imagePreview = e.target.result;
+                            reader.readAsDataURL(file);
+                        }"
                     class="w-full text-sm" />
                 @error('featured_image')
                     <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                 @enderror
             </div>
 
-            <!-- Meta Fields -->
-            <div {{-- single‑quote wrapper so JSON double‑quotes stay valid --}} x-data='{"metas": @json($metaDefaults)}'
-                class="border rounded p-4 shadow bg-white">
-                <h3 class="font-semibold text-sm mb-3">Meta Fields</h3>
-                <template x-for="(meta, index) in metas" :key="index">
-                    <div class="flex gap-2 mb-2">
-                        <input type="text" :name="`meta_keys[]`" x-model="meta.key" placeholder="Key"
-                            class="w-1/2 border rounded p-2 text-sm" />
-                        <input type="text" :name="`meta_values[]`" x-model="meta.value" placeholder="Value"
-                            class="w-1/2 border rounded p-2 text-sm" />
-                    </div>
-                </template>
-                <button type="button" @click="metas.push({ key: '', value: '' })"
-                    class="text-xs text-blue-600 hover:underline">+ Add Meta Field</button>
-            </div>
 
-            <!-- Submit -->
+
+            {{-- Submit --}}
             <div>
                 <button type="submit"
                     class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm px-6 py-3 rounded shadow">
-                    {{ isset($page) ? 'Update Page' : 'Publish Page' }}
+                    {{ $isEdit ? 'Update Page' : 'Publish Page' }}
                 </button>
             </div>
         </div>
     </form>
 </div>
+
 @push('scripts')
     <script src="{{ asset('blockeditor/bundle.js') }}"></script>
 @endpush

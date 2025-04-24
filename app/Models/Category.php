@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\HasSeoMeta;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Category extends Model
 {
+    use HasSeoMeta;
     protected $fillable = ['name', 'slug', 'featured_image', 'parent_id'];
 
     // Subcategories

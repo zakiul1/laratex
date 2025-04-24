@@ -1,10 +1,12 @@
 <?php
 namespace App\Models;
 
+use App\Traits\HasSeoMeta;
 use Illuminate\Database\Eloquent\Model;
 
 class Post extends Model
 {
+    use HasSeoMeta;
     protected $fillable = [
         'title',
         'slug',

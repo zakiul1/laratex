@@ -98,11 +98,36 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::get('/themes/{folder}/preview', [ThemeController::class, 'preview'])->name('themes.preview');
 
     // Theme Customization
-    Route::get('/themes/customize', [ThemeCustomizeController::class, 'edit'])->name('themes.customize');
-    Route::post('/themes/customize', [ThemeCustomizeController::class, 'update'])->name('themes.customize.update');
-    Route::delete('/themes/customize/reset', [ThemeCustomizeController::class, 'reset'])->name('themes.customize.reset');
-    Route::get('/themes/customize/export', [ThemeCustomizeController::class, 'export'])->name('themes.customize.export');
-    Route::post('/themes/customize/import', [ThemeCustomizeController::class, 'import'])->name('themes.customize.import'); // ✅ This is the missing one
+    // Theme customization UI
+    Route::get(
+        'themes/customize',
+        [ThemeCustomizeController::class, 'edit']
+    )
+        ->name('themes.customize');
+
+    Route::post(
+        'themes/customize',
+        [ThemeCustomizeController::class, 'update']
+    )
+        ->name('themes.customize.update');
+
+    Route::delete(
+        'themes/customize/reset',
+        [ThemeCustomizeController::class, 'reset']
+    )
+        ->name('themes.customize.reset');
+
+    Route::get(
+        'themes/customize/export',
+        [ThemeCustomizeController::class, 'export']
+    )
+        ->name('themes.customize.export');
+
+    Route::post(
+        'themes/customize/import',
+        [ThemeCustomizeController::class, 'import']
+    )
+        ->name('themes.customize.import');
 
     // Widgets Routes
 

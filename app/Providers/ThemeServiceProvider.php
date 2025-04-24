@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Models\Category;
+use App\Models\ThemeSetting;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\FileViewFinder;
 use Illuminate\Filesystem\Filesystem;
@@ -36,6 +38,17 @@ class ThemeServiceProvider extends ServiceProvider
 
     public function boot()
     {
+
+
+        // Share theme settings to all views
+        View::composer('*', function ($view) {
+            $theme = getActiveTheme();
+            $settings = ThemeSetting::firstOrCreate(
+                ['theme' => $theme],
+                ['options' => []]
+            );
+            $view->with('themeSettings', $settings);
+        });
 
         add_filter('front_header_menu', function () {
             // grab the “header” menu container

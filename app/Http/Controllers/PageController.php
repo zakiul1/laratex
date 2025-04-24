@@ -14,40 +14,36 @@ class PageController extends Controller
 {
     public function index()
     {
-        // Grab *all* pages (for client‐side table)
         $pagesAll = Post::where('type', 'page')
             ->select('id', 'slug', 'title', 'status', 'template', 'featured_image', 'created_at')
             ->latest()
             ->get();
 
-        // Options for the “Status” filter
         $statuses = [
             'published' => 'Published',
             'draft' => 'Draft',
         ];
 
-        // Pass into the view for Alpine
         return view('pages.index', compact('pagesAll', 'statuses'));
     }
 
     public function home()
     {
-        // 1) Ensure we have a settings record
         $settings = SiteSetting::firstOrCreate([]);
-
-        // 2) Use the admin’s chosen slug, or fall back to 'home'
         $slug = $settings->home_page_slug ?: 'home';
 
-        // 3) Delegate everything (page lookup, block‐builder rendering,
-        //    template resolution) to your `show()` method
         return $this->show($slug);
     }
 
     public function create()
     {
-        $templates = getThemeTemplates(); // ✅ from theme.json
+        $templates = getThemeTemplates();
         $initialImage = '';
-        return view('pages.create', compact('templates', 'initialImage'));
+
+        // pass in an empty Post so your SEO partial can do $page->seoMeta->meta
+        $page = new Post(['type' => 'page']);
+
+        return view('pages.create', compact('templates', 'initialImage', 'page'));
     }
 
     public function store(Request $request)
@@ -60,46 +56,70 @@ class PageController extends Controller
             'template' => 'nullable|string',
             'featured_image' => 'nullable|image',
             'type' => 'required|string|in:page',
+
+            // ─── SEO fields ────────────────────────────────────────────────
+            'seo.title' => 'nullable|string|max:255',
+            'seo.robots' => 'nullable|string|in:Index & Follow,NoIndex & Follow,NoIndex & NoFollow,No Archive,No Snippet',
+            'seo.description' => 'nullable|string',
+            'seo.keywords' => 'nullable|string',
         ]);
 
+        // ─── slug auto-gen if blank ────────────────────────────────────
         if (!$data['slug']) {
             $baseSlug = Str::slug($data['title']);
             $slug = $baseSlug;
-            $counter = 1;
+            $i = 1;
             while (Post::where('slug', $slug)->exists()) {
-                $slug = $baseSlug . '-' . $counter++;
+                $slug = $baseSlug . '-' . $i++;
             }
             $data['slug'] = $slug;
         }
 
+        // ─── featured image ───────────────────────────────────────────
         if ($request->hasFile('featured_image')) {
-            $data['featured_image'] = $request->file('featured_image')->store('pages', 'public');
+            $data['featured_image'] = $request
+                ->file('featured_image')
+                ->store('pages', 'public');
         }
 
+        // ─── your existing custom metas logic ────────────────────────
         $metaData = [];
         if ($request->has('meta_keys')) {
-            foreach ($request->meta_keys as $index => $key) {
+            foreach ($request->meta_keys as $idx => $key) {
                 if ($key !== null && $key !== '') {
                     $metaData[] = [
                         'key' => $key,
-                        'value' => $request->meta_values[$index] ?? ''
+                        'value' => $request->meta_values[$idx] ?? '',
                     ];
                 }
             }
         }
-
         $data['metas'] = $metaData;
         $data['author_id'] = auth()->id();
 
-        Post::create($data);
+        // ─── create the page ──────────────────────────────────────────
+        $page = Post::create($data);
 
-        return redirect()->route('pages.index')->with('success', 'Page created successfully.');
+        // ─── sync SEO into seo_meta table ────────────────────────────
+        $page->seoMeta()
+            ->updateOrCreate(
+                [],
+                ['meta' => $data['seo']]
+            );
+
+        return redirect()
+            ->route('pages.index')
+            ->with('success', 'Page created successfully.');
     }
 
     public function edit(Post $page)
     {
-        $templates = getThemeTemplates(); // ✅ from theme.json
-        $initialImage = $page->featured_image ? asset('storage/' . $page->featured_image) : '';
+        $templates = getThemeTemplates();
+        $initialImage = $page->featured_image
+            ? asset('storage/' . $page->featured_image)
+            : '';
+
+        // $page is already loaded by route‐model binding:
         return view('pages.edit', compact('page', 'templates', 'initialImage'));
     }
 
@@ -113,32 +133,43 @@ class PageController extends Controller
             'template' => 'nullable|string',
             'featured_image' => 'nullable|image',
             'type' => 'required|string|in:page',
+
+            // ─── SEO fields ────────────────────────────────────────────────
+            'seo.title' => 'nullable|string|max:255',
+            'seo.robots' => 'nullable|string|in:Index & Follow,NoIndex & Follow,NoIndex & NoFollow,No Archive,No Snippet',
+            'seo.description' => 'nullable|string',
+            'seo.keywords' => 'nullable|string',
         ]);
 
         if (!$data['slug']) {
             $baseSlug = Str::slug($data['title']);
             $slug = $baseSlug;
-            $counter = 1;
-            while (Post::where('slug', $slug)->where('id', '!=', $page->id)->exists()) {
-                $slug = $baseSlug . '-' . $counter++;
+            $i = 1;
+            while (
+                Post::where('slug', $slug)
+                    ->where('id', '!=', $page->id)
+                    ->exists()
+            ) {
+                $slug = $baseSlug . '-' . $i++;
             }
             $data['slug'] = $slug;
         }
 
         if ($request->hasFile('featured_image')) {
-            if ($page->featured_image) {
-                File::delete(public_path('storage/' . $page->featured_image));
-            }
-            $data['featured_image'] = $request->file('featured_image')->store('pages', 'public');
+            File::delete(public_path('storage/' . $page->featured_image));
+            $data['featured_image'] = $request
+                ->file('featured_image')
+                ->store('pages', 'public');
         }
 
+        // preserve your existing metas array
         $metaData = [];
         if ($request->has('meta_keys')) {
-            foreach ($request->meta_keys as $index => $key) {
+            foreach ($request->meta_keys as $idx => $key) {
                 if ($key !== null && $key !== '') {
                     $metaData[] = [
                         'key' => $key,
-                        'value' => $request->meta_values[$index] ?? ''
+                        'value' => $request->meta_values[$idx] ?? '',
                     ];
                 }
             }
@@ -147,7 +178,16 @@ class PageController extends Controller
 
         $page->update($data);
 
-        return redirect()->route('pages.index')->with('success', 'Page updated successfully.');
+        // ─── update SEO polymorphic JSON ──────────────────────────────
+        $page->seoMeta()
+            ->updateOrCreate(
+                [],
+                ['meta' => $data['seo']]
+            );
+
+        return redirect()
+            ->route('pages.index')
+            ->with('success', 'Page updated successfully.');
     }
 
     public function destroy(Post $page)
@@ -155,30 +195,26 @@ class PageController extends Controller
         if ($page->featured_image) {
             File::delete(public_path('storage/' . $page->featured_image));
         }
-
         $page->delete();
 
-        return redirect()->route('pages.index')->with('success', 'Page deleted successfully.');
+        return redirect()
+            ->route('pages.index')
+            ->with('success', 'Page deleted successfully.');
     }
-
 
     public function show(string $slug)
     {
-        // 1) Fetch the page record
         $page = Post::where('slug', $slug)
             ->where('type', 'page')
             ->where('status', 'Published')
             ->firstOrFail();
 
-        // 2) Build your block-builder or shortcode output
         $pageOutput = $this->buildPageOutput($page);
-
-        // 3) Site-wide settings and theme settings
         $site = site_settings();
         $themeSettings = theme_settings();
         $theme = getActiveTheme();
 
-        // 4) If this is the front-page slug and your theme has a special home view...
+        // front‐page override…
         if (
             $slug === ($site->home_page_slug ?? 'home')
             && view()->exists("themes.{$theme}.home")
@@ -189,10 +225,9 @@ class PageController extends Controller
             );
         }
 
-        // 5) Otherwise, check for a custom template view...
+        // custom template
         $templateView = "themes.{$theme}.templates.{$page->template}";
         if ($page->template && view()->exists($templateView)) {
-            // Contact template gets the Contact model injected
             if ($page->template === 'contact') {
                 $contact = Contact::first();
                 return view(
@@ -206,23 +241,16 @@ class PageController extends Controller
             );
         }
 
-        // 6) Fallback to your generic theme page view
-        $defaultView = "themes.{$theme}.page";
+        // default
         return view(
-            $defaultView,
+            "themes.{$theme}.page",
             compact('page', 'pageOutput', 'site', 'themeSettings')
         );
     }
 
-    /**
-     * Turn your JSON/block-builder data into HTML
-     */
     private function buildPageOutput(Post $page)
     {
-        $json = $page->content;
-        if (!is_string($json) || trim($json) === '') {
-            $json = '[]';
-        }
+        $json = $page->content ?: '[]';
         return ElementFactory::json2html($json);
     }
 }

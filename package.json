@@ -22,6 +22,10 @@
         "@alpinejs/collapse": "^3.14.9",
         "@alpinejs/focus": "^3.14.9",
         "@aponahmed/notify": "^1.0.3",
+        "@fontsource/open-sans": "^5.2.5",
+        "@fontsource/oswald": "^5.2.5",
+        "@fontsource/poppins": "^5.2.5",
+        "@fontsource/roboto": "^5.2.5",
         "sortablejs": "^1.15.6"
     }
 }

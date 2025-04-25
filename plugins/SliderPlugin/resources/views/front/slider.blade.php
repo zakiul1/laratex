@@ -29,28 +29,26 @@
 
                     init() {
                         if (this.autoplay && this.slides.length > 1) {
-                            this.start()
+                            this.start();
                         }
                     },
                     start() {
-                        this.pause()
-                        this.timer = setInterval(() => this.next(), this.interval)
+                        this.pause();
+                        this.timer = setInterval(() => this.next(), this.interval);
                     },
                     pause() {
-                        clearInterval(this.timer)
+                        clearInterval(this.timer);
                     },
                     next() {
-                        this.current = (this.current + 1) % this.slides.length
+                        this.current = (this.current + 1) % this.slides.length;
                     },
                     prev() {
-                        this.current = this.current > 0 ?
-                            this.current - 1 :
-                            this.slides.length - 1
+                        this.current = this.current > 0 ? this.current - 1 : this.slides.length - 1;
                     },
                     goTo(i) {
-                        this.current = i
+                        this.current = i;
                     }
-                }
+                };
             }
         </script>
     @endonce
@@ -86,30 +84,33 @@
             interval: 3000
         })'
             x-init="init()" @mouseenter="pause()" @mouseleave="start()"
-            class="relative w-full h-64 sm:h-80 md:h-screen overflow-hidden">
+            class="relative w-full h-48 sm:h-64 md:h-80 lg:h-screen overflow-hidden">
+
             {{-- Slides --}}
-            <template x-for="(s,i) in slides" :key="i">
+            <template x-for="(s, i) in slides" :key="i">
                 <div x-show="current === i" x-transition.opacity.duration.700ms
                     class="absolute inset-0 flex items-center justify-center bg-black">
                     <div
-                        :class="layout === 'with-content' ?
-                            'flex flex-col md:flex-row w-full h-full' :
+                        :class="layout === 'with-content'
+                            ?
+                            'flex flex-col sm:flex-row w-full h-full' :
                             'w-full h-full flex items-center justify-center'">
                         {{-- Image --}}
                         <img :src="s.imgSrc" :alt="s.imgAlt"
-                            :class="layout === 'with-content' ?
-                                'md:w-1/2 h-full object-cover' :
+                            :class="layout === 'with-content'
+                                ?
+                                'sm:w-1/2 h-full object-cover' :
                                 'w-full h-full object-cover'" />
 
                         {{-- Content --}}
                         <div x-show="layout==='with-content'"
-                            class="md:w-1/2 bg-black/50 p-4 sm:p-6 md:p-8 flex flex-col justify-center text-white">
-                            <h3 class="text-lg sm:text-xl md:text-2xl font-bold" x-text="s.title"></h3>
-                            <p class="mt-2 text-sm sm:text-base" x-text="s.description"></p>
+                            class="sm:w-1/2 bg-black/50 p-4 sm:p-6 md:p-8 flex flex-col justify-center text-white">
+                            <h3 class="text-sm sm:text-base md:text-lg lg:text-xl font-bold" x-text="s.title"></h3>
+                            <p class="mt-2 text-xs sm:text-sm md:text-base" x-text="s.description"></p>
                             <div class="mt-4 space-x-2">
-                                <template x-for="(btn,bi) in s.buttons" :key="bi">
+                                <template x-for="(btn, bi) in s.buttons" :key="bi">
                                     <a :href="btn.url"
-                                        class="px-3 py-1 sm:px-4 sm:py-2 bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm md:text-base rounded transition"
+                                        class="px-2 py-1 sm:px-3 sm:py-2 text-xs sm:text-sm md:text-base rounded transition bg-blue-600 hover:bg-blue-700"
                                         x-text="btn.text"></a>
                                 </template>
                             </div>
@@ -134,7 +135,7 @@
             <div x-show="showIndicators"
                 class="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 flex space-x-1 sm:space-x-2">
                 <template x-for="(_, idx) in slides" :key="idx">
-                    <button @click="goTo(idx)" class="w-4 sm:w-6 h-1 rounded-full transition"
+                    <button @click="goTo(idx)" class="w-4 sm:w-6 h-1 sm:h-1 rounded-full transition"
                         :class="current === idx ? 'bg-white' : 'bg-white/50'"></button>
                 </template>
             </div>

@@ -78,6 +78,12 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     // ✅ NEW: Add Page to Menu Route
     Route::post('/menus/{menu}/add-page', [MenuController::class, 'addPageToMenu'])->name('menus.addPage');
 
+    // ← ADD THESE TWO:
+    Route::post('menus/{menu}/add-category', [MenuController::class, 'addCategoryToMenu'])
+        ->name('menus.add.category');
+    Route::post('menus/{menu}/add-post', [MenuController::class, 'addPostToMenu'])
+        ->name('menus.add.post');
+
     //site settings
 
     Route::get('/site-settings', [SiteSettingController::class, 'edit'])->name('site-settings.edit');

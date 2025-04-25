@@ -1,3 +1,11 @@
+@import "@fontsource/poppins/400.css";
+@import "@fontsource/poppins/700.css";
+@import "@fontsource/open-sans/400.css";
+@import "@fontsource/open-sans/700.css";
+@import "@fontsource/oswald/400.css";
+@import "@fontsource/oswald/700.css";
+@import "@fontsource/roboto/400.css";
+@import "@fontsource/roboto/700.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,3 +13,4 @@
 .abc section {
 	width: 100%;
 }
+

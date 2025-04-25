@@ -14,7 +14,7 @@
             @endif
 
             <form x-ref="form" @submit.prevent="saveSettings" method="POST" action="{{ route('themes.customize.update') }}"
-                enctype="multipart/form-data" class="space-y-6">
+                enctype="multipart/form-data" class="space-y-4">
                 @csrf
 
                 {{-- Site Identity --}}
@@ -157,7 +157,7 @@
                         contactPhone: this.contactPhone,
                         typography: flatTypography
                     }
-                    console.log('[Customizer] broadcasting:', payload)
+                    //console.log('[Customizer] broadcasting:', payload)
                     this.$refs.previewFrame
                         .contentWindow
                         .postMessage(payload, window.location.origin)

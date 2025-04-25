@@ -38,7 +38,6 @@ class ThemeCustomizeController extends Controller
      */
     public function update(Request $request)
     {
-
         $theme = getActiveTheme();
         $settings = ThemeSetting::where('theme', $theme)->firstOrFail();
 
@@ -58,8 +57,9 @@ class ThemeCustomizeController extends Controller
             'tagline_color' => 'nullable|string|size:7',
             'show_tagline' => 'sometimes|boolean',
             'contact_phone' => 'nullable|string|max:50',
+            'container_width' => 'nullable|numeric|min:0',
 
-            // Typography subgroup (only examples shown; extend as needed)
+            // Typography subgroup
             'typography.headings.h1' => 'nullable|numeric|min:0',
             'typography.headings.h2' => 'nullable|numeric|min:0',
             'typography.headings.h3' => 'nullable|numeric|min:0',
@@ -81,22 +81,23 @@ class ThemeCustomizeController extends Controller
         }
 
         // 3) Update fixed columns
-        $settings->fill(Arr::only($validated, [
-            'logo',
-            'primary_color',
-            'font_family',
-            'footer_text',
-            'custom_css',
-        ]));
+        $settings->fill(
+            Arr::only($validated, [
+                'logo',
+                'primary_color',
+                'font_family',
+                'footer_text',
+                'custom_css',
+            ])
+        );
 
         // 4) Merge dynamic fields into options JSON
         $opts = $settings->options ?? [];
 
         // a) Site Identity fields
-        foreach (['site_title', 'primary_color', 'site_title_color', 'tagline', 'tagline_color', 'contact_phone'] as $key) {
+        foreach (['site_title', 'primary_color', 'site_title_color', 'tagline', 'tagline_color', 'contact_phone', 'container_width',] as $key) {
             $opts[$key] = $validated[$key] ?? $opts[$key] ?? null;
         }
-        //dd($opts);
         // checkbox
         $opts['show_tagline'] = $request->boolean('show_tagline');
 
@@ -108,8 +109,11 @@ class ThemeCustomizeController extends Controller
             );
         }
 
-        $settings->options = $opts;
+        // c) Persist footer_text & custom_css into the JSON as well
+        $opts['footer_text'] = $validated['footer_text'] ?? '';
+        $opts['custom_css'] = $validated['custom_css'] ?? '';
 
+        $settings->options = $opts;
         $settings->save();
 
         // 5) Return JSON on AJAX, or redirect back normally
@@ -156,7 +160,6 @@ class ThemeCustomizeController extends Controller
     {
         $theme = getActiveTheme();
         $settings = ThemeSetting::where('theme', $theme)->firstOrFail();
-
         $filename = "theme-settings-{$theme}.json";
 
         return new StreamedResponse(function () use ($settings) {
@@ -194,7 +197,7 @@ class ThemeCustomizeController extends Controller
             'custom_css' => $data['custom_css'] ?? null,
         ]));
 
-        // merge options subtree
+        // merge options subtree (including container_width, site_title, etc.)
         $settings->options = array_merge(
             $settings->options ?? [],
             $data['options'] ?? []

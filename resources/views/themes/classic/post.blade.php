@@ -3,7 +3,7 @@
 @extends('themes.classic.layout')
 
 @section('content')
-    <article class="prose lg:prose-xl mx-auto">
+    <article class=" prose lg:prose-xl mx-auto">
         <h1>{{ $post->title }}</h1>
         <p class="text-sm text-gray-500">Published on {{ $post->created_at->format('M j, Y') }}</p>
 

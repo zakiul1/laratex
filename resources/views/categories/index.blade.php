@@ -9,10 +9,17 @@
 
     <div class="w-full mx-auto py-6" x-data="categoryTable(window.categories)">
 
-        {{-- Search Box --}}
-        <div class="mb-4">
-            <input x-model="search" type="text" placeholder="Search name or slug…" class="w-full border rounded p-2">
+        {{-- Search Box & Add Button --}}
+        <div class="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+            <input x-model="search" type="text" placeholder="Search name or slug…"
+                class="w-full sm:w-2/3 border rounded p-2">
+
+            <a href="{{ route('categories.create') }}"
+                class="inline-block w-full sm:w-auto text-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded transition">
+                + Add Category
+            </a>
         </div>
+
 
         {{-- Table --}}
         <div class="overflow-x-auto">

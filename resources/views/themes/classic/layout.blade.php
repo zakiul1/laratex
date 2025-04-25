@@ -23,6 +23,8 @@
 
     @php
         $opts = $themeSettings->options ?? [];
+        // container_width stored in px, falls back to 1200
+        $containerWidth = data_get($opts, 'container_width', 1200);
     @endphp
 
     {{-- ─── INITIAL CUSTOM CSS from DB ───────────────────────────── --}}
@@ -32,7 +34,7 @@
         </style>
     @endif
 
-    {{-- ─── INITIAL CSS VARS & TYPOGRAPHY ────────────────────────── --}}
+    {{-- ─── INITIAL CSS VARS & TYPOGRAPHY & CONTAINER ─────────────── --}}
     <style data-live-preview id="initial-vars">
         :root {
             --primary-color: {{ $themeSettings->primary_color }};
@@ -48,15 +50,23 @@
             --para-line-height: {{ data_get($opts, 'typography.paragraph.line_height', 1.6) }};
             --list-marker: {{ data_get($opts, 'typography.list.marker', 'disc') }};
             --anchor-color: {{ data_get($opts, 'typography.anchor.color', $themeSettings->primary_color) }};
+            --container-width: {{ $containerWidth }}px;
+        }
+
+        /* Utility container */
+        .container {
+            max-width: var(--container-width, 1200px);
+            margin-left: auto;
+            margin-right: auto;
         }
 
         body {
             font-family: var(--body-font);
         }
 
-        a {
+        /*  a {
             color: var(--link-color);
-        }
+        } */
 
         h1 {
             font-size: var(--h1-size);
@@ -91,34 +101,28 @@
         }
 
         ul,
-        ol {
+        /*     ol {
             list-style-type: var(--list-marker);
         }
 
         a {
             color: var(--anchor-color);
-        }
+        } */
     </style>
 
-    {{-- ─── LIVE-PREVIEW LISTENER (WordPress-style Customizer) ─────── --}}
+    {{-- ─── LIVE-PREVIEW LISTENER ─────────────────────────────────── --}}
     <script>
         window.addEventListener('message', e => {
-            console.log('[Preview] message event:', e);
-
-            // Uncomment the next line to re-enable strict origin checking:
-            // if (e.origin !== window.location.origin) return;
-
             const msg = e.data;
             if (!msg || msg.type !== 'themePreview') return;
 
-            console.log('[Preview] themePreview payload:', msg);
-
-            // 1) Update CSS vars
+            // CSS vars
             document.documentElement.style.setProperty('--primary-color', msg.primaryColor);
             document.documentElement.style.setProperty('--link-color', msg.linkColor);
             document.documentElement.style.setProperty('--body-font', msg.fontFamily);
+            document.documentElement.style.setProperty('--container-width', msg.containerWidth + 'px');
 
-            // 2) Update typography vars
+            // Typography
             if (msg.typography) {
                 const t = msg.typography;
                 document.documentElement.style.setProperty('--h1-size', t.headings.h1 + 'px');
@@ -133,7 +137,7 @@
                 document.documentElement.style.setProperty('--anchor-color', t.anchor.color);
             }
 
-            // 3) Inject/update custom CSS
+            // Custom CSS
             let custom = document.getElementById('live-custom-css');
             if (!custom) {
                 custom = document.createElement('style');
@@ -142,26 +146,24 @@
             }
             custom.textContent = msg.customCss;
 
-            // 4) Update header elements
+            // Header updates
             const titleEl = document.querySelector('.site-title');
             if (titleEl) {
                 titleEl.style.color = msg.siteTitleColor;
                 titleEl.textContent = msg.siteTitle;
             }
-
             const tagEl = document.querySelector('.site-tagline');
             if (tagEl) {
                 tagEl.style.display = msg.showTagline ? '' : 'none';
                 tagEl.style.color = msg.taglineColor;
                 tagEl.textContent = msg.tagline;
             }
-
             const phoneEl = document.querySelector('.contact-phone');
             if (phoneEl) {
                 phoneEl.textContent = msg.contactPhone;
             }
 
-            // 5) Update footer
+            // Footer text
             const foot = document.querySelector('footer');
             if (foot) {
                 foot.textContent = msg.footerText;
@@ -170,9 +172,9 @@
     </script>
 </head>
 
-<body class="bg-gray-100 text-gray-900 dark:bg-neutral-950 dark:text-white">
-    <div class="min-h-screen flex flex-col">
+<body class=" text-gray-900 dark:bg-neutral-950 dark:text-white">
 
+    <div class=" min-h-screen flex flex-col">
         {{-- Site Header --}}
         @include('partials.header')
 

@@ -9,13 +9,14 @@
 @endsection
 
 @section('content')
-    <div class=" container mx-auto px-4 py-8">
-        <h1 class="text-3xl mx-auto text-center font-bold mb-4">{{ $page->title }}</h1>
+    <div class="container mx-auto px-4 py-8">
+        <h1
+            class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight sm:tracking-wide font-oswald mx-auto text-center mb-4">
+            {{ $page->title }}
+        </h1>
 
-        <div class="prose max-w-none text-justify">
-
+        <div class="prose prose-sm sm:prose lg:prose-lg max-w-none text-justify">
             {!! $pageOutput !!}
-
         </div>
     </div>
 @endsection

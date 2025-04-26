@@ -74,11 +74,13 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     @foreach ($categories as $category)
                         <a href="{{ route('categories.show', $category->slug) }}"
-                            class="block overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition mx-1 sm:mx-0">
+                            class="block overflow-hidden rounded-lg relative shadow-lg hover:shadow-xl transition mx-1 sm:mx-0">
                             <img src="{{ asset('storage/' . $category->featured_image) }}" alt="{{ $category->name }}"
-                                class="w-full h-32 sm:h-48 object-cover" />
-                            <div class="p-2 sm:p-4 text-center">
-                                <h3 class="font-semibold text-sm sm:text-base md:text-lg">{{ $category->name }}</h3>
+                                class="w-full h-32 sm:h-48 md:h-auto lg:h-auto object-cover" />
+                            <div class="absolute bottom-0 left-0 w-full bg-black bg-opacity-50 py-2">
+                                <h3
+                                    class="font-semibold text-white text-center text-sm sm:text-base md:text-[42px] py-3 uppercase font-[oswald]">
+                                    {{ $category->name }}</h3>
                             </div>
                         </a>
                     @endforeach

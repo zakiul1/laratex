@@ -153,11 +153,6 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
         ->name('admin.plugins.export');
 
 
-    // Media Library
-
-
-
-
     //Plugin Import Routes
     Route::get('/plugins/import', [PluginImportController::class, 'showForm'])->name('admin.plugins.import.form');
     Route::post('/plugins/import', [PluginImportController::class, 'upload'])->name('admin.plugins.import.upload');
@@ -170,43 +165,42 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
         ->middleware('auth')
         ->name('admin.plugins.update');
 
+
+
+    //Products Update Routes
+    Route::resource('products', ProductController::class)
+        ->names('products');
+
+
+
+    //Media
+
+    Route::get('/media', [MediaController::class, 'index'])->name('media.index');
+    Route::post('/media', [MediaController::class, 'store'])->name('media.store');
+    Route::delete('/media/{media}', [MediaController::class, 'destroy'])->name('media.destroy');
+    Route::get('/media/json', [MediaController::class, 'json'])->name('media.json');
+    Route::post('/media', [MediaController::class, 'store'])->name('media.store');
+    Route::post('/media/bulk-delete', [MediaController::class, 'bulkDelete'])
+        ->name('media.bulkDelete');
+    // List categories (already in your index controller)
+    // AJAX category endpoints
+    Route::post('media/categories', [MediaController::class, 'storeCategory'])
+        ->name('media.categories.store');
+    Route::delete('media/categories/{id}', [MediaController::class, 'destroyCategory'])
+        ->name('media.categories.destroy');
+
+
+
+    //Category
+    Route::resource('categories', CategoryController::class)
+        ->names('categories');  // → now becomes admin.categories.show, etc.
 });
 
 // in routes/web.php, inside the admin group:
 
-Route::middleware(['auth'])
-    ->prefix('admin')
-    ->group(function () {
-        // … other resources …
-    
-        // Products CRUD (admin.products.index/show/create/…)
-        Route::resource('products', ProductController::class)
-            ->names('products');
-
-        // … the rest …
-    });
-Route::middleware(['auth', 'web'])->group(function () {
-    Route::get('/media', [MediaController::class, 'index'])->name('media.index');
-    Route::post('/media', [MediaController::class, 'store'])->name('media.store');
-    Route::delete('/media/{media}', [MediaController::class, 'destroy'])->name('media.destroy');
-});
-
-Route::prefix('admin')
-    // ← add this name prefix
-    ->middleware('auth')
-    ->group(function () {
-        Route::resource('categories', CategoryController::class)
-            ->names('categories');  // → now becomes admin.categories.show, etc.
-        // …
-    });
 
 
 require __DIR__ . '/auth.php';
-
-
-Route::get('/posts/{slug}', [PostController::class, 'show'])
-    ->name('posts.show');
-
 
 
 
@@ -218,3 +212,6 @@ Route::get('/product/{slug}', [ProductController::class, 'show'])
 Route::get('/pages/{slug}', [PageController::class, 'show'])
     ->where('slug', '[A-Za-z0-9\-]+')
     ->name('page.show');
+
+Route::get('/posts/{slug}', [PostController::class, 'show'])
+    ->name('posts.show');

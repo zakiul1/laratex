@@ -21,7 +21,7 @@
 @endphp
 
 <header x-data="{ mobileOpen: false, activeIndex: null }" class="bg-white shadow">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+    <div class="container mx-auto  sm:px-6  py-4 flex items-center justify-between">
         {{-- Logo / Site Identity --}}
         <a href="{{ route('home') }}" class="flex items-center space-x-2 sm:space-x-3">
             @if ($logo)

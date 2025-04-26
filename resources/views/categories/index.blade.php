@@ -2,24 +2,36 @@
 @extends('layouts.dashboard')
 
 @section('content')
-    {{-- 1) Dump the current page’s categories into a JS global --}}
+    @php
+        // Build a simple array of only the fields your JS needs
+        $jsCategories = collect($categories)->map(function ($cat) {
+            return [
+                'id' => $cat->id,
+                'name' => $cat->term->name,
+                'slug' => $cat->term->slug,
+                'featured_image' => $cat->featured_image,
+                'status' => $cat->status,
+            ];
+        });
+    @endphp
+
+    {{-- Dump into JS global in one @json call --}}
     <script>
-        window.categories = @json($categories);
+        window.categories = @json($jsCategories);
     </script>
 
     <div class="w-full mx-auto py-6" x-data="categoryTable(window.categories)">
 
-        {{-- Search Box & Add Button --}}
+        {{-- Search & Add --}}
         <div class="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
             <input x-model="search" type="text" placeholder="Search name or slug…"
                 class="w-full sm:w-2/3 border rounded p-2">
 
             <a href="{{ route('categories.create') }}"
-                class="inline-block w-full sm:w-auto text-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded transition">
+                class="inline-block w-full sm:w-auto text-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">
                 + Add Category
             </a>
         </div>
-
 
         {{-- Table --}}
         <div class="overflow-x-auto">
@@ -28,14 +40,14 @@
                     <tr>
                         <th class="px-4 py-2">#</th>
                         <th class="px-4 py-2 cursor-pointer" @click="sort('name')">
-                            Name <span x-text="sortKey==='name' ? (sortAsc ? '↑' : '↓') : ''"></span>
+                            Name <span x-text="sortKey==='name'? (sortAsc?'↑':'↓'):''"></span>
                         </th>
                         <th class="px-4 py-2 cursor-pointer" @click="sort('slug')">
-                            Slug <span x-text="sortKey==='slug' ? (sortAsc ? '↑' : '↓') : ''"></span>
+                            Slug <span x-text="sortKey==='slug'? (sortAsc?'↑':'↓'):''"></span>
                         </th>
                         <th class="px-4 py-2">Image</th>
                         <th class="px-4 py-2 cursor-pointer" @click="sort('status')">
-                            Status <span x-text="sortKey==='status' ? (sortAsc ? '↑' : '↓') : ''"></span>
+                            Status <span x-text="sortKey==='status'? (sortAsc?'↑':'↓'):''"></span>
                         </th>
                         <th class="px-4 py-2">Actions</th>
                     </tr>
@@ -86,7 +98,7 @@
         </div>
     </div>
 
-    {{-- Alpine component --}}
+    {{-- Alpine component unchanged --}}
     <script>
         function categoryTable(data) {
             return {
@@ -94,7 +106,6 @@
                 sortKey: 'name',
                 sortAsc: true,
                 data: data,
-
                 get filtered() {
                     let f = this.data.filter(cat =>
                         cat.name.toLowerCase().includes(this.search.toLowerCase()) ||
@@ -108,21 +119,16 @@
                         return 0;
                     });
                 },
-
                 sort(key) {
-                    if (this.sortKey === key) {
-                        this.sortAsc = !this.sortAsc;
-                    } else {
+                    if (this.sortKey === key) this.sortAsc = !this.sortAsc;
+                    else {
                         this.sortKey = key;
                         this.sortAsc = true;
                     }
                 },
-
                 remove(id) {
-                    if (!confirm('Are you sure you want to delete this category?')) return;
-                    let token = document
-                        .querySelector('meta[name="csrf-token"]')
-                        .getAttribute('content');
+                    if (!confirm('Are you sure?')) return;
+                    let token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                     let form = document.createElement('form');
                     form.method = 'POST';
                     form.action = `/admin/categories/${id}`;

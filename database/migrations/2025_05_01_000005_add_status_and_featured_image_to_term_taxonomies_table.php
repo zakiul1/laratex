@@ -5,17 +5,16 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    public function up(): void
+    public function up()
     {
         Schema::table('term_taxonomies', function (Blueprint $table) {
-            // add a status flag (1 = active, 0 = inactive)
-            $table->boolean('status')->default(1)->after('taxonomy');
-            // add featured_image path
+            // add status & featured_image
+            $table->tinyInteger('status')->default(1)->after('parent');
             $table->string('featured_image')->nullable()->after('status');
         });
     }
 
-    public function down(): void
+    public function down()
     {
         Schema::table('term_taxonomies', function (Blueprint $table) {
             $table->dropColumn(['status', 'featured_image']);

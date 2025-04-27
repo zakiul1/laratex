@@ -173,21 +173,25 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
 
 
 
-    //Media
+      // Media library
+      Route::get    ('media',               [MediaController::class,'index'])
+      ->name('media.index');
+        Route::post   ('media',               [MediaController::class,'store'])
+            ->name('admin.media.store');
 
-    Route::get('/media', [MediaController::class, 'index'])->name('media.index');
-    Route::post('/media', [MediaController::class, 'store'])->name('media.store');
-    Route::delete('/media/{media}', [MediaController::class, 'destroy'])->name('media.destroy');
-    Route::get('/media/json', [MediaController::class, 'json'])->name('media.json');
-    Route::post('/media', [MediaController::class, 'store'])->name('media.store');
-    Route::post('/media/bulk-delete', [MediaController::class, 'bulkDelete'])
-        ->name('media.bulkDelete');
-    // List categories (already in your index controller)
-    // AJAX category endpoints
-    Route::post('media/categories', [MediaController::class, 'storeCategory'])
-        ->name('media.categories.store');
-    Route::delete('media/categories/{id}', [MediaController::class, 'destroyCategory'])
-        ->name('media.categories.destroy');
+               // Bulk‐delete media items
+       Route::delete('media/bulk', [MediaController::class, 'bulkDelete'])
+       ->name('admin.media.bulkDelete');
+        Route::delete ('media/{media}',       [MediaController::class,'destroy'])
+            ->name('admin.media.destroy');
+
+        // AJAX category create/delete
+        Route::post   ('media/categories',    [MediaController::class,'storeCategory'])
+            ->name('admin.media.categories.store');
+        Route::delete ('media/categories/{id}', [MediaController::class,'destroyCategory'])
+            ->name('admin.media.categories.destroy');
+
+    
 
 
 

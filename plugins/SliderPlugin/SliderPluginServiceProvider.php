@@ -17,36 +17,42 @@ class SliderPluginServiceProvider extends ServiceProvider
         // 1) Where our plugin’s migrations live
         $migrationPath = __DIR__ . '/database/migrations';
 
-        // 2) Tell Laravel about them
+        // 2) Tell Laravel to include them when you run "php artisan migrate"
         $this->loadMigrationsFrom($migrationPath);
 
-        // 3) If the 'sliders' table doesn't exist yet, run those migrations now
-        if (!Schema::hasTable('sliders')) {
-            Artisan::call('migrate', [
-                '--path' => 'Plugins/SliderPlugin/database/migrations',
-                '--force' => true,
-            ]);
-        }
+        // 3) After the app is fully booted, if the "sliders" table doesn't exist,
+        //    run only our plugin migrations right now.
+        $this->app->booted(function () use ($migrationPath) {
+            if (! Schema::hasTable('sliders')) {
+                Artisan::call('migrate', [
+                    // realpath → absolute path resolution
+                    '--path'     => realpath($migrationPath),
+                    '--realpath' => true,
+                    '--force'    => true,
+                ]);
+            }
+        });
 
-        // 4) Load our views
+        // 4) Load our admin & front‐end views
         $this->loadViewsFrom(__DIR__ . '/resources/views/admin', 'slider-plugin');
         $this->loadViewsFrom(__DIR__ . '/resources/views/front', 'slider-plugin-front');
 
         // 5) Load our routes
         $this->loadRoutesFrom(__DIR__ . '/routes/web.php');
 
+        // 6) Hook into the filter system, if available
         if (function_exists('add_filter')) {
-            // a) Add to admin sidebar
+            // a) Admin sidebar injector
             add_filter('admin_sidebar_menu', function (array $items) {
                 $items[] = [
                     'label' => 'Slider Plugin',
                     'route' => 'slider-plugin.sliders.index',
-                    'icon' => 'lucide-images',
+                    'icon'  => 'lucide-images',
                 ];
                 return $items;
             });
 
-            // b) Inject the latest active slider per location
+            // b) Front‐end slider injections by location
             foreach (['header', 'footer', 'sidebar'] as $location) {
                 add_filter("slider.{$location}", function (string $html) use ($location) {
                     $slider = Slider::where('is_active', true)
@@ -55,7 +61,7 @@ class SliderPluginServiceProvider extends ServiceProvider
                         ->with('items')
                         ->first();
 
-                    if (!$slider) {
+                    if (! $slider) {
                         return $html;
                     }
 

@@ -1,252 +1,352 @@
-@php
-    use Illuminate\Support\Facades\Storage;
-
-    // Precompute your media library JSON
-    $mediaData = $items
-        ->map(function ($m) {
-            return [
-                'id' => $m->id,
-                'url' => Storage::url($m->path),
-                'filename' => $m->filename,
-            ];
-        })
-        ->toJson();
-@endphp
-
+{{-- resources/views/media/index.blade.php --}}
 @extends('layouts.dashboard')
 
 @section('content')
-    <div x-data="mediaLibrary()" class="p-6 bg-gray-50 rounded-lg shadow-lg">
-        <h2 class="text-2xl font-bold mb-6 text-gray-800">Media Library</h2>
+<div
+  x-data='mediaLibrary(@json($mediaData), @json($categories))'
+  class="p-6 bg-gray-50 rounded-lg shadow-lg"
+>
+  <h2 class="text-2xl font-bold mb-6">Media Library</h2>
 
-        {{-- Controls --}}
-        <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
-            <div class="flex space-x-2">
-                <input x-ref="input" type="file" multiple @change="addFiles" class="hidden" />
-                <button @click="$refs.input.click()"
-                    class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded shadow">
-                    <!-- upload icon -->
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12v8M8 16h8" />
-                    </svg>
-                    Select Files
-                </button>
-                <button @click="uploadAll" :disabled="files.length === 0"
-                    class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow disabled:opacity-50">
-                    <!-- cloud-upload icon -->
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h4l3-8 4 16 3-8h4" />
-                    </svg>
-                    <span x-text="'Upload ' + files.length"></span>
-                </button>
-            </div>
+  {{-- CATEGORY FILTER --}}
+  <div class="flex flex-wrap gap-2 mb-4">
+    <button
+      @click="filterCategory = null"
+      :class="filterCategory===null
+               ? 'bg-purple-600 text-white'
+               : 'bg-white text-gray-700'"
+      class="px-3 py-1 rounded-lg shadow-sm"
+    >All</button>
 
-            <div class="flex items-center space-x-4">
-                <input type="text" x-model="searchTerm" placeholder="Search media…"
-                    class="border border-gray-300 rounded px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500" />
+    <template x-for="(cat, idx) in categories" :key="idx">
+      <button
+        @click="filterCategory = cat.id"
+        :class="filterCategory===cat.id
+                 ? 'bg-purple-600 text-white'
+                 : 'bg-white text-gray-700'"
+        class="px-3 py-1 rounded-lg shadow-sm"
+        x-text="cat.name"
+      ></button>
+    </template>
+  </div>
 
-                <button @click="viewMode='grid'"
-                    :class="{ 'text-indigo-600': viewMode === 'grid', 'text-gray-400': viewMode !== 'grid' }"
-                    class="hover:text-indigo-600">
-                    <!-- grid icon -->
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 4h6v6H4V4zm0 10h6v6H4v-6zm10-10h6v6h-6V4zm0 10h6v6h-6v-6z" />
-                    </svg>
-                </button>
-
-                <button @click="viewMode='list'"
-                    :class="{ 'text-indigo-600': viewMode === 'list', 'text-gray-400': viewMode !== 'list' }"
-                    class="hover:text-indigo-600">
-                    <!-- list icon -->
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-
-        {{-- Selected File Previews --}}
-        <div class="flex space-x-4 overflow-x-auto mb-8 pb-2">
-            <template x-for="(f, idx) in files" :key="idx">
-                <div
-                    class="relative w-40 h-32 flex-shrink-0 bg-white rounded-lg shadow hover:shadow-lg transition overflow-hidden">
-                    <img :src="f.preview" class="w-full h-full object-cover" />
-
-                    <!-- close button -->
-                    <button @click="remove(idx)"
-                        class="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1.5 shadow-md focus:outline-none">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-
-                    <!-- progress bar -->
-                    <div class="absolute bottom-0 left-0 w-full">
-                        <div class="h-1 bg-gray-200">
-                            <div class="h-full bg-indigo-500" :style="`width:${f.progress}%`"></div>
-                        </div>
-                    </div>
-                </div>
-            </template>
-        </div>
-
-        {{-- Media Grid or List --}}
-        <div>
-            <template x-if="viewMode==='grid'">
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-                    <template x-for="item in filtered" :key="item.id">
-                        <div class="relative group bg-white rounded-lg shadow overflow-hidden">
-                            <img :src="item.url" class="w-40 h-40 object-cover group-hover:opacity-75 transition" />
-
-                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-25 transition"></div>
-
-                            <button @click="showModal(item)"
-                                class="absolute top-2 left-2 bg-white bg-opacity-75 p-1 rounded opacity-0 group-hover:opacity-100 transition">
-                                <!-- eye icon -->
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-800" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.269 2.943 9.542 7-1.273 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                </svg>
-                            </button>
-
-                            <button @click="deleteMedia(item.id)"
-                                class="absolute top-2 right-2 bg-red-500 p-1 rounded opacity-0 group-hover:opacity-100 transition">
-                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-
-                            <div class="p-2 text-xs truncate" x-text="item.filename"></div>
-                        </div>
-                    </template>
-                </div>
-            </template>
-
-            <template x-if="viewMode==='list'">
-                <div class="space-y-2">
-                    <template x-for="item in filtered" :key="item.id">
-                        <div class="flex items-center justify-between bg-white rounded-lg shadow p-3 group">
-                            <div class="flex items-center gap-4">
-                                <img :src="item.url" class="w-12 h-12 object-cover rounded" />
-                                <span x-text="item.filename" class="text-sm font-medium"></span>
-                            </div>
-                            <button @click="deleteMedia(item.id)" class="text-red-500 hover:text-red-700 transition">
-                                Delete
-                            </button>
-                        </div>
-                    </template>
-                </div>
-            </template>
-        </div>
-
-        {{-- Image Preview Modal --}}
-        <div x-show="modalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg overflow-hidden shadow-xl max-w-lg w-full">
-                <div class="flex justify-end p-2">
-                    <button @click="modalOpen=false"
-                        class="text-gray-600 hover:text-gray-900 text-xl leading-none">&times;</button>
-                </div>
-                <img :src="modalImage.url" class="w-full h-auto" />
-                <div class="p-4 text-center font-medium" x-text="modalImage.filename"></div>
-            </div>
-        </div>
+  {{-- VIEW MODE + ACTIONS --}}
+  <div class="flex items-center justify-between mb-6">
+    <div class="flex space-x-4">
+      <button
+        @click="viewMode='grid'"
+        :class="viewMode==='grid' ? 'text-purple-600 font-semibold' : 'text-gray-600'"
+      >Grid</button>
+      <button
+        @click="viewMode='list'"
+        :class="viewMode==='list' ? 'text-purple-600 font-semibold' : 'text-gray-600'"
+      >List</button>
+      <button
+        @click="viewMode='thumb'"
+        :class="viewMode==='thumb' ? 'text-purple-600 font-semibold' : 'text-gray-600'"
+      >Thumb</button>
     </div>
+
+    <div class="flex gap-2">
+      <button
+        @click="openUpload()"
+        class="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg"
+      >+ Upload</button>
+
+      <button
+        @click="bulkDelete()"
+        :disabled="selected.length===0"
+        class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+      >🗑 Delete Selected (<span x-text="selected.length"></span>)</button>
+    </div>
+  </div>
+
+  {{-- GALLERY --}}
+  <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <template x-for="item in filtered" :key="item.id">
+      <div class="relative" x-show="viewMode==='grid' || viewMode==='thumb'">
+        <!-- Bulk checkbox -->
+        <input type="checkbox" x-model="selected" :value="item.id"
+               class="absolute top-2 left-2 z-10 rounded border-gray-300 bg-white"/>
+
+        <img :src="item.url"
+             :class="viewMode==='thumb' 
+                      ? 'w-20 h-20 object-cover rounded-lg mx-auto'
+                      : 'w-full h-40 object-cover rounded-lg shadow'"/>
+
+        <div
+          x-show="viewMode==='grid'"
+          class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black bg-opacity-25 transition"
+        >
+          <button @click="showModal(item)"
+                  class="bg-white p-2 rounded-full shadow mr-2">👁</button>
+          <button @click="deleteMedia(item.id)"
+                  class="bg-red-500 p-2 rounded-full shadow text-white">✕</button>
+        </div>
+
+        <div
+          x-show="viewMode==='grid'"
+          class="mt-2 text-xs truncate text-center"
+          x-text="item.filename"
+        ></div>
+      </div>
+
+      {{-- LIST ROW --}}
+      <div
+        x-show="viewMode==='list'"
+        class="flex items-center justify-between bg-white rounded-lg shadow p-4"
+      >
+        <div class="flex items-center gap-4">
+          <input type="checkbox" x-model="selected" :value="item.id"
+                 class="rounded border-gray-300"/>
+          <img :src="item.url" class="w-12 h-12 object-cover rounded"/>
+          <span x-text="item.filename" class="font-medium"></span>
+        </div>
+        <button @click="deleteMedia(item.id)"
+                class="text-red-500 hover:text-red-700">Delete</button>
+      </div>
+    </template>
+  </div>
+
+  {{-- PREVIEW MODAL --}}
+  <div
+    x-show="modalOpen"
+    x-cloak
+    class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+  >
+    <div class="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-2xl w-full relative">
+      <button @click="modalOpen=false"
+              class="absolute top-4 right-4 text-3xl bg-white rounded-full p-1">×</button>
+      <img :src="modalImage.url" class="w-full h-auto object-contain"/>
+      <div class="p-4 text-center text-lg font-medium" x-text="modalImage.filename"></div>
+    </div>
+  </div>
+
+  {{-- UPLOAD MODAL --}}
+  <div
+    x-show="uploadModalOpen"
+    x-cloak
+    x-transition
+    class="fixed inset-0 backdrop-blur-md bg-black/40 flex items-center justify-center z-50"
+  >
+    <div @click.away="closeUpload()"
+         class="bg-white rounded-2xl shadow-2xl w-full max-w-xl p-8 space-y-6">
+      <h3 class="text-2xl font-semibold">Upload Media</h3>
+
+      {{-- Category selector --}}
+      <div class="flex items-center gap-4">
+        <label class="block text-sm font-medium">Category</label>
+        <select x-model="selectedCategory"
+                class="border-gray-300 rounded-lg px-3 py-2 flex-1">
+          <option value="">Uncategorized</option>
+          <template x-for="(cat, idx) in categories" :key="idx">
+            <option :value="cat.id" x-text="cat.name"></option>
+          </template>
+        </select>
+        <button @click="showAddCategory = !showAddCategory"
+                class="text-purple-600 hover:underline text-sm">
+          + New
+        </button>
+      </div>
+
+      {{-- New category form --}}
+      <template x-if="showAddCategory">
+        <div class="flex gap-4">
+          <input x-model="newCategoryName" type="text"
+                 placeholder="Category name"
+                 class="flex-1 border-gray-300 rounded-lg px-3 py-2"/>
+          <button @click="addCategory()"
+                  class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg">
+            Create
+          </button>
+        </div>
+      </template>
+
+      {{-- File picker + previews --}}
+      <div>
+        <input x-ref="fileInput" type="file" multiple @change="addFiles" class="hidden"/>
+        <button @click="$refs.fileInput.click()"
+                class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg">
+          Select Files
+        </button>
+      </div>
+
+      <div class="flex overflow-x-auto space-x-4 py-2">
+        <template x-for="(f, idx) in files" :key="idx">
+          <div class="relative w-28 h-28 bg-gray-100 rounded-lg overflow-hidden">
+            <img :src="f.preview" class="w-full h-full object-cover"/>
+            <button @click="remove(idx)"
+                    class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1">×</button>
+            <div class="absolute bottom-0 left-0 w-full h-1 bg-gray-200">
+              <div class="h-full bg-purple-600 transition-all"
+                   :style="`width:${f.progress}%`"></div>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      {{-- Actions --}}
+      <div class="flex justify-end gap-4">
+        <button @click="closeUpload()"
+                class="px-4 py-2 bg-gray-200 rounded-lg">Cancel</button>
+        <button @click="uploadAll()"
+                :disabled="files.length===0"
+                class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg disabled:opacity-50">
+          Upload
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 @endsection
 
 @push('scripts')
-    <script>
-        function mediaLibrary() {
-            return {
-                files: [],
-                library: {!! $mediaData !!},
-                viewMode: 'grid',
-                searchTerm: '',
-                modalOpen: false,
-                modalImage: {},
+<script>
+function mediaLibrary(initialMedia, initialCategories) {
+  return {
+    // state
+    files: [],
+    library: initialMedia,
+    categories: initialCategories,
+    filterCategory: null,
+    viewMode: 'grid',
+    modalOpen: false,
+    modalImage: {},
+    uploadModalOpen: false,
+    selectedCategory: null,
+    showAddCategory: false,
+    newCategoryName: '',
+    selected: [],
 
-                get filtered() {
-                    if (!this.searchTerm) return this.library;
-                    return this.library.filter(i =>
-                        i.filename.toLowerCase().includes(this.searchTerm.toLowerCase())
-                    );
-                },
+    // computed
+    get filtered() {
+      let arr = this.library.filter(item =>
+        !this.filterCategory
+        || item.categories.includes(this.filterCategory)
+      );
+      return arr;
+    },
 
-                addFiles(e) {
-                    for (let f of e.target.files) {
-                        if (!f.type.startsWith('image/')) continue;
-                        let reader = new FileReader();
-                        reader.onload = evt => {
-                            this.files.push({
-                                file: f,
-                                name: f.name,
-                                preview: evt.target.result,
-                                progress: 0
-                            });
-                        };
-                        reader.readAsDataURL(f);
-                    }
-                    e.target.value = null;
-                },
+    // methods
+    openUpload() {
+      this.files = [];
+      this.uploadModalOpen = true;
+    },
+    closeUpload() {
+      this.uploadModalOpen = false;
+      this.showAddCategory = false;
+      this.newCategoryName = '';
+    },
+    showModal(item) {
+      this.modalImage = item;
+      this.modalOpen = true;
+    },
+    bulkDelete() {
+  
 
-                remove(idx) {
-                    this.files.splice(idx, 1);
-                },
+  fetch('{{ route("admin.media.bulkDelete") }}', {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': '{{ csrf_token() }}'
+    },
+    body: JSON.stringify({ ids: this.selected })
+  })
+  .then(res => {
+    if (!res.ok) {
+      return res.text().then(text => { throw new Error(`Server returned ${res.status}: ${text}`); });
+    }
+    return res.json();
+  })
+  .then(json => {
+    if (json.deleted) {
+      // remove from UI
+      this.library = this.library.filter(m => !this.selected.includes(m.id));
+      this.selected = [];
+      window.location.reload();
+    } else {
+      alert('No items were deleted.');
+    }
+  })
+  .catch(err => {
+    console.error('Bulk delete error:', err);
+    alert('Could not delete selected items: ' + err.message);
+  });
+},
 
-                uploadAll() {
-                    let total = this.files.length;
-                    this.files.forEach((f, idx) => {
-                        let form = new FormData();
-                        form.append('files[]', f.file);
+deleteMedia(id) {
+  if (!confirm('Delete this media?')) return;
 
-                        let xhr = new XMLHttpRequest();
-                        xhr.open('POST', '{{ route('media.store') }}');
-                        xhr.setRequestHeader('X-CSRF-TOKEN', '{{ csrf_token() }}');
+  const url = '{{ route("admin.media.destroy", ["media"=>":id"]) }}'.replace(':id', id);
+  fetch(url, {
+    method: 'DELETE',
+    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+  })
+  .then(res => {
+    if (!res.ok) throw new Error(`Server returned ${res.status}`);
+    return res.json();
+  })
+  .then(json => {
+    if (json.deleted) {
+      this.library = this.library.filter(m => m.id !== id);
+      window.location.reload();
+    } else {
+      alert('Could not delete item.');
+    }
+  })
+  .catch(err => {
+    console.error('Delete error:', err);
+    alert('Error deleting item: ' + err.message);
+  });
+},
 
-                        xhr.upload.onprogress = e => f.progress = Math.round(e.loaded / e.total * 100);
-
-                        xhr.onload = () => {
-                            if (xhr.status === 201) {
-                                JSON.parse(xhr.responseText).uploaded.forEach(u => this.library.unshift(u));
-                            }
-                            // remove this file from array
-                            this.files.splice(idx, 1);
-
-                            // when all done, reload to ensure fresh thumbnails
-                            if (idx === total - 1) {
-                                window.location.reload();
-                            }
-                        };
-
-                        xhr.send(form);
-                    });
-                },
-
-                deleteMedia(id) {
-                    if (!confirm('Delete this media?')) return;
-                    fetch(`/media/${id}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            }
-                        })
-                        .then(r => r.json())
-                        .then(json => {
-                            if (json.deleted) this.library = this.library.filter(i => i.id !== id);
-                        });
-                },
-
-                showModal(item) {
-                    this.modalImage = item;
-                    this.modalOpen = true;
-                }
-            }
-        }
-    </script>
+    addFiles(e) {
+      this.files = [];
+      for (let f of e.target.files) {
+        if (!f.type.startsWith('image/')) continue;
+        let reader = new FileReader();
+        reader.onload = evt => this.files.push({ file: f, preview: evt.target.result, progress: 0 });
+        reader.readAsDataURL(f);
+      }
+      e.target.value = null;
+    },
+    remove(idx) {
+      this.files.splice(idx,1);
+    },
+    addCategory() {
+      if (!this.newCategoryName.trim()) return;
+      fetch('{{ route("admin.media.categories.store") }}', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}' },
+        body: JSON.stringify({ name:this.newCategoryName, parent:0 })
+      })
+      .then(r=>r.ok?r.json():Promise.reject(r.statusText))
+      .then(cat=>{
+        this.categories.push(cat);
+        this.selectedCategory=cat.id;
+        this.showAddCategory=false;
+        this.newCategoryName='';
+      })
+      .catch(err=>alert('Error: '+err));
+    },
+    uploadAll() {
+      let total = this.files.length;
+      this.files.forEach((f,i)=>{
+        let form=new FormData();
+        form.append('files[]', f.file);
+        form.append('category_id',this.selectedCategory||'');
+        let xhr=new XMLHttpRequest();
+        xhr.open('POST','{{ route("admin.media.store") }}');
+        xhr.setRequestHeader('X-CSRF-TOKEN','{{ csrf_token() }}');
+        xhr.upload.onprogress=e=>f.progress=Math.round(e.loaded/e.total*100);
+        xhr.onload=()=>{
+          if(xhr.status===201) JSON.parse(xhr.responseText).uploaded.forEach(u=>this.library.unshift(u));
+          if(i===total-1) this.closeUpload();
+        };
+        xhr.send(form);
+      });
+    }
+  }
+}
+</script>
 @endpush

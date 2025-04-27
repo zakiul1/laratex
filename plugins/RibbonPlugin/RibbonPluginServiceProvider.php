@@ -1,51 +1,50 @@
 <?php
 
 namespace Plugins\RibbonPlugin;
+
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Artisan;
-
 
 class RibbonPluginServiceProvider extends ServiceProvider
 {
     public function boot()
     {
-         // only run your plugin’s migrations if the table doesn’t exist
-         if (! Schema::hasTable('ribbon_settings')) {
-            Artisan::call('migrate', [
-                // point at the real migrations folder inside your plugin
-                '--path'     => realpath(__DIR__ . '/database/migrations'),
-                '--realpath' => true,
-                '--force'    => true,
-            ]);
-        }
-        // 1) Auto‑load migrations
+        // 1) Auto-load migrations so "php artisan migrate" includes them
         $this->loadMigrationsFrom(__DIR__ . '/database/migrations');
 
-        // 2) Load Views
-        $this->loadViewsFrom(__DIR__ . '/resources/views/settings', 'ribbon-plugin');
-        $this->loadViewsFrom(__DIR__ . '/resources/views/front', 'ribbon-plugin-front');
+        // 2) If the table doesn't exist, run only our migrations now
+        $this->app->booted(function () {
+            if (! Schema::hasTable('ribbon_settings')) {
+                Artisan::call('migrate', [
+                    '--path'     => realpath(__DIR__ . '/database/migrations'),
+                    '--realpath' => true,
+                    '--force'    => true,
+                ]);
+            }
+        });
 
-        // 3) Routes
+        // 3) Load views
+        $this->loadViewsFrom(__DIR__ . '/resources/views/settings', 'ribbon-plugin');
+        $this->loadViewsFrom(__DIR__ . '/resources/views/front',   'ribbon-plugin-front');
+
+        // 4) Load routes
         $this->loadRoutesFrom(__DIR__ . '/routes/web.php');
 
-        // 4) Admin‑sidebar menu hook (unchanged)
+        // 5) Register both of your filters under one guard
         if (function_exists('add_filter')) {
+            // Admin sidebar link
             add_filter('admin_sidebar_menu', function (array $items) {
                 $items[] = [
                     'label' => 'Ribbon Settings',
                     'route' => 'ribbon-plugin.settings.edit',
-                    'icon' => 'lucide-activity',
+                    'icon'  => 'lucide-activity',
                 ];
                 return $items;
             });
-        }
 
-        // 5) **Front‑end injection via your hook system**  
-        //    Replace 'theme.header' with whatever hook your layout fires.
-        if (function_exists('add_filter')) {
+            // Front-end injection hook
             add_filter('frontend_ribbon', function (string $html) {
-                // prepend the ribbon partial to the existing header HTML
                 $ribbonHtml = view('ribbon-plugin-front::ribbon')->render();
                 return $ribbonHtml . $html;
             });
@@ -54,6 +53,6 @@ class RibbonPluginServiceProvider extends ServiceProvider
 
     public function register()
     {
-        // No uninstall command here—your system handles plugin deletion.
+        // nothing to register
     }
 }

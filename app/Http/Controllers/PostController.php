@@ -9,6 +9,7 @@ use App\Models\TermTaxonomy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class PostController extends Controller
 {
@@ -24,14 +25,13 @@ class PostController extends Controller
         $types = ['post' => 'Post', 'page' => 'Page', 'custom' => 'Custom'];
         $statuses = ['published' => 'Published', 'draft' => 'Draft'];
 
-        return view('posts.index', compact('postsAll', 'types', 'statuses'));
+        return view('posts.index', compact('postsAll', 'types', 'statuses', 'postsPaged'));
     }
 
     public function create()
     {
         $templates = getThemeTemplates();
         $post = new Post(['type' => 'post']);
-
         $allCategories = TermTaxonomy::with('term')
             ->where('taxonomy', 'category')
             ->get();
@@ -42,9 +42,25 @@ class PostController extends Controller
 
     public function store(Request $request)
     {
+        // 1) Build & dedupe the slug BEFORE validation:
+        $input = $request->all();
+        $input['slug'] = $request->filled('slug')
+            ? Str::slug($request->input('slug'))
+            : Str::slug($request->input('title'));
+
+        $base = $input['slug'];
+        $i = 1;
+        while (Post::where('slug', $input['slug'])->exists()) {
+            $input['slug'] = "{$base}-" . $i++;
+        }
+
+        // Merge back into the request so the validator sees the final slug
+        $request->merge($input);
+
+        // 2) Now validate, including a UNIQUE rule on the real slug
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'slug' => 'nullable|string|unique:posts,slug',
+            'slug' => ['required', 'string', Rule::unique('posts', 'slug')],
             'type' => 'required|string',
             'status' => 'required|string',
             'content' => 'nullable|string',
@@ -52,41 +68,48 @@ class PostController extends Controller
             'featured_images' => 'nullable|array',
             'featured_images.*' => 'integer|exists:media,id',
             'meta' => 'nullable|array',
-            'meta.*' => 'nullable|string',
+            'meta.*.key' => 'required|string|min:1',
+            'meta.*.value' => 'nullable|string',
             'seo.title' => 'nullable|string|max:255',
             'seo.robots' => 'nullable|string|in:Index & Follow,NoIndex & Follow,NoIndex & NoFollow,No Archive,No Snippet',
             'seo.description' => 'nullable|string',
             'seo.keywords' => 'nullable|string',
             'categories' => 'nullable|array',
-            'categories.*' => 'integer|exists:term_taxonomies,id',
+            'categories.*' => 'integer|exists:term_taxonomies,term_taxonomy_id',
         ]);
 
-        $validated['slug'] = $validated['slug'] ?? Str::slug($validated['title']);
         $validated['author_id'] = auth()->id();
 
-        // Create the Post
+        // Ensure unique featured_images
+        if (!empty($validated['featured_images'])) {
+            $validated['featured_images'] = array_values(
+                array_unique($validated['featured_images'], SORT_NUMERIC)
+            );
+        }
+
+        // 3) Create the post
         $post = Post::create($validated);
 
-        // Save metas
+        // 4) Save other related data
         if (!empty($validated['meta'])) {
-            foreach ($validated['meta'] as $key => $value) {
+            foreach ($validated['meta'] as $meta) {
                 PostMeta::create([
                     'post_id' => $post->id,
-                    'meta_key' => $key,
-                    'meta_value' => $value,
+                    'meta_key' => $meta['key'],
+                    'meta_value' => $meta['value'],
                 ]);
             }
         }
 
         // SEO
-        $post->seoMeta()->updateOrCreate([], ['meta' => $validated['seo']]);
+        $post->seoMeta()->updateOrCreate(
+            ['meta_key' => 'seo'],
+            ['meta_value' => json_encode($validated['seo'])]
+        );
 
-        // Categories
-        $post->categories()->sync($validated['categories'] ?? []);
-
-        // Featured images (stored as JSON array on `featured_images` column)
-        $post->featured_images = $validated['featured_images'] ?? [];
-        $post->save();
+        // Categories & images
+        $post->syncCategories($validated['categories'] ?? []);
+        $post->syncFeaturedImages($validated['featured_images'] ?? []);
 
         return redirect()
             ->route('posts.index')
@@ -100,16 +123,77 @@ class PostController extends Controller
         $allCategories = TermTaxonomy::with('term')
             ->where('taxonomy', 'category')
             ->get();
-        $selected = $post->categories->pluck('id')->toArray();
 
-        return view('posts.edit', compact('post', 'templates', 'allCategories', 'selected'));
+        $selected = $post->categories
+            ->pluck('term_taxonomy_id')
+            ->toArray();
+
+        // pull ALL metas except seo/featured_image
+        $customMeta = $post->meta()
+            ->whereNotIn('meta_key', ['seo', 'featured_image'])
+            ->get()
+            ->map(fn($m) => [
+                'key' => $m->meta_key,
+                'value' => $m->meta_value,
+            ])
+            ->toArray();  // convert to plain array for your Blade/Alpine
+
+        // ── Normalize SEO meta_value ───────────────────────────────────
+        $rawSeo = optional($post->seoMeta)->meta_value;
+        if (is_string($rawSeo)) {
+            // it was stored as JSON string
+            $seoMeta = json_decode($rawSeo, true) ?: [];
+        } elseif (is_array($rawSeo)) {
+            // already cast to array by model
+            $seoMeta = $rawSeo;
+        } else {
+            $seoMeta = [];
+        }
+
+        // get the featured-image IDs array
+        $featuredImages = $post->getFeaturedImageIdsAttribute();
+
+        return view('posts.edit', compact(
+            'post',
+            'templates',
+            'allCategories',
+            'selected',
+            'customMeta',
+            'seoMeta',
+            'featuredImages'
+        ));
     }
+
+
 
     public function update(Request $request, Post $post)
     {
+        // 1) Build & dedupe slug BEFORE validation, ignoring current post
+        $input = $request->all();
+        $input['slug'] = $request->filled('slug')
+            ? Str::slug($request->input('slug'))
+            : Str::slug($request->input('title'));
+
+        $base = $input['slug'];
+        $i = 1;
+        while (
+            Post::where('slug', $input['slug'])
+                ->where('id', '!=', $post->id)
+                ->exists()
+        ) {
+            $input['slug'] = "{$base}-" . $i++;
+        }
+
+        $request->merge($input);
+
+        // 2) Validate, ignoring this post for unique check
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'slug' => 'nullable|string|unique:posts,slug,' . $post->id,
+            'slug' => [
+                'required',
+                'string',
+                Rule::unique('posts', 'slug')->ignore($post->id),
+            ],
             'type' => 'required|string',
             'status' => 'required|string',
             'content' => 'nullable|string',
@@ -117,39 +201,47 @@ class PostController extends Controller
             'featured_images' => 'nullable|array',
             'featured_images.*' => 'integer|exists:media,id',
             'meta' => 'nullable|array',
-            'meta.*' => 'nullable|string',
+            'meta.*.key' => 'required|string|min:1',
+            'meta.*.value' => 'nullable|string',
             'seo.title' => 'nullable|string|max:255',
             'seo.robots' => 'nullable|string|in:Index & Follow,NoIndex & Follow,NoIndex & NoFollow,No Archive,No Snippet',
             'seo.description' => 'nullable|string',
             'seo.keywords' => 'nullable|string',
             'categories' => 'nullable|array',
-            'categories.*' => 'integer|exists:term_taxonomies,id',
+            'categories.*' => 'integer|exists:term_taxonomies,term_taxonomy_id',
         ]);
 
-        $validated['slug'] = $validated['slug'] ?? Str::slug($validated['title']);
+        // Unique featured_images
+        if (!empty($validated['featured_images'])) {
+            $validated['featured_images'] = array_values(
+                array_unique($validated['featured_images'], SORT_NUMERIC)
+            );
+        }
 
-        // Update basic fields
+        // 3) Update
         $post->update($validated);
 
-        // Update metas
+        // 4) Sync metas (except seo), SEO, categories, images
         if (!empty($validated['meta'])) {
-            foreach ($validated['meta'] as $key => $value) {
+            $post->meta()
+                ->whereNotIn('meta_key', ['seo', 'featured_image'])
+                ->delete();
+
+            foreach ($validated['meta'] as $meta) {
                 $post->meta()->updateOrCreate(
-                    ['meta_key' => $key],
-                    ['meta_value' => $value]
+                    ['meta_key' => $meta['key']],
+                    ['meta_value' => $meta['value']]
                 );
             }
         }
 
-        // SEO
-        $post->seoMeta()->updateOrCreate([], ['meta' => $validated['seo']]);
+        $post->seoMeta()->updateOrCreate(
+            ['meta_key' => 'seo'],
+            ['meta_value' => json_encode($validated['seo'])]
+        );
 
-        // Categories
-        $post->categories()->sync($validated['categories'] ?? []);
-
-        // Featured images
-        $post->featured_images = $validated['featured_images'] ?? [];
-        $post->save();
+        $post->syncCategories($validated['categories'] ?? []);
+        $post->syncFeaturedImages($validated['featured_images'] ?? []);
 
         return redirect()
             ->route('posts.index')
@@ -160,10 +252,16 @@ class PostController extends Controller
     {
         $post->delete();
 
+        if (request()->wantsJson()) {
+            // 204 No Content is ideal for a successful delete with no response body
+            return response()->json(null, 204);
+        }
+
         return redirect()
             ->route('posts.index')
             ->with('success', 'Post deleted successfully.');
     }
+
 
     public function show($slug)
     {
@@ -175,7 +273,6 @@ class PostController extends Controller
         $theme = getActiveTheme();
         $templateView = "themes.{$theme}.templates.{$page->template}";
         $defaultView = "themes.{$theme}.page";
-
         $pageOutput = $this->buildPageOutput($page);
         $site = site_settings();
         $themeSettings = theme_settings();

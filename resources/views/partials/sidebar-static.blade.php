@@ -57,7 +57,7 @@
     <x-lucide-settings class="size-6" />
     <span>Site Settings</span>
 </a> --}}
-<a href="{{ route('media.index') }}"
+<a href="{{ route('admin.media.index') }}"
     class="flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium {{ request()->routeIs('media.*') ? 'bg-gray-200' : '' }}">
     <x-lucide-image class="size-6" />
     <span>Media Library</span>
@@ -85,6 +85,12 @@
             x-bind:class="isExpanded ? 'rotate-180' : 'rotate-0'" />
     </button>
 
+    @php
+        use App\Models\Plugin;
+        // Check if our plugin is active
+        $seoSearchActive = Plugin::where('slug', 'seosearch-pro')->where('enabled', true)->exists();
+    @endphp
+
     <ul class="ml-6" x-cloak x-show="isExpanded" x-collapse aria-labelledby="theme-btn" id="theme-menu">
         <li class="px-1 py-0.5 first:mt-2">
             <a href="{{ route('themes.index') }}"
@@ -104,5 +110,15 @@
                 Widgets
             </a>
         </li>
+
+        @if ($seoSearchActive)
+            <li class="px-1 py-0.5">
+                <a href="{{ route('seosearch.builder') }}"
+                    class="flex items-center gap-2 px-2 py-1.5 text-sm rounded-radius {{ $route('seosearch.builder') }}">
+                    SEO Search Builder
+                </a>
+            </li>
+        @endif
     </ul>
+
 </div>

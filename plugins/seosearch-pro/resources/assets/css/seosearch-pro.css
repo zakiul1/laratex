@@ -1,0 +1,53 @@
+/* Base wrapper */
+.seosearch-wrapper {
+  margin: 2rem 0;
+}
+
+/* Grid gutters */
+.seosearch-wrapper > .grid {
+  gap: 1rem;
+}
+
+/* Default item box */
+.seosearch-item {
+  border: 1px solid #e5e7eb;
+  transition: transform .2s;
+}
+.seosearch-item:hover {
+  transform: translateY(-2px);
+}
+
+/* Style: imgsrnk (page-1) */
+.style-imgsrnk .seosearch-item {
+  background: #f9fafb;
+}
+.style-imgsrnk .seosearch-item h3 {
+  font-size: 1.125rem;
+  margin-bottom: .5rem;
+}
+
+/* Style: widget-post (from your PDF) */
+.style-widget-post .seosearch-item {
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,.05);
+}
+.style-widget-post .seosearch-item h3 {
+  font-size: 1rem;
+}
+
+/* Style: img-right (another PDF style) */
+.style-img-right .seosearch-wrapper .seosearch-item {
+  display: flex;
+  align-items: center;
+}
+.style-img-right .seosearch-item img {
+  width: 40%;
+  margin-right: 1rem;
+}
+
+/* Responsive tweaks (if needed) */
+@media (max-width: 768px) {
+  .seosearch-wrapper > .grid {
+    gap: .5rem;
+  }
+}

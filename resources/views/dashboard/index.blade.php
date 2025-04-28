@@ -57,7 +57,7 @@
                     <x-lucide-plus-circle class="w-6 h-6 mb-2" />
                     <span>Create Page</span>
                 </a>
-                <a href="{{ route('media.index') }}"
+                <a href="{{ route('admin.media.index') }}"
                     class="bg-yellow-600 hover:bg-[#b45309]
           text-white rounded-lg p-4 flex flex-col items-center">
                     <x-lucide-image class="w-6 h-6 mb-2" />

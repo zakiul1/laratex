@@ -1,0 +1,105 @@
+<?php
+
+namespace Plugins\SeoSearchPro\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Models\Post;
+use App\Facades\Shortcode;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
+
+class SeoSearchController extends Controller
+{
+    /**
+     * Preview endpoint for the shortcode output
+     */
+    public function preview(Request $request)
+    {
+        $attrs = $this->sanitizeAttributes($request->all());
+        $posts = $this->queryPosts($attrs);
+
+        return view('seosearch::search', compact('posts', 'attrs'));
+    }
+
+    /**
+     * Show the shortcode-builder UI.
+     */
+    public function builder()
+    {
+        $styles = [
+            'imgsrnk' => 'Image Rank',
+            'img-right' => 'Image Right',
+            'widget-post' => 'Widget Post',
+            'default' => 'Default',
+        ];
+
+        $defaults = [
+            'cat' => '',
+            'column' => 1,
+            'img' => 'yes',
+            'tcol' => 1,
+            'mcol' => 1,
+            'orderby' => 'ID',
+            'get-price' => 'no',
+            'order' => 'ASC',
+            'style' => 'imgsrnk',
+            'taxo' => 'spcategory',
+            'c-class' => '',
+            'post-id' => '',
+            'excerpt-hide' => '',
+            'icon' => 'no',
+            'bg' => 'no',
+        ];
+
+        return view('seosearch::builder', compact('styles', 'defaults'));
+    }
+
+    /**
+     * Sanitize and normalize shortcode attributes
+     */
+    public function sanitizeAttributes(array $input): array
+    {
+        return [
+            'cat' => isset($input['cat']) ? (int) $input['cat'] : null,
+            'column' => isset($input['column']) ? (int) $input['column'] : 1,
+            'img' => (!empty($input['img']) && strtolower($input['img']) === 'yes'),
+            'tcol' => isset($input['tcol']) ? (int) $input['tcol'] : 1,
+            'mcol' => isset($input['mcol']) ? (int) $input['mcol'] : 1,
+            'orderby' => $input['orderby'] ?? 'id',
+            'get-price' => (!empty($input['get-price']) && strtolower($input['get-price']) === 'yes'),
+            'order' => strtoupper($input['order'] ?? 'ASC'),
+            'style' => $input['style'] ?? 'default',
+            'taxo' => $input['taxo'] ?? 'category',
+            'c-class' => $input['c-class'] ?? '',
+            'post-id' => isset($input['post-id']) ? (int) $input['post-id'] : null,
+            'excerpt-hide' => isset($input['excerpt-hide']) ? (int) $input['excerpt-hide'] : null,
+            'icon' => (!empty($input['icon']) && strtolower($input['icon']) === 'yes'),
+            'bg' => (!empty($input['bg']) && strtolower($input['bg']) === 'yes'),
+        ];
+    }
+
+    /**
+     * Build and execute the query based on attributes
+     */
+    public function queryPosts(array $attrs)
+    {
+        $query = Post::query()
+            ->where('status', 'published')
+            ->with(['meta', 'categories']);
+
+        if (!empty($attrs['cat'])) {
+            $query->whereHas('categories', function ($q) use ($attrs) {
+                $q->where('term_taxonomy_id', $attrs['cat']);
+            });
+        }
+
+        if (!empty($attrs['post-id'])) {
+            $query->where('id', $attrs['post-id']);
+        }
+
+        $query->orderBy($attrs['orderby'], $attrs['order']);
+
+        return $query->get();
+    }
+}

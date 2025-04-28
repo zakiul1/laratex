@@ -173,25 +173,8 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
 
 
 
-      // Media library
-      Route::get    ('media',               [MediaController::class,'index'])
-      ->name('media.index');
-        Route::post   ('media',               [MediaController::class,'store'])
-            ->name('admin.media.store');
 
-               // Bulk‐delete media items
-       Route::delete('media/bulk', [MediaController::class, 'bulkDelete'])
-       ->name('admin.media.bulkDelete');
-        Route::delete ('media/{media}',       [MediaController::class,'destroy'])
-            ->name('admin.media.destroy');
 
-        // AJAX category create/delete
-        Route::post   ('media/categories',    [MediaController::class,'storeCategory'])
-            ->name('admin.media.categories.store');
-        Route::delete ('media/categories/{id}', [MediaController::class,'destroyCategory'])
-            ->name('admin.media.categories.destroy');
-
-    
 
 
 
@@ -202,7 +185,25 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
 
 // in routes/web.php, inside the admin group:
 
-
+Route::prefix('admin/media')->name('admin.media.')->group(function () {
+    Route::get('/', [MediaController::class, 'index'])->name('index');
+    Route::delete(
+        '/bulk-delete',
+        [MediaController::class, 'bulkDelete']
+    )->name('bulkDelete');
+    Route::delete(
+        '/{media}',
+        [MediaController::class, 'destroy']
+    )->name('destroy');
+    Route::post(
+        '/upload',
+        [MediaController::class, 'store']
+    )->name('store');
+    Route::post(
+        '/categories',
+        [MediaController::class, 'storeCategory']
+    )->name('categories.store');
+});
 
 require __DIR__ . '/auth.php';
 

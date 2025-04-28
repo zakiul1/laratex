@@ -61,20 +61,28 @@
                     <tr>
                         <th class="p-3 text-left">Image</th>
                         <th class="p-3 text-left cursor-pointer" @click="sortBy('title')">
-                            Title <template x-if="sortKey==='title'"><span
-                                    x-text="sortDir==='asc' ? '▲' : '▼'"></span></template>
+                            Title
+                            <template x-if="sortKey==='title'">
+                                <span x-text="sortDir==='asc' ? '▲' : '▼'"></span>
+                            </template>
                         </th>
                         <th class="p-3 text-left cursor-pointer" @click="sortBy('type')">
-                            Type <template x-if="sortKey==='type'"><span
-                                    x-text="sortDir==='asc' ? '▲' : '▼'"></span></template>
+                            Type
+                            <template x-if="sortKey==='type'">
+                                <span x-text="sortDir==='asc' ? '▲' : '▼'"></span>
+                            </template>
                         </th>
                         <th class="p-3 text-left cursor-pointer" @click="sortBy('status')">
-                            Status <template x-if="sortKey==='status'"><span
-                                    x-text="sortDir==='asc' ? '▲' : '▼'"></span></template>
+                            Status
+                            <template x-if="sortKey==='status'">
+                                <span x-text="sortDir==='asc' ? '▲' : '▼'"></span>
+                            </template>
                         </th>
                         <th class="p-3 text-left cursor-pointer" @click="sortBy('created_at')">
-                            Created <template x-if="sortKey==='created_at'"><span
-                                    x-text="sortDir==='asc' ? '▲' : '▼'"></span></template>
+                            Created
+                            <template x-if="sortKey==='created_at'">
+                                <span x-text="sortDir==='asc' ? '▲' : '▼'"></span>
+                            </template>
                         </th>
                         <th class="p-3 text-right">Actions</th>
                     </tr>
@@ -94,16 +102,19 @@
                             <td class="p-2 capitalize" x-text="post.type"></td>
                             <td class="p-2 capitalize" x-text="post.status"></td>
                             <td class="p-2"
-                                x-text="(new Date(post.created_at)).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})">
+                                x-text="(new Date(post.created_at)).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day:   'numeric',
+                                    year:  'numeric'
+                                })">
                             </td>
                             <td class="p-2 text-right space-x-2">
-                                <!-- use our new viewUrl() helper -->
                                 <a :href="viewUrl(post)" target="_blank" class="text-green-600 hover:underline">View</a>
                                 <a :href="`/admin/posts/${post.id}/edit`" class="text-indigo-600 hover:underline">Edit</a>
-                                <button @click="deletePost(post.id)" class="text-red-600 hover:underline">Delete</button>
-
+                                <button @click="deletePost(post.id)" class="text-red-600 hover:underline">
+                                    Delete
+                                </button>
                             </td>
-
                         </tr>
                     </template>
                     <template x-if="filteredData().length === 0">
@@ -118,115 +129,131 @@
         {{-- Pagination --}}
         <div class="flex justify-end space-x-2">
             <button :disabled="currentPage === 1" @click="currentPage--"
-                class="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50">&laquo;</button>
+                class="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50">
+                &laquo;
+            </button>
 
             <template x-for="page in totalPages()" :key="page">
                 <button @click="currentPage = page" x-text="page"
                     :class="{
-                        'bg-blue-600 text-white': currentPage ===
-                            page,
+                        'bg-blue-600 text-white': currentPage === page,
                         'px-3 py-1 border rounded hover:bg-gray-100': true
                     }"></button>
             </template>
 
             <button :disabled="currentPage === totalPages()" @click="currentPage++"
-                class="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50">&raquo;</button>
+                class="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50">
+                &raquo;
+            </button>
         </div>
     </div>
-
-
-    @push('scripts')
-        <script>
-            function postsTable() {
-                return {
-                    posts: @json($postsAll),
-                    search: '',
-                    filterType: '',
-                    filterStatus: '',
-                    perPage: 10,
-                    sortKey: 'created_at',
-                    sortDir: 'desc',
-                    currentPage: 1,
-                    types: @json($types),
-                    statuses: @json($statuses),
-
-                    // ★ New helper: build the front‑end URL based on type
-                    viewUrl(item) {
-                        switch (item.type) {
-                            case 'page':
-                                return `/pages/${item.slug}`;
-                            case 'post':
-                                return `/posts/${item.slug}`;
-                            default:
-                                return `/${item.type}s/${item.slug}`;
-                        }
-                    },
-
-                    resetFilters() {
-                        this.search = '';
-                        this.filterType = '';
-                        this.filterStatus = '';
-                        this.perPage = 10;
-                        this.currentPage = 1;
-                        this.sortKey = 'created_at';
-                        this.sortDir = 'desc';
-                    },
-
-                    filteredData() {
-                        return this.posts.filter(post => {
-                            const matchesSearch = !this.search || post.title.toLowerCase().includes(this.search
-                                .toLowerCase());
-                            const matchesType = !this.filterType || post.type === this.filterType;
-                            const matchesStatus = !this.filterStatus || post.status === this.filterStatus;
-                            return matchesSearch && matchesType && matchesStatus;
-                        });
-                    },
-
-                    sortedData() {
-                        return this.filteredData().sort((a, b) => {
-                            let va = a[this.sortKey],
-                                vb = b[this.sortKey];
-                            if (this.sortKey === 'created_at') {
-                                va = new Date(va);
-                                vb = new Date(vb);
-                            }
-                            return (va < vb ? -1 : va > vb ? 1 : 0) * (this.sortDir === 'asc' ? 1 : -1);
-                        });
-                    },
-
-                    paginatedData() {
-                        const start = (this.currentPage - 1) * this.perPage;
-                        return this.sortedData().slice(start, start + this.perPage);
-                    },
-
-                    totalPages() {
-                        return Math.ceil(this.filteredData().length / this.perPage);
-                    },
-
-                    sortBy(field) {
-                        if (this.sortKey === field) {
-                            this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
-                        } else {
-                            this.sortKey = field;
-                            this.sortDir = 'asc';
-                        }
-                    },
-
-                    async deletePost(id) {
-                        if (!confirm('Delete this post?')) return;
-                        await fetch(`/posts/${id}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                            }
-                        });
-                        this.posts = this.posts.filter(p => p.id !== id);
-                        if (this.currentPage > this.totalPages()) {
-                            this.currentPage = this.totalPages() || 1;
-                        }
-                    },
-                }
-            }
-        </script>
-    @endpush
 @endsection
+
+@push('scripts')
+    <script>
+        function postsTable() {
+            // Point directly at /admin/posts as the base, then append /{id}
+            const baseUrl = "{{ url('admin/posts') }}";
+
+            return {
+                posts: @json($postsAll),
+                search: '',
+                filterType: '',
+                filterStatus: '',
+                perPage: 10,
+                sortKey: 'created_at',
+                sortDir: 'desc',
+                currentPage: 1,
+                types: @json($types),
+                statuses: @json($statuses),
+
+                viewUrl(item) {
+                    switch (item.type) {
+                        case 'page':
+                            return `/pages/${item.slug}`;
+                        case 'post':
+                            return `/posts/${item.slug}`;
+                        default:
+                            return `/${item.type}s/${item.slug}`;
+                    }
+                },
+
+                resetFilters() {
+                    this.search = '';
+                    this.filterType = '';
+                    this.filterStatus = '';
+                    this.perPage = 10;
+                    this.currentPage = 1;
+                    this.sortKey = 'created_at';
+                    this.sortDir = 'desc';
+                },
+
+                filteredData() {
+                    return this.posts.filter(post => {
+                        const matchesSearch = !this.search ||
+                            post.title.toLowerCase().includes(this.search.toLowerCase());
+                        const matchesType = !this.filterType || post.type === this.filterType;
+                        const matchesStatus = !this.filterStatus || post.status === this.filterStatus;
+                        return matchesSearch && matchesType && matchesStatus;
+                    });
+                },
+
+                sortedData() {
+                    return this.filteredData().sort((a, b) => {
+                        let va = a[this.sortKey],
+                            vb = b[this.sortKey];
+                        if (this.sortKey === 'created_at') {
+                            va = new Date(va);
+                            vb = new Date(vb);
+                        }
+                        return (va < vb ? -1 : va > vb ? 1 : 0) *
+                            (this.sortDir === 'asc' ? 1 : -1);
+                    });
+                },
+
+                paginatedData() {
+                    const start = (this.currentPage - 1) * this.perPage;
+                    return this.sortedData().slice(start, start + this.perPage);
+                },
+
+                totalPages() {
+                    return Math.ceil(this.filteredData().length / this.perPage);
+                },
+
+                sortBy(field) {
+                    if (this.sortKey === field) {
+                        this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        this.sortKey = field;
+                        this.sortDir = 'asc';
+                    }
+                },
+
+                async deletePost(id) {
+                    if (!confirm('Delete this post?')) return;
+
+                    const url = `${baseUrl}/${id}`;
+
+                    const res = await fetch(url, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Accept': 'application/json',
+                        },
+                    });
+
+                    if (!res.ok) {
+                        console.error('Delete failed', res.status, res.statusText);
+                        return;
+                    }
+
+                    // remove from front-end state
+                    this.posts = this.posts.filter(p => p.id !== id);
+                    if (this.currentPage > this.totalPages()) {
+                        this.currentPage = this.totalPages() || 1;
+                    }
+                },
+            }
+        }
+    </script>
+@endpush

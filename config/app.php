@@ -90,6 +90,7 @@ return [
          */
         App\Providers\ThemeServiceProvider::class,
         App\Providers\HookServiceProvider::class,
+        App\Providers\ShortcodeServiceProvider::class,
 
 
     ],

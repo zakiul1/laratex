@@ -1,13 +1,16 @@
-{{-- resources/views/posts/form.blade.php --}}
 @extends('layouts.dashboard')
 
 @section('content')
     @php
+        use Illuminate\Support\Facades\Storage;
+
         $isEdit = isset($post) && $post->exists;
         $formAction = $isEdit ? route('posts.update', $post) : route('posts.store');
         $formMethod = $isEdit ? 'PUT' : 'POST';
 
-        // Category data for your categoryBox
+        //
+        // ── Prepare Categories ──────────────────────────────────────────────
+        //
         $templates = $templates ?? getThemeTemplates();
         $allCategories = $allCategories ?? collect();
         $selected = $selected ?? [];
@@ -15,24 +18,87 @@
         $categoriesJson = $allCategories
             ->map(
                 fn($c) => [
-                    'id' => $c->id,
+                    'id' => $c->term_taxonomy_id,
                     'name' => $c->term->name,
                     'parent' => $c->parent,
                 ],
             )
             ->toJson();
+
         $selectedJson = json_encode($selected);
 
-        // Initial arrays for multi-image picker (empty on create)
-        $initialImageIds = old('featured_images', $post->featured_images ?? []);
-        $initialImageUrls = old('featured_images_urls', $post->featured_images_urls ?? []);
+        //
+        // ── Prepare Featured Images ─────────────────────────────────────────
+        //
+        $initialImageIds = old('featured_images', $post->featured_image_ids ?? []);
+        $initialImageIds = array_filter(array_unique($initialImageIds), fn($id) => is_numeric($id) && $id > 0);
+
+        if (count($initialImageIds)) {
+            $mediaItems = \App\Models\Media::whereIn('id', $initialImageIds)->get();
+
+            // build an [id => url] map
+            $urlMap = $mediaItems
+                ->mapWithKeys(
+                    fn($m) => [
+                        $m->id => Storage::url($m->path),
+                    ],
+                )
+                ->toArray();
+
+            // preserve original order, drop any missing
+            $initialImageUrls = [];
+            foreach ($initialImageIds as $id) {
+                if (isset($urlMap[$id])) {
+                    $initialImageUrls[] = $urlMap[$id];
+                }
+            }
+        } else {
+            $initialImageUrls = old('featured_images_urls', []);
+        }
+
+        //
+        // ── Prepare Custom Meta Fields (excludes seo & featured_image) ────────
+        //
+        $initialMetaFields = old(
+            'meta',
+            $isEdit
+                ? $post->meta
+                    ->whereNotIn('meta_key', ['seo', 'featured_image'])
+                    ->map(
+                        fn($m) => [
+                            'key' => $m->meta_key,
+                            'value' => $m->meta_value,
+                        ],
+                    )
+                    ->toArray()
+                : [],
+        );
+
+        //
+        // ── Prepare SEO array, handling string or array in meta_value ────────
+        //
+        $oldSeo = old('seo');
+        if (is_array($oldSeo)) {
+            $seo = $oldSeo;
+        } else {
+            $raw = optional($post->seoMeta)->meta_value;
+            if (is_string($raw)) {
+                $seo = json_decode($raw, true) ?: [];
+            } elseif (is_array($raw)) {
+                $seo = $raw;
+            } else {
+                $seo = [];
+            }
+        }
     @endphp
+
 
     <script>
         window.categoriesBoxData = {!! $categoriesJson !!};
         window.initialSelected = {!! $selectedJson !!};
         window.initialImageIds = {!! json_encode($initialImageIds) !!};
         window.initialImageUrls = {!! json_encode($initialImageUrls) !!};
+        window.initialMetaFields = {!! json_encode($initialMetaFields) !!};
     </script>
 
     <link rel="stylesheet" href="{{ asset('blockeditor/styles.css') }}">
@@ -44,13 +110,14 @@
             @method('PUT')
         @endif
 
-        {{-- ── Left: Title & Block Editor ───────────────────────────── --}}
+        {{-- ── Left: Title, Editor, SEO ──────────────────────────────────── --}}
         <div class="lg:col-span-2 space-y-6">
             {{-- Title --}}
             <div>
                 <input type="text" name="title" value="{{ old('title', $post->title ?? '') }}" placeholder="Add title"
                     required
-                    class="w-full text-3xl font-semibold border border-gray-300 focus:border-primary focus:ring-0 placeholder:text-gray-400">
+                    class="w-full text-3xl font-semibold border border-gray-300
+                           focus:border-primary focus:ring-0 placeholder:text-gray-400" />
                 @error('title')
                     <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                 @enderror
@@ -63,11 +130,57 @@
                 <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
             @enderror
 
-            {{-- SEO Fields --}}
-            @include('components.seo-fields', ['model' => $post])
+            {{-- ── SEO Settings ──────────────────────────────────────────── --}}
+            <div class="border rounded p-4 bg-white shadow">
+                <h3 class="font-semibold text-sm mb-2">SEO Settings</h3>
+                <div class="space-y-4">
+                    {{-- Meta Title --}}
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Meta Title</label>
+                        <input type="text" name="seo[title]" value="{{ $seo['title'] ?? '' }}"
+                            class="w-full border rounded p-2" />
+                        @error('seo.title')
+                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Meta Description --}}
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Meta Description</label>
+                        <textarea name="seo[description]" class="w-full border rounded p-2">{{ $seo['description'] ?? '' }}</textarea>
+                        @error('seo.description')
+                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Meta Keywords --}}
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Meta Keywords</label>
+                        <input type="text" name="seo[keywords]" value="{{ $seo['keywords'] ?? '' }}"
+                            class="w-full border rounded p-2" />
+                        @error('seo.keywords')
+                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Robots --}}
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Robots</label>
+                        <select name="seo[robots]" class="w-full border rounded p-2">
+                            @foreach (['Index & Follow', 'NoIndex & Follow', 'NoIndex & NoFollow', 'No Archive', 'No Snippet'] as $opt)
+                                <option value="{{ $opt }}"
+                                    {{ ($seo['robots'] ?? '') === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                            @endforeach
+                        </select>
+                        @error('seo.robots')
+                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+            </div>
         </div>
 
-        {{-- ── Right: Options Panel ──────────────────────────────────── --}}
+        {{-- ── Right: Settings, Categories, Media, Meta ─────────────────── --}}
         <div class="space-y-6">
             {{-- Status & Visibility --}}
             <div class="border rounded p-4 bg-white shadow">
@@ -100,18 +213,21 @@
             <div class="border rounded p-4 bg-white shadow">
                 <h3 class="font-semibold text-sm mb-2">Permalink</h3>
                 <input type="text" name="slug" value="{{ old('slug', $post->slug ?? '') }}"
-                    placeholder="Optional. Auto-generated if blank." class="w-full border rounded p-2">
+                    placeholder="Optional. Auto-generated if blank." class="w-full border rounded p-2" />
             </div>
 
             {{-- Post Type --}}
             <div class="border rounded p-4 bg-white shadow">
                 <h3 class="font-semibold text-sm mb-2">Post Type</h3>
                 <select name="type" class="w-full border rounded p-2">
-                    <option value="post" {{ old('type', $post->type ?? '') === 'post' ? 'selected' : '' }}>Post
+                    <option value="post" {{ old('type', $post->type ?? '') === 'post' ? 'selected' : '' }}>
+                        Post
                     </option>
-                    <option value="page" {{ old('type', $post->type ?? '') === 'page' ? 'selected' : '' }}>Page
+                    <option value="page" {{ old('type', $post->type ?? '') === 'page' ? 'selected' : '' }}>
+                        Page
                     </option>
-                    <option value="custom" {{ old('type', $post->type ?? '') === 'custom' ? 'selected' : '' }}>Custom
+                    <option value="custom" {{ old('type', $post->type ?? '') === 'custom' ? 'selected' : '' }}>
+                        Custom
                     </option>
                 </select>
             </div>
@@ -152,11 +268,10 @@
                 </div>
             </div>
 
-            {{-- ── Featured Images Picker ────────────────────────────────── --}}
+            {{-- Featured Images Picker --}}
             <div class="border rounded p-4 bg-white shadow" x-data="featuredImagesPicker()">
                 <h3 class="font-semibold text-sm mb-2">Featured Images</h3>
 
-                {{-- Preview grid --}}
                 <div class="grid grid-cols-4 gap-2 mb-4">
                     <template x-for="(url, idx) in previewUrls" :key="idx">
                         <div class="relative">
@@ -168,34 +283,62 @@
                 </div>
 
                 <button type="button" @click="openMedia()"
-                    class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm mb-2">Add Images</button>
+                    class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm mb-2">
+                    Add Images
+                </button>
 
-                {{-- hidden inputs for submission --}}
-                <template x-for="id in selectedIds" :key="id">
+                <template x-for="id in filteredIds" :key="id">
                     <input type="hidden" name="featured_images[]" :value="id">
                 </template>
             </div>
 
-            {{-- Publish Button --}}
+            {{-- Custom Meta Fields --}}
+            <div class="border rounded p-4 bg-white shadow" x-data="metaFields()">
+                <h3 class="font-semibold text-sm mb-2 flex justify-between items-center">
+                    Custom Meta Fields
+                    <button type="button" class="text-xs text-blue-600" @click="addField()">
+                        + Add
+                    </button>
+                </h3>
+
+                <div class="space-y-2">
+                    <template x-for="(field, index) in fields" :key="index">
+                        <div class="flex space-x-2 items-center">
+                            <input type="text" :name="`meta[${index}][key]`" x-model="field.key"
+                                placeholder="Meta Key" class="w-1/2 border rounded p-2 text-sm">
+                            <input type="text" :name="`meta[${index}][value]`" x-model="field.value"
+                                placeholder="Meta Value" class="w-1/2 border rounded p-2 text-sm">
+                            <button type="button" @click="removeField(index)"
+                                class="text-red-600 hover:text-red-800">×</button>
+                        </div>
+                    </template>
+                </div>
+
+                @error('meta.*.key')
+                    <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                @enderror
+                @error('meta.*.value')
+                    <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Submit --}}
             <div>
-                <button type="submit"
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm px-6 py-3 rounded shadow">{{ $isEdit ? 'Update Post' : 'Publish Post' }}</button>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded shadow">
+                    {{ $isEdit ? 'Update Post' : 'Publish Post' }}
+                </button>
             </div>
         </div>
     </form>
 
-    {{-- include the shared media browser modal --}}
+    {{-- Media Browser Modal --}}
     @include('media.browser-modal')
 @endsection
 
 @push('scripts')
-    {{-- Alpine.js (once in layout, this can be omitted if already in your dashboard layout) --}}
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
-    {{-- Block-editor bundle --}}
     <script src="{{ asset('blockeditor/bundle.js') }}"></script>
 
-    {{-- categoryBox component --}}
     <script>
         function categoryBox(all, selected) {
             return {
@@ -249,7 +392,7 @@
                     let json = await res.json();
                     this.all.push({
                         id: json.id,
-                        name: json.term.name,
+                        name: json.name,
                         parent: json.parent
                     });
                     this.newName = '';
@@ -258,19 +401,21 @@
                 }
             };
         }
-    </script>
 
-    {{-- featuredImagesPicker component --}}
-    <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('featuredImagesPicker', () => ({
-                selectedIds: window.initialImageIds,
-                previewUrls: window.initialImageUrls,
+                selectedIds: window.initialImageIds || [],
+                previewUrls: window.initialImageUrls || [],
+                get filteredIds() {
+                    return this.selectedIds.filter(id =>
+                        id != null && Number.isInteger(Number(id))
+                    );
+                },
                 openMedia() {
                     document.dispatchEvent(new CustomEvent('media-open', {
                         detail: {
                             onSelect: img => {
-                                if (!this.selectedIds.includes(img.id)) {
+                                if (img.id && !this.selectedIds.includes(img.id)) {
                                     this.selectedIds.push(img.id);
                                     this.previewUrls.push(img.url);
                                 }
@@ -281,6 +426,19 @@
                 remove(i) {
                     this.selectedIds.splice(i, 1);
                     this.previewUrls.splice(i, 1);
+                }
+            }));
+
+            Alpine.data('metaFields', () => ({
+                fields: window.initialMetaFields || [],
+                addField() {
+                    this.fields.push({
+                        key: '',
+                        value: ''
+                    });
+                },
+                removeField(index) {
+                    this.fields.splice(index, 1);
                 }
             }));
         });

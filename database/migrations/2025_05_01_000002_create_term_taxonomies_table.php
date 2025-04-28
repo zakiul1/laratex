@@ -8,7 +8,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('term_taxonomies', function (Blueprint $table) {
-            $table->id();
+            $table->id('term_taxonomy_id'); // Change from $table->id() to explicitly name the column
             $table->foreignId('term_id')
                 ->constrained()
                 ->onDelete('cascade');

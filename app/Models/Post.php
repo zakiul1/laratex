@@ -2,19 +2,13 @@
 
 namespace App\Models;
 
-use App\Traits\HasSeoMeta;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Post extends Model
 {
-    use HasSeoMeta;
+    use HasFactory;
 
-    /**
-     * Mass assignable attributes.
-     */
     protected $fillable = [
         'title',
         'slug',
@@ -23,86 +17,60 @@ class Post extends Model
         'type',
         'status',
         'template',
-        'featured_images', // JSON array of media IDs
         'author_id',
     ];
 
-    /**
-     * Attribute casting.
-     */
-    protected $casts = [
-        'featured_images' => 'array',
-    ];
-
-    /**
-     * All stored meta entries for this post.
-     */
-    public function meta(): HasMany
-    {
-        return $this->hasMany(PostMeta::class);
-    }
-
-    /**
-     * Convenient getter for a single meta key.
-     */
-    public function getMeta(string $key, $default = null)
-    {
-        $meta = $this->meta->firstWhere('meta_key', $key);
-        return $meta ? $meta->meta_value : $default;
-    }
-
-    /**
-     * Post author relationship.
-     */
-    public function author(): BelongsTo
+    public function author()
     {
         return $this->belongsTo(User::class, 'author_id');
     }
 
-    /**
-     * All term_taxonomies attached to this post (any taxonomy).
-     */
-    public function terms(): BelongsToMany
+    public function categories()
     {
         return $this->belongsToMany(
             TermTaxonomy::class,
             'term_relationships',
-            'object_id',
+            'object_id',            // ← change here
             'term_taxonomy_id'
-        )
-            ->withPivot('object_type')
-            ->wherePivot('object_type', 'post');
+        );
     }
 
-    /**
-     * Only the 'category' terms.
-     */
-    public function categories(): BelongsToMany
+    public function meta()
     {
-        return $this->terms()->where('taxonomy', 'category');
+        return $this->hasMany(PostMeta::class);
     }
 
-    /**
-     * Only the 'tag' terms.
-     */
-    public function tags(): BelongsToMany
+    public function seoMeta()
     {
-        return $this->terms()->where('taxonomy', 'tag');
+        return $this->hasOne(PostMeta::class)
+            ->where('meta_key', 'seo');
     }
 
-    /**
-     * Sync categories by taxonomy IDs.
-     */
-    public function syncCategories(array $ids): void
+    public function getFeaturedImageIdsAttribute()
     {
-        $this->categories()->sync($ids);
+        return $this->meta()
+            ->where('meta_key', 'featured_image')
+            ->pluck('meta_value')
+            ->map(fn($v) => (int) $v)
+            ->toArray();
     }
 
-    /**
-     * Sync tags by taxonomy IDs.
-     */
-    public function syncTags(array $ids): void
+    public function syncCategories(array $categoryIds): void
     {
-        $this->tags()->sync($ids);
+        $this->categories()->sync($categoryIds);
+    }
+
+    public function syncFeaturedImages(array $ids): void
+    {
+        $this->meta()
+            ->where('meta_key', 'featured_image')
+            ->delete();
+
+        foreach ($ids as $mediaId) {
+            $this->meta()->create([
+                'meta_key' => 'featured_image',
+                'meta_value' => $mediaId,
+            ]);
+        }
     }
 }

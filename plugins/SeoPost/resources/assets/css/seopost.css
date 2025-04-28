@@ -1,0 +1,25 @@
+/* Wrapper styling */
+.seopost-wrapper {
+    display: block;
+    margin: 2rem 0;
+  }
+  
+  /* Base card styling */
+  .seopost-item {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    transition: box-shadow 0.2s ease;
+  }
+  
+  .seopost-item:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* imgsrnk-style overrides */
+  .imgsrnk-card {
+    background: #f9fafb;
+    padding: 1.5rem;
+  }
+  

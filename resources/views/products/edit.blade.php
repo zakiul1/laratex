@@ -1,3 +1,4 @@
+{{-- resources/views/products/edit.blade.php --}}
 @extends('layouts.dashboard')
 
 @section('content')

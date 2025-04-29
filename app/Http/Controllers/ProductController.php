@@ -3,58 +3,108 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
-use App\Models\Category;
 use App\Models\ProductImage;
+use App\Models\Term;
+use App\Models\TermTaxonomy;
+use App\Models\Media;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
+use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
-    public function index()
+    /* ---------------------------------------------------------
+     |  INDEX
+     * --------------------------------------------------------*/
+    public function index(Request $request)
     {
-        $products = Product::with('category')->latest()->paginate(10);
-        return view('products.index', compact('products'));
+        $query = Product::with([
+            'taxonomies.term',
+            'featuredMedia'    // ← add this
+        ]);
+
+        if ($tid = $request->get('filter_category')) {
+            $query->whereHas(
+                'taxonomies',
+                fn($q) =>
+                $q->where('term_taxonomy_id', $tid)
+            );
+        }
+
+        $products = $query->latest()->paginate(10);
+
+        $allCats = TermTaxonomy::select('term_taxonomies.*')
+            ->join('terms', 'term_taxonomies.term_id', 'terms.id')
+            ->where('taxonomy', 'product')
+            ->with('term')
+            ->orderBy('terms.name')
+            ->get();
+
+        return view('products.index', compact('products', 'allCats'));
     }
 
+    /* ---------------------------------------------------------
+     |  CREATE
+     * --------------------------------------------------------*/
     public function create()
     {
-        $categories = Category::all();
-        return view('products.create', compact('categories'));
+        $taxonomies = TermTaxonomy::select('term_taxonomies.*')
+            ->join('terms', 'term_taxonomies.term_id', '=', 'terms.id')
+            ->where('taxonomy', 'product')
+            ->with('term')
+            ->orderBy('terms.name')
+            ->get();
+
+        return view('products.create', compact('taxonomies'));
     }
 
+    /* ---------------------------------------------------------
+     |  STORE
+     * --------------------------------------------------------*/
     public function store(Request $request)
     {
-
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|unique:products,slug',
-            'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string',
             'price' => 'nullable|numeric',
             'stock' => 'nullable|integer',
             'status' => 'required|boolean',
-            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
+
+            // <-- multiple featured images -->
+            'featured_media_ids' => 'nullable|array',
+            'featured_media_ids.*' => 'integer|exists:media,id',
+
+            'taxonomy_ids' => 'required|array',
+            'taxonomy_ids.*' => 'integer|exists:term_taxonomies,term_taxonomy_id',
+
+            // gallery (if you still need it)
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
 
+        // collision-safe slug
         $slug = $data['slug'] ?? Str::slug($data['name']);
-        $originalSlug = $slug;
-        $counter = 1;
+        $base = $slug;
+        $i = 1;
         while (Product::where('slug', $slug)->exists()) {
-            $slug = $originalSlug . '-' . $counter++;
+            $slug = "{$base}-" . ($i++);
         }
         $data['slug'] = $slug;
 
-        if ($request->hasFile('featured_image')) {
-            $data['featured_image'] = $request->file('featured_image')->store('products/featured', 'public');
-        }
-
+        // create product (we removed the single‐image logic)
         $product = Product::create($data);
 
+        // sync featured images (many-to-many)
+        $product->featuredMedia()->sync($request->input('featured_media_ids', []));
+
+        // sync categories
+        $product->taxonomies()->sync($request->input('taxonomy_ids', []));
+
+        // gallery uploads (optional)
         if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('products/gallery', 'public');
+            foreach ($request->file('images') as $img) {
+                $path = $img->store('products/gallery', 'public');
                 ProductImage::create([
                     'product_id' => $product->id,
                     'image' => $path,
@@ -62,51 +112,76 @@ class ProductController extends Controller
             }
         }
 
-        return redirect()->route('products.index')->with('success', 'Product created successfully.');
+        return redirect()->route('products.index')
+            ->with('success', 'Product created successfully.');
     }
 
+    /* ---------------------------------------------------------
+     |  EDIT
+     * --------------------------------------------------------*/
     public function edit(Product $product)
     {
-        $categories = Category::all();
-        $product->load('images');
-        return view('products.edit', compact('product', 'categories'));
+        $product->load('taxonomies.term', 'images', 'featuredMedia');
+
+        $taxonomies = TermTaxonomy::select('term_taxonomies.*')
+            ->join('terms', 'term_taxonomies.term_id', '=', 'terms.id')
+            ->where('taxonomy', 'product')
+            ->with('term')
+            ->orderBy('terms.name')
+            ->get();
+
+        return view('products.edit', compact('product', 'taxonomies'));
     }
 
+    /* ---------------------------------------------------------
+     |  UPDATE
+     * --------------------------------------------------------*/
     public function update(Request $request, Product $product)
     {
-        // dd($request->all());
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'slug' => 'nullable|string|unique:products,slug,' . $product->id,
-            'category_id' => 'required|exists:categories,id',
+            'slug' => "nullable|string|unique:products,slug,{$product->id}",
             'description' => 'nullable|string',
             'price' => 'nullable|numeric',
             'stock' => 'nullable|integer',
             'status' => 'required|boolean',
-            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
+
+            // <-- multiple featured images -->
+            'featured_media_ids' => 'nullable|array',
+            'featured_media_ids.*' => 'integer|exists:media,id',
+
+            'taxonomy_ids' => 'required|array',
+            'taxonomy_ids.*' => 'integer|exists:term_taxonomies,term_taxonomy_id',
+
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
 
-        $data['slug'] = $data['slug'] ?? Str::slug($data['name']);
-        $originalSlug = $data['slug'];
-        $counter = 1;
-
-        while (Product::where('slug', $data['slug'])->where('id', '!=', $product->id)->exists()) {
-            $data['slug'] = $originalSlug . '-' . $counter++;
+        // collision-safe slug update
+        $slug = $data['slug'] ?? Str::slug($data['name']);
+        $base = $slug;
+        $i = 1;
+        while (
+            Product::where('slug', $slug)
+                ->where('id', '!=', $product->id)
+                ->exists()
+        ) {
+            $slug = "{$base}-" . ($i++);
         }
+        $data['slug'] = $slug;
 
-        if ($request->hasFile('featured_image')) {
-            if ($product->featured_image) {
-                File::delete(public_path('storage/' . $product->featured_image));
-            }
-            $data['featured_image'] = $request->file('featured_image')->store('products/featured', 'public');
-        }
-
+        // update
         $product->update($data);
 
+        // re-sync featured images
+        $product->featuredMedia()->sync($request->input('featured_media_ids', []));
+
+        // re-sync categories
+        $product->taxonomies()->sync($request->input('taxonomy_ids', []));
+
+        // new gallery uploads (if you still need them)
         if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('products/gallery', 'public');
+            foreach ($request->file('images') as $img) {
+                $path = $img->store('products/gallery', 'public');
                 ProductImage::create([
                     'product_id' => $product->id,
                     'image' => $path,
@@ -114,74 +189,95 @@ class ProductController extends Controller
             }
         }
 
-        return redirect()->route('products.index')->with('success', 'Product updated successfully.');
+        return redirect()->route('products.index')
+            ->with('success', 'Product updated successfully.');
     }
 
+    /* ---------------------------------------------------------
+     |  DESTROY
+     * --------------------------------------------------------*/
     public function destroy(Product $product)
     {
-        if ($product->featured_image) {
-            File::delete(public_path('storage/' . $product->featured_image));
-        }
+        $product->taxonomies()->detach();
 
-        foreach ($product->images as $image) {
-            File::delete(public_path('storage/' . $image->image));
-            $image->delete();
+        foreach ($product->images as $img) {
+            File::delete(public_path("storage/{$img->image}"));
+            $img->delete();
         }
-
         $product->delete();
 
-        return redirect()->route('products.index')->with('success', 'Product deleted successfully.');
+        return redirect()->route('products.index')
+            ->with('success', 'Product deleted successfully.');
     }
 
-    public function deleteImage($id)
-    {
-        $image = ProductImage::findOrFail($id);
-        File::delete(public_path('storage/' . $image->image));
-        $image->delete();
 
-        return response()->json(['success' => true]);
-    }
+    /* ---------------------------------------------------------
+     |  FRONT-END SHOW
+     * --------------------------------------------------------*/
     public function show($slug)
     {
-        // 1) Load the product and its category
         $product = Product::where('slug', $slug)
-            ->with('category')
+            ->with('taxonomies.term', 'images', 'featuredMedia')
             ->firstOrFail();
 
-        // 2) Sidebar (all categories), current category, related products
-        $categories = Category::all();
-        $category = $product->category;
-        $relatedProducts = Product::where('category_id', $category->id)
-            ->where('id', '!=', $product->id)
-            ->where('status', 1)
-            ->latest()
-            ->take(4)
-            ->get();
+        $firstCat = $product->taxonomies->first()?->term_taxonomy_id;
+        $related = $firstCat
+            ? Product::whereHas('taxonomies', fn($q) => $q->where('term_taxonomy_id', $firstCat))
+                ->where('id', '!=', $product->id)
+                ->where('status', 1)
+                ->latest()
+                ->take(4)
+                ->get()
+            : collect();
 
-        // 3) Detect active theme
-        $theme = getActiveTheme(); // your helper for “classic”, “modern”, etc.
+        $theme = getActiveTheme();
+        $view = "themes.$theme.templates.product";
 
-        // 4) Construct the theme‐specific view name
-        $themeView = "themes.{$theme}.templates.product";
-
-        // 5) If the theme provides its own product template, use it
-        if (view()->exists($themeView)) {
-            return view($themeView, compact(
-                'product',
-                'categories',
-                'category',
-                'relatedProducts'
-            ));
-        }
-
-        // 6) Otherwise fall back to the module’s default
-        return view('products.show', compact(
-            'product',
-            'categories',
-            'category',
-            'relatedProducts'
-        ));
+        return view()->exists($view)
+            ? view($view, compact('product', 'related'))
+            : view('products.show', compact('product', 'related'));
     }
 
+
+    /**
+     * AJAX endpoint to create a new “product” category on the fly.
+     */
+
+    public function ajaxCategoryStore(Request $request)
+    {
+
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'parent' => [
+                'nullable',
+                'integer',
+                Rule::exists('term_taxonomies', 'term_taxonomy_id')
+            ],
+        ]);
+
+
+        $slug = Str::slug($data['name']);
+
+        if (Term::where('slug', $slug)->exists()) {
+            return response()->json(['message' => 'Category already exists'], 409);
+        }
+
+        $term = Term::create([
+            'name' => $data['name'],
+            'slug' => $slug,
+        ]);
+
+        $tax = TermTaxonomy::create([
+            'term_id' => $term->id,
+            'taxonomy' => 'product',
+            'parent' => $data['parent'] ?? 0,
+        ]);
+
+        return response()->json([
+            'id' => $tax->term_taxonomy_id,
+            'name' => $term->name,
+        ]);
+    }
 
 }

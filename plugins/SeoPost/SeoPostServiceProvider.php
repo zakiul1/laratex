@@ -20,11 +20,11 @@ class SeoPostServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__ . '/database/migrations');
         $this->loadViewsFrom(__DIR__ . '/resources/views/admin', 'admin');
         $this->app->booted(function () {
-            if (! Schema::hasTable('seopost_settings')) {
+            if (!Schema::hasTable('seopost_settings')) {
                 Artisan::call('migrate', [
-                    '--path'     => realpath(__DIR__ . '/database/migrations'),
+                    '--path' => realpath(__DIR__ . '/database/migrations'),
                     '--realpath' => true,
-                    '--force'    => true,
+                    '--force' => true,
                 ]);
             }
         });
@@ -41,41 +41,41 @@ class SeoPostServiceProvider extends ServiceProvider
                 $items[] = [
                     'label' => 'SeoPost',
                     'route' => 'seopost.config',   // your generator UI
-                    'icon'  => 'lucide-search',    // Lucide icon
+                    'icon' => 'lucide-search',    // Lucide icon
                 ];
                 return $items;
             });
 
-            // 2) Hook into the shortcode render pipeline
-            add_filter('render_shortcode', function (string $output, string $tag, array $attrs) {
-                if ($tag === 'seopost') {
-                    return (new Shortcodes\SeoPostShortcode())->render($attrs);
-                }
-                return $output;
-            }, 10, 3);
+            /*     // 2) Hook into the shortcode render pipeline
+                add_filter('render_shortcode', function (string $output, string $tag, array $attrs) {
+                    if ($tag === 'seopost') {
+                        return (new Shortcodes\SeoPostShortcode())->render($attrs);
+                    }
+                    return $output;
+                }, 10, 3); */
         }
 
 
-        
-    if (function_exists('add_filter')) {
-        // 1) Inject into the main page content
-        add_filter('frontend_content', function (string $html) {
-            // find [tag attr="…"] and let your existing render_shortcode filter handle it
-            return preg_replace_callback('/\[(\w+)([^\]]*)\]/', function ($match) {
-                $tag      = $match[1];
-                $rawAttrs = trim($match[2]);
 
-                // parse attrs into [ key => value ]
-                preg_match_all('/(\w+)\s*=\s*"([^"]*)"/', $rawAttrs, $m, PREG_SET_ORDER);
-                $attrs = [];
-                foreach ($m as $kv) {
-                    $attrs[$kv[1]] = $kv[2];
-                }
+        if (function_exists('add_filter')) {
+            // 1) Inject into the main page content
+            add_filter('seopost_content', function (string $html) {
+                // find [tag attr="…"] and let your existing render_shortcode filter handle it
+                return preg_replace_callback('/\[(\w+)([^\]]*)\]/', function ($match) {
+                    $tag = $match[1];
+                    $rawAttrs = trim($match[2]);
 
-                // now run your render_shortcode filter
-                return apply_filters('render_shortcode', '', $tag, $attrs);
-            }, $html);
-        });
-    }
+                    // parse attrs into [ key => value ]
+                    preg_match_all('/(\w+)\s*=\s*"([^"]*)"/', $rawAttrs, $m, PREG_SET_ORDER);
+                    $attrs = [];
+                    foreach ($m as $kv) {
+                        $attrs[$kv[1]] = $kv[2];
+                    }
+
+                    // now run your render_shortcode filter
+                    return apply_filters('render_shortcode', '', $tag, $attrs);
+                }, $html);
+            });
+        }
     }
 }

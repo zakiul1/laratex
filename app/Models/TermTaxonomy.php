@@ -7,7 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class TermTaxonomy extends Model
 {
     protected $primaryKey = 'term_taxonomy_id';
-
+    public $incrementing = true;
+    protected $keyType = 'int';
     protected $fillable = [
         'term_id',
         'taxonomy',
@@ -31,4 +32,22 @@ class TermTaxonomy extends Model
     {
         return $this->belongsTo(self::class, 'parent');
     }
+
+    public function images()
+    {
+        return $this->hasMany(
+            TermTaxonomyImage::class,
+            'term_taxonomy_id',
+            'term_taxonomy_id'
+        );
+    }
+    public function parentTaxonomy()
+    {
+        return $this->belongsTo(
+            self::class,
+            'parent',
+            'term_taxonomy_id'
+        );
+    }
+
 }

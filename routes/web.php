@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\PluginExportController;
 use App\Http\Controllers\Admin\PluginImportController;
 use App\Http\Controllers\Admin\PluginSettingController;
 use App\Http\Controllers\Admin\PluginUpdateController;
+use App\Http\Controllers\Admin\ProductTaxonomyController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
@@ -46,7 +47,9 @@ Route::middleware('auth')->group(function () {
 Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit');
 
 
-
+// AJAX endpoint for runtime category creation
+Route::post('posts/categories', [PostController::class, 'ajaxCategoryStore'])
+    ->name('admin.posts.categories.store');
 
 
 // Admin routes with auth
@@ -174,7 +177,9 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
 
 
 
-
+    Route::resource('product-taxonomies', ProductTaxonomyController::class);
+    Route::post('/products/categories', [ProductController::class, 'ajaxCategoryStore'])
+        ->name('admin.products.categories.store');
 
 
 

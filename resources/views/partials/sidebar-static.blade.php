@@ -28,17 +28,65 @@
     <span>Menus</span>
 </a>
 
-<a href="{{ route('categories.index') }}"
+{{-- <a href="{{ route('categories.index') }}"
     class="flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium {{ $route('categories.*') }}">
     <x-lucide-folder class="size-6" />
     <span>Categories</span>
-</a>
+</a> --}}
 
-<a href="{{ route('products.index') }}"
-    class="flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium {{ $route('products.*') }}">
-    <x-lucide-package class="size-6" />
-    <span>Products</span>
-</a>
+{{-- resources/views/partials/sidebar-product.blade.php --}}
+{{-- resources/views/partials/sidebar-product.blade.php --}}
+@php
+    use App\Models\TermTaxonomy;
+
+    // Should the Products menu be expanded?
+    $isProductActive = request()->routeIs('products.*') || request()->routeIs('product-taxonomies.*');
+
+    // Fetch all “product” categories, joined so we can order by the real terms.name column
+    $productCategories = TermTaxonomy::select('term_taxonomies.*')
+        ->join('terms', 'term_taxonomies.term_id', '=', 'terms.id')
+        ->where('taxonomy', 'product')
+        ->orderBy('terms.name', 'asc')
+        ->with('term')
+        ->get();
+@endphp
+
+<div x-data='@json(['isExpanded' => (bool) $isProductActive])' class="flex flex-col">
+    <button type="button" @click="isExpanded = !isExpanded" id="product-btn" aria-controls="product-menu"
+        x-bind:aria-expanded="isExpanded ? 'true' : 'false'"
+        class="flex items-center gap-2 px-2 py-1.5 text-sm font-medium rounded-radius
+            {{ $isProductActive
+                ? 'bg-slate-300 text-on-surface-strong dark:bg-primary-dark/10 dark:text-on-surface-dark-strong'
+                : 'text-on-surface hover:bg-primary/5 hover:text-on-surface-strong dark:text-on-surface-dark dark:hover:text-on-surface-dark-strong dark:hover:bg-primary-dark/5' }}">
+        <x-lucide-package class="size-6 shrink-0" />
+        <span class="mr-auto text-left">Products</span>
+        <x-lucide-chevron-down class="size-4 transition-transform shrink-0 ml-auto"
+            x-bind:class="isExpanded ? 'rotate-180' : 'rotate-0'" />
+    </button>
+
+    <ul x-cloak x-show="isExpanded" x-collapse id="product-menu" aria-labelledby="product-btn" class="ml-6 space-y-1">
+        {{-- All Products --}}
+        <li class="px-1 py-0.5 first:mt-2">
+            <a href="{{ route('products.index') }}"
+                class="block px-2 py-1.5 text-sm rounded-radius
+                    {{ request()->routeIs('products.index') ? 'bg-slate-200 font-semibold' : 'hover:bg-primary/5' }}">
+                All Products
+            </a>
+        </li>
+
+        {{-- Categories index --}}
+        <li class="px-1 py-0.5">
+            <a href="{{ route('product-taxonomies.index') }}"
+                class="block px-2 py-1.5 text-sm rounded-radius
+                    {{ request()->routeIs('product-taxonomies.index') ? 'bg-slate-200 font-semibold' : 'hover:bg-primary/5' }}">
+                Categories
+            </a>
+        </li>
+
+
+    </ul>
+</div>
+
 
 {{-- <a href="{{ route('sliders.index') }}"
     class="flex items-center rounded-radius gap-2 px-2 py-1.5 text-sm font-medium {{ $route('sliders.*') }}">

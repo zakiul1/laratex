@@ -1,6 +1,13 @@
+{{-- resources/views/products/index.blade.php --}}
 @extends('layouts.dashboard')
 
 @section('content')
+    @php
+        use Illuminate\Support\Facades\Storage;
+        use App\Models\Media;
+        use Illuminate\Support\Arr;
+    @endphp
+
     <div class="max-w-7xl mx-auto px-4 py-6">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-xl font-semibold">All Products</h1>
@@ -16,6 +23,23 @@
             </div>
         @endif
 
+        {{-- Category Filter --}}
+        {{--      <div class="mb-4">
+            <form method="GET" class="flex items-center space-x-2">
+                <label for="filter_category" class="text-sm font-medium">Filter by Category:</label>
+                <select name="filter_category" id="filter_category" class="border rounded p-1 text-sm">
+                    <option value="">All Categories</option>
+                    @foreach ($allCats as $cat)
+                        <option value="{{ $cat->term_taxonomy_id }}"
+                            {{ request('filter_category') == $cat->term_taxonomy_id ? 'selected' : '' }}>
+                            {{ $cat->term->name }}
+                        </option>
+                    @endforeach
+                </select>
+                <button type="submit" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm">Apply</button>
+            </form>
+        </div>  --}}
+
         <div class="overflow-x-auto bg-white shadow rounded-lg">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50 text-left text-sm font-semibold text-gray-700">
@@ -23,7 +47,7 @@
                         <th class="px-4 py-2">#</th>
                         <th class="px-4 py-2">Image</th>
                         <th class="px-4 py-2">Name</th>
-                        <th class="px-4 py-2">Category</th>
+                        <th class="px-4 py-2">Categories</th>
                         <th class="px-4 py-2">Price</th>
                         <th class="px-4 py-2">Status</th>
                         <th class="px-4 py-2">Actions</th>
@@ -32,17 +56,30 @@
                 <tbody class="divide-y divide-gray-100 text-sm text-gray-700">
                     @forelse ($products as $product)
                         <tr>
-                            <td class="px-4 py-2">{{ $loop->iteration + ($products->currentPage() - 1) * $products->perPage() }}</td>
                             <td class="px-4 py-2">
-                                @if ($product->featured_image)
-                                    <img src="{{ asset('storage/' . $product->featured_image) }}" alt="Image"
+                                {{ $loop->iteration + ($products->currentPage() - 1) * $products->perPage() }}
+                            </td>
+
+                            <td class="px-4 py-2">
+                                @php
+                                    // grab the first related Media model
+                                    $media = $product->featuredMedia->first();
+                                    // build a public URL to its stored path
+                                    $firstUrl = $media ? Storage::disk('public')->url($media->path) : null;
+                                @endphp
+
+                                @if ($firstUrl)
+                                    <img src="{{ $firstUrl }}" alt="Image"
                                         class="w-16 h-16 object-cover rounded border">
                                 @else
                                     <span class="text-gray-400">No Image</span>
                                 @endif
                             </td>
+
                             <td class="px-4 py-2">{{ $product->name }}</td>
-                            <td class="px-4 py-2">{{ $product->category->name ?? '-' }}</td>
+                            <td class="px-4 py-2">
+                                {{ $product->taxonomies->pluck('term.name')->join(', ') ?: '-' }}
+                            </td>
                             <td class="px-4 py-2">{{ $product->price ?? '-' }}</td>
                             <td class="px-4 py-2">
                                 <span class="{{ $product->status ? 'text-green-600' : 'text-red-600' }}">
@@ -51,15 +88,13 @@
                             </td>
                             <td class="px-4 py-2">
                                 <div class="flex items-center gap-2">
-                                    <a href="{{ route('products.edit', $product->id) }}"
+                                    <a href="{{ route('products.edit', $product) }}"
                                         class="text-xs px-3 py-1 rounded bg-yellow-500 hover:bg-yellow-600 text-white">
                                         Edit
                                     </a>
-
-                                    <form action="{{ route('products.destroy', $product->id) }}" method="POST"
+                                    <form action="{{ route('products.destroy', $product) }}" method="POST"
                                         onsubmit="return confirm('Are you sure you want to delete this product?');">
-                                        @csrf
-                                        @method('DELETE')
+                                        @csrf @method('DELETE')
                                         <button type="submit"
                                             class="text-xs px-3 py-1 rounded bg-red-600 hover:bg-red-700 text-white">
                                             Delete
@@ -76,6 +111,7 @@
                         </tr>
                     @endforelse
                 </tbody>
+
             </table>
         </div>
 

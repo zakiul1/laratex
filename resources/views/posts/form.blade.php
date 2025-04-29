@@ -1,3 +1,4 @@
+{{-- resources/views/posts/form.blade.php --}}
 @extends('layouts.dashboard')
 
 @section('content')
@@ -8,13 +9,7 @@
         $formAction = $isEdit ? route('posts.update', $post) : route('posts.store');
         $formMethod = $isEdit ? 'PUT' : 'POST';
 
-        //
-        // ── Prepare Categories ──────────────────────────────────────────────
-        //
-        $templates = $templates ?? getThemeTemplates();
-        $allCategories = $allCategories ?? collect();
-        $selected = $selected ?? [];
-
+        // Prepare categories
         $categoriesJson = $allCategories
             ->map(
                 fn($c) => [
@@ -24,74 +19,28 @@
                 ],
             )
             ->toJson();
-
         $selectedJson = json_encode($selected);
 
-        //
-        // ── Prepare Featured Images ─────────────────────────────────────────
-        //
-        $initialImageIds = old('featured_images', $post->featured_image_ids ?? []);
-        $initialImageIds = array_filter(array_unique($initialImageIds), fn($id) => is_numeric($id) && $id > 0);
-
+        // Prepare featured images
+        $initialImageIds = old('featured_images', $featuredImages ?? []);
+        $initialImageUrls = [];
         if (count($initialImageIds)) {
-            $mediaItems = \App\Models\Media::whereIn('id', $initialImageIds)->get();
-
-            // build an [id => url] map
-            $urlMap = $mediaItems
-                ->mapWithKeys(
-                    fn($m) => [
-                        $m->id => Storage::url($m->path),
-                    ],
-                )
-                ->toArray();
-
-            // preserve original order, drop any missing
-            $initialImageUrls = [];
+            $items = \App\Models\Media::whereIn('id', $initialImageIds)->get();
+            $map = $items->mapWithKeys(fn($m) => [$m->id => Storage::url($m->path)])->toArray();
             foreach ($initialImageIds as $id) {
-                if (isset($urlMap[$id])) {
-                    $initialImageUrls[] = $urlMap[$id];
+                if (isset($map[$id])) {
+                    $initialImageUrls[] = $map[$id];
                 }
             }
         } else {
             $initialImageUrls = old('featured_images_urls', []);
         }
 
-        //
-        // ── Prepare Custom Meta Fields (excludes seo & featured_image) ────────
-        //
-        $initialMetaFields = old(
-            'meta',
-            $isEdit
-                ? $post->meta
-                    ->whereNotIn('meta_key', ['seo', 'featured_image'])
-                    ->map(
-                        fn($m) => [
-                            'key' => $m->meta_key,
-                            'value' => $m->meta_value,
-                        ],
-                    )
-                    ->toArray()
-                : [],
-        );
-
-        //
-        // ── Prepare SEO array, handling string or array in meta_value ────────
-        //
-        $oldSeo = old('seo');
-        if (is_array($oldSeo)) {
-            $seo = $oldSeo;
-        } else {
-            $raw = optional($post->seoMeta)->meta_value;
-            if (is_string($raw)) {
-                $seo = json_decode($raw, true) ?: [];
-            } elseif (is_array($raw)) {
-                $seo = $raw;
-            } else {
-                $seo = [];
-            }
-        }
+        // Prepare custom meta fields
+        $initialMetaFields = old('meta', $customMeta ?? []);
+        // Prepare SEO
+        $seo = $seoMeta ?? [];
     @endphp
-
 
     <script>
         window.categoriesBoxData = {!! $categoriesJson !!};
@@ -100,238 +49,232 @@
         window.initialImageUrls = {!! json_encode($initialImageUrls) !!};
         window.initialMetaFields = {!! json_encode($initialMetaFields) !!};
     </script>
+    <div>
+        <link rel="stylesheet" href="{{ asset('blockeditor/styles.css') }}">
+        <form method="POST" action="{{ $formAction }}" enctype="multipart/form-data"
+            class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-    <link rel="stylesheet" href="{{ asset('blockeditor/styles.css') }}">
+            @csrf
+            @if ($formMethod === 'PUT')
+                @method('PUT')
+            @endif
 
-    <form method="POST" action="{{ $formAction }}" enctype="multipart/form-data"
-        class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        @csrf
-        @if ($formMethod === 'PUT')
-            @method('PUT')
-        @endif
+            {{-- Left: Title, Editor, SEO --}}
+            <div class="lg:col-span-2 space-y-6">
+                {{-- Title --}}
+                <div>
+                    <input type="text" name="title" value="{{ old('title', $post->title ?? '') }}" placeholder="Add title"
+                        required
+                        class="w-full text-3xl font-semibold border border-gray-300 focus:border-primary focus:ring-0 placeholder:text-gray-400" />
+                    @error('title')
+                        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
 
-        {{-- ── Left: Title, Editor, SEO ──────────────────────────────────── --}}
-        <div class="lg:col-span-2 space-y-6">
-            {{-- Title --}}
-            <div>
-                <input type="text" name="title" value="{{ old('title', $post->title ?? '') }}" placeholder="Add title"
-                    required
-                    class="w-full text-3xl font-semibold border border-gray-300
-                           focus:border-primary focus:ring-0 placeholder:text-gray-400" />
-                @error('title')
+                {{-- Block Editor --}}
+                <div id="customAreaBuilder" class="w-full border rounded"></div>
+                <textarea id="layoutData" name="content" class="hidden">{{ old('content', $post->content ?? '') }}</textarea>
+                @error('content')
                     <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                 @enderror
-            </div>
 
-            {{-- Block Editor --}}
-            <div id="customAreaBuilder" class="w-full border rounded"></div>
-            <textarea id="layoutData" name="content" class="hidden">{{ old('content', $post->content ?? '') }}</textarea>
-            @error('content')
-                <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-            @enderror
-
-            {{-- ── SEO Settings ──────────────────────────────────────────── --}}
-            <div class="border rounded p-4 bg-white shadow">
-                <h3 class="font-semibold text-sm mb-2">SEO Settings</h3>
-                <div class="space-y-4">
-                    {{-- Meta Title --}}
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Meta Title</label>
-                        <input type="text" name="seo[title]" value="{{ $seo['title'] ?? '' }}"
-                            class="w-full border rounded p-2" />
-                        @error('seo.title')
-                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- Meta Description --}}
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Meta Description</label>
-                        <textarea name="seo[description]" class="w-full border rounded p-2">{{ $seo['description'] ?? '' }}</textarea>
-                        @error('seo.description')
-                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- Meta Keywords --}}
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Meta Keywords</label>
-                        <input type="text" name="seo[keywords]" value="{{ $seo['keywords'] ?? '' }}"
-                            class="w-full border rounded p-2" />
-                        @error('seo.keywords')
-                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- Robots --}}
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Robots</label>
-                        <select name="seo[robots]" class="w-full border rounded p-2">
-                            @foreach (['Index & Follow', 'NoIndex & Follow', 'NoIndex & NoFollow', 'No Archive', 'No Snippet'] as $opt)
-                                <option value="{{ $opt }}"
-                                    {{ ($seo['robots'] ?? '') === $opt ? 'selected' : '' }}>{{ $opt }}</option>
-                            @endforeach
-                        </select>
-                        @error('seo.robots')
-                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                        @enderror
+                {{-- SEO Settings --}}
+                <div class="border rounded p-4 bg-white shadow">
+                    <h3 class="font-semibold text-sm mb-2">SEO Settings</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Meta Title</label>
+                            <input type="text" name="seo[title]" value="{{ $seo['title'] ?? '' }}"
+                                class="w-full border rounded p-2" />
+                            @error('seo.title')
+                                <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Meta Description</label>
+                            <textarea name="seo[description]" class="w-full border rounded p-2">{{ $seo['description'] ?? '' }}</textarea>
+                            @error('seo.description')
+                                <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Meta Keywords</label>
+                            <input type="text" name="seo[keywords]" value="{{ $seo['keywords'] ?? '' }}"
+                                class="w-full border rounded p-2" />
+                            @error('seo.keywords')
+                                <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Robots</label>
+                            <select name="seo[robots]" class="w-full border rounded p-2">
+                                @foreach (['Index & Follow', 'NoIndex & Follow', 'NoIndex & NoFollow', 'No Archive', 'No Snippet'] as $opt)
+                                    <option value="{{ $opt }}"
+                                        {{ ($seo['robots'] ?? '') === $opt ? 'selected' : '' }}>
+                                        {{ $opt }}</option>
+                                @endforeach
+                            </select>
+                            @error('seo.robots')
+                                <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        {{-- ── Right: Settings, Categories, Media, Meta ─────────────────── --}}
-        <div class="space-y-6">
-            {{-- Status & Visibility --}}
-            <div class="border rounded p-4 bg-white shadow">
-                <h3 class="font-semibold text-sm mb-2">Status & Visibility</h3>
-                <select name="status" class="w-full border rounded p-2">
-                    <option value="published" {{ old('status', $post->status ?? '') === 'published' ? 'selected' : '' }}>
-                        Published
-                    </option>
-                    <option value="draft" {{ old('status', $post->status ?? '') === 'draft' ? 'selected' : '' }}>
-                        Draft
-                    </option>
-                </select>
-            </div>
-
-            {{-- Template --}}
-            <div class="border rounded p-4 bg-white shadow">
-                <h3 class="font-semibold text-sm mb-2">Template</h3>
-                <select name="template" class="w-full border rounded p-2">
-                    <option value="">Default</option>
-                    @foreach ($templates as $key => $label)
-                        <option value="{{ $key }}"
-                            {{ old('template', $post->template ?? '') === $key ? 'selected' : '' }}>
-                            {{ $label }}
+            {{-- Right: Settings, Categories, Media, Meta --}}
+            <div class="space-y-6">
+                {{-- Status & Visibility --}}
+                <div class="border rounded p-4 bg-white shadow">
+                    <h3 class="font-semibold text-sm mb-2">Status & Visibility</h3>
+                    <select name="status" class="w-full border rounded p-2">
+                        <option value="published"
+                            {{ old('status', $post->status ?? '') === 'published' ? 'selected' : '' }}>
+                            Published
                         </option>
-                    @endforeach
-                </select>
-            </div>
-
-            {{-- Permalink --}}
-            <div class="border rounded p-4 bg-white shadow">
-                <h3 class="font-semibold text-sm mb-2">Permalink</h3>
-                <input type="text" name="slug" value="{{ old('slug', $post->slug ?? '') }}"
-                    placeholder="Optional. Auto-generated if blank." class="w-full border rounded p-2" />
-            </div>
-
-            {{-- Post Type --}}
-            <div class="border rounded p-4 bg-white shadow">
-                <h3 class="font-semibold text-sm mb-2">Post Type</h3>
-                <select name="type" class="w-full border rounded p-2">
-                    <option value="post" {{ old('type', $post->type ?? '') === 'post' ? 'selected' : '' }}>
-                        Post
-                    </option>
-                    <option value="page" {{ old('type', $post->type ?? '') === 'page' ? 'selected' : '' }}>
-                        Page
-                    </option>
-                    <option value="custom" {{ old('type', $post->type ?? '') === 'custom' ? 'selected' : '' }}>
-                        Custom
-                    </option>
-                </select>
-            </div>
-
-            {{-- Categories Meta-Box --}}
-            <div class="border rounded p-4 bg-white shadow" x-data="categoryBox(window.categoriesBoxData, window.initialSelected)">
-                <input x-model="search" type="text" placeholder="Search categories…"
-                    class="w-full mb-2 border rounded p-2 text-sm">
-
-                <h3 class="font-semibold text-sm mb-2 flex justify-between items-center">
-                    Categories
-                    <button type="button" class="text-xs text-blue-600" @click="showAdd = !showAdd">
-                        <span x-text="showAdd ? '−' : '+'"></span> Add
-                    </button>
-                </h3>
-
-                <div class="max-h-48 overflow-y-auto mb-4 space-y-1">
-                    <template x-for="cat in filteredList" :key="cat.id">
-                        <label class="flex items-center text-sm">
-                            <input type="checkbox" name="categories[]" :value="cat.id" x-model="selected"
-                                class="mr-2">
-                            <span x-text="cat.indent + cat.name"></span>
-                        </label>
-                    </template>
-                </div>
-
-                <div x-show="showAdd" class="space-y-2">
-                    <input x-model="newName" type="text" placeholder="New category name"
-                        class="w-full border rounded p-2 text-sm">
-                    <select x-model="newParent" class="w-full border rounded p-2 text-sm">
-                        <option value="">— Parent —</option>
-                        <template x-for="cat in filteredList" :key="cat.id">
-                            <option :value="cat.id" x-text="cat.indent + cat.name"></option>
-                        </template>
+                        <option value="draft" {{ old('status', $post->status ?? '') === 'draft' ? 'selected' : '' }}>Draft
+                        </option>
                     </select>
-                    <button type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
-                        @click="addCategory()">Add Category</button>
-                </div>
-            </div>
-
-            {{-- Featured Images Picker --}}
-            <div class="border rounded p-4 bg-white shadow" x-data="featuredImagesPicker()">
-                <h3 class="font-semibold text-sm mb-2">Featured Images</h3>
-
-                <div class="grid grid-cols-4 gap-2 mb-4">
-                    <template x-for="(url, idx) in previewUrls" :key="idx">
-                        <div class="relative">
-                            <img :src="url" class="w-full h-24 object-cover rounded border">
-                            <button type="button" @click="remove(idx)"
-                                class="absolute top-1 right-1 bg-white rounded-full text-red-600 hover:bg-red-100">×</button>
-                        </div>
-                    </template>
                 </div>
 
-                <button type="button" @click="openMedia()"
-                    class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm mb-2">
-                    Add Images
-                </button>
+                {{-- Template --}}
+                <div class="border rounded p-4 bg-white shadow">
+                    <h3 class="font-semibold text-sm mb-2">Template</h3>
+                    <select name="template" class="w-full border rounded p-2">
+                        <option value="">Default</option>
+                        @foreach ($templates as $key => $label)
+                            <option value="{{ $key }}"
+                                {{ old('template', $post->template ?? '') === $key ? 'selected' : '' }}>
+                                {{ $label }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
 
-                <template x-for="id in filteredIds" :key="id">
-                    <input type="hidden" name="featured_images[]" :value="id">
-                </template>
-            </div>
+                {{-- Permalink --}}
+                <div class="border rounded p-4 bg-white shadow">
+                    <h3 class="font-semibold text-sm mb-2">Permalink</h3>
+                    <input type="text" name="slug" value="{{ old('slug', $post->slug ?? '') }}"
+                        placeholder="Optional. Auto-generated if blank." class="w-full border rounded p-2" />
+                </div>
 
-            {{-- Custom Meta Fields --}}
-            <div class="border rounded p-4 bg-white shadow" x-data="metaFields()">
-                <h3 class="font-semibold text-sm mb-2 flex justify-between items-center">
-                    Custom Meta Fields
-                    <button type="button" class="text-xs text-blue-600" @click="addField()">
-                        + Add
+                {{-- Post Type --}}
+                <div class="border rounded p-4 bg-white shadow">
+                    <h3 class="font-semibold text-sm mb-2">Post Type</h3>
+                    <select name="type" class="w-full border rounded p-2"
+                        onchange="
+      if (this.value === 'product') {
+        window.location = '{{ route('products.create') }}';
+      }
+    ">
+                        <option value="post" {{ old('type', $post->type ?? '') === 'post' ? 'selected' : '' }}>Post
+                        </option>
+                        <option value="page" {{ old('type', $post->type ?? '') === 'page' ? 'selected' : '' }}>Page
+                        </option>
+                        <option value="custom" {{ old('type', $post->type ?? '') === 'custom' ? 'selected' : '' }}>Custom
+                        </option>
+                        <option value="product">Product</option>
+                    </select>
+                </div>
+
+
+                {{-- Categories Meta-Box --}}
+                <div class="border rounded p-4 bg-white shadow" x-data="categoryBox(window.categoriesBoxData, window.initialSelected)">
+                    <input x-model="search" type="text" placeholder="Search categories…"
+                        class="w-full mb-2 border rounded p-2 text-sm">
+
+                    <h3 class="font-semibold text-sm mb-2 flex justify-between items-center">
+                        Categories
+                        <button type="button" class="text-xs text-blue-600" @click="showAdd = !showAdd">
+                            <span x-text="showAdd ? '−' : '+'"></span> Add
+                        </button>
+                    </h3>
+
+                    <div class="max-h-48 overflow-y-auto mb-4 space-y-1">
+                        <template x-for="cat in filteredList" :key="cat.id">
+                            <label class="flex items-center text-sm">
+                                <input type="checkbox" name="categories[]" :value="cat.id" x-model="selected"
+                                    class="mr-2">
+                                <span x-text="cat.indent + cat.name"></span>
+                            </label>
+                        </template>
+                    </div>
+
+                    <div x-show="showAdd" class="space-y-2">
+                        <input x-model="newName" type="text" placeholder="New category name"
+                            class="w-full border rounded p-2 text-sm">
+                        <select x-model="newParent" class="w-full border rounded p-2 text-sm">
+                            <option value="">— Parent —</option>
+                            <template x-for="cat in flatList" :key="cat.id">
+                                <option :value="cat.id" x-text="cat.indent + cat.name"></option>
+                            </template>
+                        </select>
+                        <button type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
+                            @click="addCategory()">Add Category</button>
+                    </div>
+                </div>
+
+                {{-- Featured Images Picker --}}
+                <div class="border rounded p-4 bg-white shadow" x-data="featuredImagesPicker()">
+                    <h3 class="font-semibold text-sm mb-2">Featured Images</h3>
+                    <div class="grid grid-cols-4 gap-2 mb-4">
+                        <template x-for="(url, idx) in previewUrls" :key="idx">
+                            <div class="relative">
+                                <img :src="url" class="w-full h-24 object-cover rounded border">
+                                <button type="button" @click="remove(idx)"
+                                    class="absolute top-1 right-1 bg-white rounded-full text-red-600 hover:bg-red-100">×</button>
+                            </div>
+                        </template>
+                    </div>
+                    <button type="button" @click="openMedia()"
+                        class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm mb-2">
+                        Add Images
                     </button>
-                </h3>
-
-                <div class="space-y-2">
-                    <template x-for="(field, index) in fields" :key="index">
-                        <div class="flex space-x-2 items-center">
-                            <input type="text" :name="`meta[${index}][key]`" x-model="field.key"
-                                placeholder="Meta Key" class="w-1/2 border rounded p-2 text-sm">
-                            <input type="text" :name="`meta[${index}][value]`" x-model="field.value"
-                                placeholder="Meta Value" class="w-1/2 border rounded p-2 text-sm">
-                            <button type="button" @click="removeField(index)"
-                                class="text-red-600 hover:text-red-800">×</button>
-                        </div>
+                    <template x-for="id in filteredIds" :key="id">
+                        <input type="hidden" name="featured_images[]" :value="id">
                     </template>
                 </div>
 
-                @error('meta.*.key')
-                    <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                @enderror
-                @error('meta.*.value')
-                    <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                @enderror
-            </div>
+                {{-- Custom Meta Fields --}}
+                <div class="border rounded p-4 bg-white shadow" x-data="metaFields()">
+                    <h3 class="font-semibold text-sm mb-2 flex justify-between items-center">
+                        Custom Meta Fields
+                        <button type="button" class="text-xs text-blue-600" @click="addField()">
+                            + Add
+                        </button>
+                    </h3>
+                    <div class="space-y-2">
+                        <template x-for="(field, index) in fields" :key="index">
+                            <div class="flex space-x-2 items-center">
+                                <input type="text" :name="`meta[${index}][key]`" x-model="field.key"
+                                    placeholder="Meta Key" class="w-1/2 border rounded p-2 text-sm">
+                                <input type="text" :name="`meta[${index}][value]`" x-model="field.value"
+                                    placeholder="Meta Value" class="w-1/2 border rounded p-2 text-sm">
+                                <button type="button" @click="removeField(index)"
+                                    class="text-red-600 hover:text-red-800">×</button>
+                            </div>
+                        </template>
+                    </div>
+                    @error('meta.*.key')
+                        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                    @enderror
+                    @error('meta.*.value')
+                        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
 
-            {{-- Submit --}}
-            <div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded shadow">
-                    {{ $isEdit ? 'Update Post' : 'Publish Post' }}
-                </button>
+                {{-- Submit --}}
+                <div>
+                    <button type="submit"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded shadow">
+                        {{ $isEdit ? 'Update Post' : 'Publish Post' }}
+                    </button>
+                </div>
             </div>
-        </div>
-    </form>
+        </form>
 
-    {{-- Media Browser Modal --}}
+    </div>
+
     @include('media.browser-modal')
 @endsection
 
@@ -348,6 +291,7 @@
                 showAdd: false,
                 newName: '',
                 newParent: '',
+
                 get flatList() {
                     let roots = this.all.filter(c => c.parent === 0),
                         subs = this.all.filter(c => c.parent !== 0),
@@ -365,18 +309,23 @@
                     });
                     return out;
                 },
+
                 get filteredList() {
                     let term = this.search.toLowerCase();
-                    return this.flatList.filter(c => c.name.toLowerCase().includes(term));
+                    return this.flatList.filter(c =>
+                        c.name.toLowerCase().includes(term)
+                    );
                 },
+
                 async addCategory() {
                     if (!this.newName.trim()) return;
                     let token = document.querySelector('meta[name=csrf-token]').content;
-                    let res = await fetch('{{ route('categories.store') }}', {
+
+                    let res = await fetch('{{ route('admin.posts.categories.store') }}', {
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json',
                             'Accept': 'application/json',
+                            'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': token
                         },
                         body: JSON.stringify({
@@ -385,16 +334,20 @@
                             status: 1
                         })
                     });
-                    if (!res.ok) {
-                        alert('Failed to add category');
-                        return;
+
+                    if (res.status === 409) {
+                        let err = await res.json();
+                        return alert(err.message);
                     }
+                    if (!res.ok) throw new Error(await res.text());
+
                     let json = await res.json();
                     this.all.push({
                         id: json.id,
                         name: json.name,
                         parent: json.parent
                     });
+                    this.selected.push(json.id);
                     this.newName = '';
                     this.newParent = '';
                     this.showAdd = false;
@@ -407,9 +360,7 @@
                 selectedIds: window.initialImageIds || [],
                 previewUrls: window.initialImageUrls || [],
                 get filteredIds() {
-                    return this.selectedIds.filter(id =>
-                        id != null && Number.isInteger(Number(id))
-                    );
+                    return this.selectedIds.filter(id => Number.isInteger(+id));
                 },
                 openMedia() {
                     document.dispatchEvent(new CustomEvent('media-open', {
@@ -437,8 +388,8 @@
                         value: ''
                     });
                 },
-                removeField(index) {
-                    this.fields.splice(index, 1);
+                removeField(i) {
+                    this.fields.splice(i, 1);
                 }
             }));
         });

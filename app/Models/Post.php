@@ -18,6 +18,11 @@ class Post extends Model
         'status',
         'template',
         'author_id',
+        'featured_images',       // ← add this
+    ];
+
+    protected $casts = [
+        'featured_images' => 'array',  // ← cast JSON→array
     ];
 
     public function author()
@@ -30,7 +35,7 @@ class Post extends Model
         return $this->belongsToMany(
             TermTaxonomy::class,
             'term_relationships',
-            'object_id',            // ← change here
+            'object_id',
             'term_taxonomy_id'
         );
     }
@@ -46,31 +51,29 @@ class Post extends Model
             ->where('meta_key', 'seo');
     }
 
-    public function getFeaturedImageIdsAttribute()
+    /**
+     * Accessor to get the array of featured image IDs.
+     */
+    public function getFeaturedImageIdsAttribute(): array
     {
-        return $this->meta()
-            ->where('meta_key', 'featured_image')
-            ->pluck('meta_value')
-            ->map(fn($v) => (int) $v)
-            ->toArray();
+        // returns [] if null
+        return $this->featured_images ?? [];
     }
 
+    /**
+     * Sync the featured image IDs by overwriting the JSON column.
+     */
+    public function syncFeaturedImages(array $ids): void
+    {
+        $this->featured_images = $ids;
+        $this->save();
+    }
+
+    /**
+     * Sync categories by IDs.
+     */
     public function syncCategories(array $categoryIds): void
     {
         $this->categories()->sync($categoryIds);
-    }
-
-    public function syncFeaturedImages(array $ids): void
-    {
-        $this->meta()
-            ->where('meta_key', 'featured_image')
-            ->delete();
-
-        foreach ($ids as $mediaId) {
-            $this->meta()->create([
-                'meta_key' => 'featured_image',
-                'meta_value' => $mediaId,
-            ]);
-        }
     }
 }

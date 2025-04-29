@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Aponahmed\HtmlBuilder\ElementFactory;
 use App\Models\Post;
 use App\Models\PostMeta;
+use App\Models\Term;
 use App\Models\TermTaxonomy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -248,6 +249,10 @@ class PostController extends Controller
             ->with('success', 'Post updated successfully.');
     }
 
+    /**
+     * AJAX: create a new product category
+     */
+
     public function destroy(Post $post)
     {
         $post->delete();
@@ -289,4 +294,46 @@ class PostController extends Controller
         $json = $page->block ?: '[]';
         return ElementFactory::json2html($json);
     }
+
+
+
+    /**
+     * AJAX: Create a new post‐category on the fly (with optional parent).
+     */
+    public function ajaxCategoryStore(Request $request)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'parent' => ['nullable', 'integer', Rule::exists('term_taxonomies', 'term_taxonomy_id')],
+            'status' => ['nullable', 'integer'], // if you want to set status, or omit
+        ]);
+
+        // slug‐dedupe
+        $slug = Str::slug($data['name']);
+        if (Term::where('slug', $slug)->exists()) {
+            return response()->json(['message' => 'Category already exists'], 409);
+        }
+
+        // 1) create term
+        $term = Term::create([
+            'name' => $data['name'],
+            'slug' => $slug,
+        ]);
+
+        // 2) create taxonomy row
+        $tax = TermTaxonomy::create([
+            'term_id' => $term->id,
+            'taxonomy' => 'category',                 // since these are post categories
+            'parent' => $data['parent'] ?? 0,
+            'status' => $data['status'] ?? 1,       // if you track status
+        ]);
+
+        // return the new item
+        return response()->json([
+            'id' => $tax->term_taxonomy_id,
+            'name' => $term->name,
+            'parent' => $tax->parent,
+        ]);
+    }
+
 }

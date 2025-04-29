@@ -16,7 +16,8 @@
         </h1>
 
         <div class="prose prose-sm sm:prose lg:prose-lg max-w-none text-justify">
-            {!! $pageOutput !!}
+            {{--   {!! $pageOutput !!} --}}
+            {!! apply_filters('seopost_content', $pageOutput) !!}
         </div>
     </div>
 @endsection

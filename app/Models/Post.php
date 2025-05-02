@@ -4,6 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Media;
+use App\Models\TermTaxonomy;
+use App\Models\PostMeta;
+use App\Models\User;
 
 class Post extends Model
 {
@@ -18,12 +22,16 @@ class Post extends Model
         'status',
         'template',
         'author_id',
-        'featured_images',       // ← add this
+        'featured_images',
     ];
 
     protected $casts = [
-        'featured_images' => 'array',  // ← cast JSON→array
+        'featured_images' => 'array',
     ];
+
+    /*-----------------------------------------
+     | Relationships
+     |-----------------------------------------*/
 
     public function author()
     {
@@ -51,26 +59,37 @@ class Post extends Model
             ->where('meta_key', 'seo');
     }
 
-    /**
-     * Accessor to get the array of featured image IDs.
-     */
+    /*-----------------------------------------
+     | Featured Images Helpers
+     |-----------------------------------------*/
+
     public function getFeaturedImageIdsAttribute(): array
     {
-        // returns [] if null
         return $this->featured_images ?? [];
     }
 
-    /**
-     * Sync the featured image IDs by overwriting the JSON column.
-     */
     public function syncFeaturedImages(array $ids): void
     {
-        $this->featured_images = $ids;
+        $this->featured_images = array_values($ids);
         $this->save();
     }
 
+    public function getFeaturedMediaAttribute()
+    {
+        $ids = $this->featured_images ?? [];
+        if (empty($ids)) {
+            return collect();
+        }
+
+        return Media::whereIn('id', $ids)->get();
+    }
+
+    /*-----------------------------------------
+     | Categories Helper
+     |-----------------------------------------*/
+
     /**
-     * Sync categories by IDs.
+     * Sync the given category IDs against this post.
      */
     public function syncCategories(array $categoryIds): void
     {

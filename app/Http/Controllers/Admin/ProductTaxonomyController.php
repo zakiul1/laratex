@@ -15,7 +15,7 @@ class ProductTaxonomyController extends Controller
 {
     public function index()
     {
-        $taxonomies = TermTaxonomy::with(['term', 'parentTaxonomy', 'images'])
+        $taxonomies = TermTaxonomy::with(['term', 'parentTaxonomy', 'images.media'])
             ->where('taxonomy', 'product')
             ->paginate(20);
 
@@ -28,30 +28,31 @@ class ProductTaxonomyController extends Controller
             ->where('taxonomy', 'product')
             ->get();
 
-        return view('admin.product-taxonomies.create', [
-            'parents' => $parents,
-            'taxonomy' => null,
-        ]);
+        $initialImages = []; // no images on create
+
+        return view('admin.product-taxonomies.form', compact(
+            'parents',
+            'initialImages'
+        ));
     }
 
     public function store(Request $request)
     {
-        if ($request->input('parent') === '' || $request->input('parent') === '0') {
-            $request->merge(['parent' => null]);
-        }
-
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => ['nullable', 'string', Rule::unique('terms', 'slug')],
             'description' => 'nullable|string',
-            'parent' => 'nullable|exists:term_taxonomies,term_taxonomy_id',
+            'parent' => ['nullable', 'integer', 'exists:term_taxonomies,term_taxonomy_id'],
             'status' => 'required|boolean',
             'image_ids' => 'nullable|array',
             'image_ids.*' => 'exists:media,id',
         ]);
 
-        // ensure unique slug
-        $slug = $data['slug'] ?? Str::slug($data['name']);
+        // ensure parent is numeric and default to 0
+        $parent = intval($data['parent'] ?? 0);
+
+        // generate a unique slug if needed
+        $slug = $data['slug'] ?: Str::slug($data['name']);
         $base = $slug;
         $i = 1;
         while (Term::where('slug', $slug)->exists()) {
@@ -59,129 +60,120 @@ class ProductTaxonomyController extends Controller
             $i++;
         }
 
+        // Create Term
         $term = Term::firstOrCreate(
             ['slug' => $slug],
             ['name' => $data['name']]
         );
 
+        // Create Taxonomy
         $tt = TermTaxonomy::create([
             'term_id' => $term->id,
             'taxonomy' => 'product',
             'description' => $data['description'] ?? null,
-            'parent' => $data['parent'] ?? 0,
+            'parent' => $parent,
             'count' => 0,
             'status' => $data['status'],
         ]);
 
-        if (!empty($data['image_ids'])) {
-            foreach ($data['image_ids'] as $mid) {
-                if ($media = Media::find($mid)) {
-                    TermTaxonomyImage::create([
-                        'term_taxonomy_id' => $tt->term_taxonomy_id,
-                        'path' => $media->path,
-                    ]);
-                }
+        // Attach images by media_id
+        foreach ($data['image_ids'] ?? [] as $mid) {
+            if (Media::where('id', $mid)->exists()) {
+                TermTaxonomyImage::create([
+                    'term_taxonomy_id' => $tt->term_taxonomy_id,
+                    'media_id' => $mid,
+                ]);
             }
         }
 
         return redirect()
             ->route('product-taxonomies.index')
-            ->with('success', 'Product category created.');
+            ->with('success', 'Category created.');
     }
 
-    public function edit($id)
+    public function edit(int $id)
     {
-        $taxonomy = TermTaxonomy::with(['term', 'images'])
+        $taxonomy = TermTaxonomy::with(['term', 'parentTaxonomy', 'images.media'])
+            ->where('taxonomy', 'product')
             ->findOrFail($id);
-
-        if (!$taxonomy->term) {
-            return redirect()
-                ->route('product-taxonomies.index')
-                ->with('error', 'The taxonomy term is missing or invalid.');
-        }
 
         $parents = TermTaxonomy::with('term')
             ->where('taxonomy', 'product')
             ->where('term_taxonomy_id', '!=', $id)
             ->get();
 
-        return view('admin.product-taxonomies.edit', compact('taxonomy', 'parents'));
+        $initialImages = $taxonomy->images
+            ->filter(fn($ti) => $ti->media)
+            ->map(fn($ti) => [
+                'id' => $ti->media->id,
+                'url' => $ti->getUrl('thumbnail'),
+            ])
+            ->values()
+            ->all();
+
+        return view('admin.product-taxonomies.form', compact(
+            'taxonomy',
+            'parents',
+            'initialImages'
+        ));
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, int $id)
     {
         $tt = TermTaxonomy::findOrFail($id);
 
-        if (!$tt->term) {
-            return redirect()
-                ->route('product-taxonomies.index')
-                ->with('error', 'The taxonomy term is missing or invalid.');
-        }
-
-        if ($request->input('parent') === '' || $request->input('parent') === '0') {
-            $request->merge(['parent' => null]);
-        }
-
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'slug' => [
-                'required',
-                'string',
-                Rule::unique('terms', 'slug')->ignore($tt->term_id),
-            ],
+            'slug' => ['required', 'string', Rule::unique('terms', 'slug')->ignore($tt->term_id)],
             'description' => 'nullable|string',
-            'parent' => 'nullable|exists:term_taxonomies,term_taxonomy_id',
+            'parent' => ['nullable', 'integer', 'exists:term_taxonomies,term_taxonomy_id'],
             'status' => 'required|boolean',
             'image_ids' => 'nullable|array',
             'image_ids.*' => 'exists:media,id',
         ]);
 
-        // update term
+        $parent = intval($data['parent'] ?? 0);
+
+        // update the underlying Term
         $tt->term->update([
             'name' => $data['name'],
             'slug' => $data['slug'],
         ]);
 
-        // update taxonomy
+        // update Taxonomy
         $tt->update([
             'description' => $data['description'] ?? null,
-            'parent' => $data['parent'] ?? 0,
+            'parent' => $parent,
             'status' => $data['status'],
         ]);
 
-        // **ONLY delete pivot rows**, keep actual media files intact**
+        // reset images
         $tt->images()->delete();
-
-        // re-create associations
-        if (!empty($data['image_ids'])) {
-            foreach ($data['image_ids'] as $mid) {
-                if ($media = Media::find($mid)) {
-                    TermTaxonomyImage::create([
-                        'term_taxonomy_id' => $tt->term_taxonomy_id,
-                        'path' => $media->path,
-                    ]);
-                }
+        foreach ($data['image_ids'] ?? [] as $mid) {
+            if (Media::where('id', $mid)->exists()) {
+                TermTaxonomyImage::create([
+                    'term_taxonomy_id' => $tt->term_taxonomy_id,
+                    'media_id' => $mid,
+                ]);
             }
         }
 
         return redirect()
             ->route('product-taxonomies.index')
-            ->with('success', 'Product category updated.');
+            ->with('success', 'Category updated.');
     }
 
-    public function destroy($id)
+    public function destroy(int $id)
     {
         $tt = TermTaxonomy::findOrFail($id);
 
-        // **ONLY delete pivot rows**, keep media files in library
+        // cascade delete images & term
         $tt->images()->delete();
-
-        // delete term and taxonomy
         $tt->term()->delete();
         $tt->delete();
 
         return redirect()
             ->route('product-taxonomies.index')
-            ->with('success', 'Product category deleted.');
+            ->with('success', 'Category deleted.');
     }
 }

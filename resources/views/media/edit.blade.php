@@ -4,18 +4,18 @@
     <div class="max-w-3xl mx-auto mt-6 bg-white shadow rounded p-6">
         <h1 class="text-2xl font-bold mb-4">Edit File Metadata</h1>
 
-        <form action="{{ route('media.update', $media) }}" method="POST">
+        <form action="{{ route('media.update', $media->id) }}" method="POST">
             @csrf
             @method('PUT')
 
+            {{-- Editable “display name” for the file --}}
             <div class="mb-4">
-                <label for="original_name" class="block text-sm font-medium text-gray-700">
+                <label for="name" class="block text-sm font-medium text-gray-700">
                     Filename
                 </label>
-                <input type="text" name="original_name" id="original_name"
-                    value="{{ old('original_name', $media->original_name) }}"
+                <input type="text" name="name" id="name" value="{{ old('name', $media->name) }}"
                     class="mt-1 block w-full border-gray-300 rounded p-2">
-                @error('original_name')
+                @error('name')
                     <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>

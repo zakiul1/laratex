@@ -2,203 +2,145 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Media;
-use App\Models\Term;
-use App\Models\TermTaxonomy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Models\MediaLibrary;           // the “library” owner for your Spatie media
+use App\Models\Media;                  // your Media model (backed by `media` table)
+use App\Models\Term;
+use App\Models\TermTaxonomy;
 
 class MediaController extends Controller
 {
-    /**
-     * Display a paginated, searchable, filterable media library.
-     */
     public function index(Request $request)
     {
-        try {
-            // 1) Build base query
-            $query = Media::with('categories');
+        // 1) Build base query
+        $query = Media::with('categories');
 
-            // 2) Search filter
-            if ($request->filled('search')) {
-                $query->where('filename', 'like', '%' . $request->search . '%');
-            }
-
-            // 3) Category filter
-            if ($request->filled('category')) {
-                $cat = $request->category;
-                $query->whereHas('categories', fn($q) => $q->where('term_taxonomies.term_taxonomy_id', $cat));
-            }
-
-            // 4) Per-page
-            $perPage = intval($request->input('per_page', 20));
-
-            // 5) Paginate
-            $paginated = $query
-                ->orderBy('created_at', 'desc')
-                ->paginate($perPage)
-                ->withQueryString();
-
-            // 6) If this is an AJAX / JSON request, return JSON
-            if ($request->wantsJson() || $request->ajax() || $request->expectsJson()) {
-                // Transform each item into the shape Alpine expects
-                $data = $paginated->getCollection()
-                    ->map(fn($m) => [
-                        'id' => $m->id,
-                        'url' => Storage::url($m->path),
-                        'filename' => $m->filename,
-                        'categories' => $m->categories->pluck('term_taxonomy_id')->toArray(),
-                    ]);
-
-                return response()->json([
-                    'data' => $data,
-                    'meta' => [
-                        'current_page' => $paginated->currentPage(),
-                        'last_page' => $paginated->lastPage(),
-                        'per_page' => $paginated->perPage(),
-                        'total' => $paginated->total(),
-                    ],
-                    'categories' => TermTaxonomy::select('term_taxonomies.*')
-                        ->join('terms', 'term_taxonomies.term_id', '=', 'terms.id')
-                        ->where('taxonomy', 'media_category')
-                        ->orderBy('terms.name', 'asc')
-                        ->with('term')
-                        ->get()
-                        ->map(fn($tax) => (object) [
-                            'id' => $tax->term_taxonomy_id,
-                            'name' => $tax->term->name,
-                            'parent' => $tax->parent,
-                        ]),
-                ]);
-            }
-
-            // 7) Otherwise, render your full HTML view
-            return view('media.index', [
-                'media' => $paginated,
-                'categories' => TermTaxonomy::select('term_taxonomies.*')
-                    ->join('terms', 'term_taxonomies.term_id', '=', 'terms.id')
-                    ->where('taxonomy', 'media_category')
-                    ->orderBy('terms.name', 'asc')
-                    ->with('term')
-                    ->get()
-                    ->map(fn($tax) => (object) [
-                        'id' => $tax->term_taxonomy_id,
-                        'name' => $tax->term->name,
-                        'parent' => $tax->parent,
-                    ]),
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Error loading media: ' . $e->getMessage(), [
-                'exception' => $e,
-                'request' => $request->all(),
-            ]);
-            if ($request->wantsJson() || $request->ajax() || $request->expectsJson()) {
-                return response()->json(['error' => 'Failed to load media: ' . $e->getMessage()], 500);
-            }
-            throw $e; // For non-AJAX requests, rethrow to see the error in the browser
+        // 2) Search filter
+        if ($request->filled('search')) {
+            $query->where('filename', 'like', '%' . $request->search . '%');
         }
-    }
 
-    /**
-     * Handle new uploads (files[] + optional category_id).
-     */
-    public function store(Request $request)
-    {
-        try {
-            $request->validate([
-                'files.*' => 'required|image|max:5120',
-                'category_id' => 'nullable|integer|exists:term_taxonomies,term_taxonomy_id',
+        // 3) Category filter
+        if ($request->filled('category')) {
+            $query->whereHas(
+                'categories',
+                fn($q) =>
+                $q->where('term_taxonomies.term_taxonomy_id', $request->category)
+            );
+        }
+
+        // 4) Per-page (default to 12)
+        $perPage = (int) $request->input('per_page', 12);
+
+        // 5) Paginate and preserve query string
+        $paginated = $query
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage)
+            ->withQueryString();
+
+        // 6) Load categories for the dropdown
+        $categories = TermTaxonomy::select('term_taxonomies.*')
+            ->join('terms', 'term_taxonomies.term_id', '=', 'terms.id')
+            ->where('taxonomy', 'media_category')
+            ->orderBy('terms.name', 'asc')
+            ->with('term')
+            ->get()
+            ->map(fn($tax) => (object) [
+                'id' => $tax->term_taxonomy_id,
+                'name' => $tax->term->name,
+                'parent' => $tax->parent,
             ]);
 
-            // Ensure “Uncategorized” exists when no category is passed
-            $catId = $request->input('category_id');
-            if (!$catId) {
-                $term = Term::firstOrCreate(
-                    ['slug' => 'uncategorized'],
-                    ['name' => 'Uncategorized']
-                );
+        // 7) If AJAX/JSON request, return JSON payload
+        if ($request->wantsJson() || $request->ajax() || $request->expectsJson()) {
+            $data = $paginated->getCollection()->map(function (Media $m) {
+                $fullUrl = $m->getUrl();
+                // fallback to fullUrl if thumb not generated
+                $thumbUrl = $m->hasGeneratedConversion('thumbnail')
+                    ? $m->getUrl('thumbnail')
+                    : $fullUrl;
 
-                $tax = TermTaxonomy::firstOrCreate(
-                    ['term_id' => $term->id, 'taxonomy' => 'media_category'],
-                    ['parent' => 0, 'description' => '', 'count' => 0]
-                );
-
-                $catId = $tax->term_taxonomy_id;
-            }
-
-            $uploaded = [];
-            foreach ($request->file('files') as $file) {
-                $path = $file->store('media', 'public');
-
-                $media = Media::create([
-                    'filename' => $file->getClientOriginalName(),
-                    'path' => $path,
-                    'mime_type' => $file->getMimeType(),
-                    'size' => $file->getSize(),
-                ]);
-
-                // Sync the category with the correct object_type
-                $media->categories()->sync([$catId => ['object_type' => 'media']]);
-                \Log::info('Media created and associated with category', [
-                    'media_id' => $media->id,
-                    'category_id' => $catId,
-                    'object_type' => 'media',
-                ]);
-
-                $uploaded[] = [
-                    'id' => $media->id,
-                    'url' => Storage::url($path),
-                    'filename' => $media->filename,
+                return [
+                    'id' => $m->id,
+                    'url' => $fullUrl,
+                    'thumbnail' => $thumbUrl,
+                    'filename' => $m->filename,
+                    'categories' => $m->categories->pluck('term_taxonomy_id')->toArray(),
                 ];
-            }
-
-            return response()->json(['uploaded' => $uploaded], 201);
-        } catch (\Exception $e) {
-            \Log::error('Media upload failed: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to upload media: ' . $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * Delete a single media item (and its file + pivot links).
-     */
-    public function destroy(Media $media)
-    {
-        try {
-            Storage::disk('public')->delete($media->path);
-            $media->categories()->detach();
-            $media->delete();
-
-            return response()->json(['deleted' => true]);
-        } catch (\Exception $e) {
-            \Log::error('Media deletion failed: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to delete media: ' . $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * Bulk-delete multiple media items at once.
-     */
-    public function bulkDelete(Request $request)
-    {
-        try {
-            $ids = $request->input('ids', []);
-            if (!is_array($ids) || empty($ids)) {
-                return response()->json(['error' => 'No media IDs provided'], 422);
-            }
-
-            Media::whereIn('id', $ids)->get()->each(function (Media $m) {
-                Storage::disk('public')->delete($m->path);
-                $m->categories()->detach();
-                $m->delete();
             });
 
-            return response()->json(['deleted' => true]);
-        } catch (\Exception $e) {
-            \Log::error('Bulk media deletion failed: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to bulk delete media: ' . $e->getMessage()], 500);
+            return response()->json([
+                'data' => $data,
+                'meta' => [
+                    'current_page' => $paginated->currentPage(),
+                    'last_page' => $paginated->lastPage(),
+                    'per_page' => $paginated->perPage(),
+                    'total' => $paginated->total(),
+                ],
+                'categories' => $categories,
+            ]);
         }
+
+        // 8) For initial Blade render: shape the first page just like JSON
+        $initialMedia = collect($paginated->items())->map(function (Media $m) {
+            $fullUrl = $m->getUrl();
+            $thumbUrl = $m->hasGeneratedConversion('thumbnail')
+                ? $m->getUrl('thumbnail')
+                : $fullUrl;
+
+            return [
+                'id' => $m->id,
+                'url' => $fullUrl,
+                'thumbnail' => $thumbUrl,
+                'filename' => $m->filename,
+                'categories' => $m->categories->pluck('term_taxonomy_id')->toArray(),
+            ];
+        });
+
+        // 9) Return the view with initial data + paginator + categories
+        return view('media.index', [
+            'initialMedia' => $initialMedia,
+            'mediaPaginator' => $paginated,
+            'categories' => $categories,
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'files.*' => 'required|image|max:5120',
+            'category_id' => 'nullable|integer|exists:term_taxonomies,term_taxonomy_id',
+        ]);
+
+        $catId = $request->input('category_id') ?: $this->getOrCreateUncategorized();
+        $uploaded = [];
+        $library = MediaLibrary::firstOrCreate(['id' => 1]);
+
+        foreach ($request->file('files') as $file) {
+            $mediaItem = $library
+                ->addMedia($file)
+                ->usingFileName(
+                    time() . '_' . Str::slug(pathinfo(
+                        $file->getClientOriginalName(),
+                        PATHINFO_FILENAME
+                    )) . '.' . $file->getClientOriginalExtension()
+                )
+                ->toMediaCollection('library');
+
+            $mediaItem->categories()
+                ->sync([$catId => ['object_type' => 'media']]);
+
+            $uploaded[] = [
+                'id' => $mediaItem->id,
+                'url' => $mediaItem->getUrl(),
+                'thumbnail' => $mediaItem->getUrl('thumbnail'),
+                'filename' => $mediaItem->name,
+            ];
+        }
+
+        return response()->json(['uploaded' => $uploaded], 201);
     }
 
     /**
@@ -206,81 +148,94 @@ class MediaController extends Controller
      */
     public function storeCategory(Request $request)
     {
-        try {
-            // Validate the request
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'parent' => 'nullable|integer',
-            ]);
+        // First, validate name and that parent—if present—is at least an integer.
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'parent' => 'nullable|integer',
+        ]);
 
-            // Check for duplicate category name
-            $existingTerm = Term::where('name', $validated['name'])->first();
-            if ($existingTerm) {
-                $existingTaxonomy = TermTaxonomy::where('term_id', $existingTerm->id)
-                    ->where('taxonomy', 'media_category')
-                    ->first();
-                if ($existingTaxonomy) {
-                    return response()->json(['error' => 'A category with this name already exists'], 422);
-                }
+        // Normalize parent to 0 if it wasn't given
+        $parentId = $validated['parent'] ?? 0;
+
+        // If they did supply a real parent (>0), make sure it exists in media_category
+        if ($parentId > 0) {
+            $exists = TermTaxonomy::where('term_taxonomy_id', $parentId)
+                ->where('taxonomy', 'media_category')
+                ->exists();
+
+            if (!$exists) {
+                return response()->json([
+                    'error' => 'The selected parent is invalid.'
+                ], 422);
             }
-
-            // Check if parent exists (excluding 0, which is the default for no parent)
-            if ($validated['parent'] !== 0) {
-                $parentExists = TermTaxonomy::where('term_taxonomy_id', $validated['parent'])->exists();
-                if (!$parentExists) {
-                    return response()->json(['error' => 'Parent category does not exist'], 422);
-                }
-            }
-
-            // Begin a transaction to ensure atomicity
-            \DB::beginTransaction();
-
-            $term = Term::create([
-                'name' => $request->name,
-                'slug' => Str::slug($request->name),
-            ]);
-
-            $tax = TermTaxonomy::create([
-                'term_id' => $term->id,
-                'taxonomy' => 'media_category',
-                'description' => '',
-                'parent' => $request->parent ?: 0,
-                'count' => 0,
-            ]);
-
-            \DB::commit();
-
-            return response()->json([
-                'id' => $tax->term_taxonomy_id,
-                'name' => $term->name,
-                'parent' => $tax->parent,
-            ], 201);
-        } catch (\Exception $e) {
-            \DB::rollBack();
-            \Log::error('Category creation failed: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to create category: ' . $e->getMessage()], 500);
         }
+
+        // Prevent duplicate names in this taxonomy
+        $existingTerm = Term::where('name', $validated['name'])->first();
+        if ($existingTerm) {
+            $existingTax = TermTaxonomy::where('term_id', $existingTerm->id)
+                ->where('taxonomy', 'media_category')
+                ->first();
+
+            if ($existingTax) {
+                return response()->json([
+                    'error' => 'A category with this name already exists'
+                ], 422);
+            }
+        }
+
+        // Create the Term
+        $term = Term::create([
+            'name' => $validated['name'],
+            'slug' => Str::slug($validated['name']),
+        ]);
+
+        // Create its taxonomy entry
+        $tax = TermTaxonomy::create([
+            'term_id' => $term->id,
+            'taxonomy' => 'media_category',
+            'description' => '',
+            'parent' => $parentId,
+            'count' => 0,
+        ]);
+
+        return response()->json([
+            'id' => $tax->term_taxonomy_id,
+            'name' => $term->name,
+            'parent' => $tax->parent,
+        ], 201);
     }
 
-    /**
-     * Delete a category by its taxonomy ID.
-     */
-    public function destroyCategory($id)
+    protected function getOrCreateUncategorized(): int
     {
-        try {
-            $tax = TermTaxonomy::where('term_taxonomy_id', $id)->firstOrFail();
-            $term = Term::findOrFail($tax->term_id);
+        $term = Term::firstOrCreate(
+            ['slug' => 'uncategorized'],
+            ['name' => 'Uncategorized']
+        );
+        $tax = TermTaxonomy::firstOrCreate(
+            ['term_id' => $term->id, 'taxonomy' => 'media_category'],
+            ['parent' => 0, 'description' => '', 'count' => 0]
+        );
+        return $tax->term_taxonomy_id;
+    }
 
-            \DB::beginTransaction();
-            $tax->delete();
-            $term->delete();
-            \DB::commit();
+    public function destroy(Media $media)
+    {
+        $media->categories()->detach();
+        $media->delete();
+        return response()->json(['deleted' => true]);
+    }
 
-            return response()->json(['deleted' => true]);
-        } catch (\Exception $e) {
-            \DB::rollBack();
-            \Log::error('Category deletion failed: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to delete category: ' . $e->getMessage()], 500);
+    public function bulkDelete(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        if (!is_array($ids) || empty($ids)) {
+            return response()->json(['error' => 'No media IDs provided'], 422);
         }
+        Media::whereIn('id', $ids)->get()->each(fn(Media $m) => [
+            $m->categories()->detach(),
+            $m->delete(),
+        ]);
+        return response()->json(['deleted' => true]);
     }
 }

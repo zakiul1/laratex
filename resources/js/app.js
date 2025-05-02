@@ -6,11 +6,16 @@ import focus from "@alpinejs/focus";
 import Sortable from "sortablejs";
 import Notification from "@aponahmed/notify";
 
+// ** Side-effect imports only **
+import registerMediaBrowser from "./mediaBrowser";
+import "./mediaLibrary";
+
 window.Alpine = Alpine;
 window.Sortable = Sortable;
 window.ntfy = (message, type = "success", timeout = 3000) => {
     new Notification({ type, message, timeout });
 };
+registerMediaBrowser();
 
 Alpine.plugin(collapse);
 Alpine.plugin(focus);

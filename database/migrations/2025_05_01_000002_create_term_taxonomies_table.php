@@ -8,14 +8,30 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('term_taxonomies', function (Blueprint $table) {
-            $table->id('term_taxonomy_id'); // Change from $table->id() to explicitly name the column
+            // Primary key
+            $table->id('term_taxonomy_id');
+
+            // Link back to the terms table
             $table->foreignId('term_id')
-                ->constrained()
-                ->onDelete('cascade');
-            $table->string('taxonomy');       // e.g. "category", "tag"
+                ->constrained('terms', 'id')
+                ->cascadeOnDelete();
+
+            // Type of taxonomy (e.g. category, tag, product)
+            $table->string('taxonomy');
+
+            // Optional description
             $table->text('description')->nullable();
+
+            // Parent term_taxonomy_id (0 = no parent)
             $table->unsignedBigInteger('parent')->default(0);
+
+            // Usage count (for WP-like count tracking)
             $table->unsignedBigInteger('count')->default(0);
+
+            // Active/inactive toggle
+            $table->boolean('status')->default(1);
+
+            // Timestamps
             $table->timestamps();
         });
     }

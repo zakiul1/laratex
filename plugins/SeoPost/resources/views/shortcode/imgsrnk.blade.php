@@ -1,40 +1,31 @@
 {{-- plugins/SeoPost/resources/views/shortcode/imgsrnk.blade.php --}}
 @php
+    use Illuminate\Support\Facades\Storage;
     use Illuminate\Support\Str;
 @endphp
 
-<div
-    class="{{ $wrapperClass }} grid grid-cols-{{ $settings['mcol'] }} sm:grid-cols-{{ $settings['tcol'] }} lg:grid-cols-{{ $settings['column'] }} gap-6">
-    @foreach ($posts as $post)
-        <div class="seopost-item imgsrnk-card {{ $settings['c-class'] }}">
-            {{-- Featured Image --}}
-            @if ($settings['img'] === 'yes' && isset($post->thumbnail_url))
-                <img src="{{ $post->thumbnail_url }}" alt="{{ $post->title }}" class="w-full mb-4 rounded" />
-            @endif
+<div class="{{ $wrapperClass }}">
+    @if ($products->isEmpty())
+        <p>No items found.</p>
+    @else
+        <div class="grid grid-cols-{{ $settings['column'] }} gap-6">
+            @foreach ($products as $product)
+                <div class="border p-4 rounded">
+                    <h3 class="font-semibold mb-2">{{ $product->name }}</h3>
 
-            {{-- Title / Stamp --}}
-            <h2 class="text-2xl font-bold mb-2">{{ $post->title }}</h2>
+                    @if ($settings['img'] === 'yes' && $product->featuredMedia->isNotEmpty())
+                        @php
+                            $media = $product->featuredMedia->first();
+                        @endphp
+                        <img src="{{ Storage::url($media->path) }}" alt="{{ $product->name }}"
+                            class="w-full h-auto mb-2 rounded" />
+                    @endif
 
-            {{-- Icon if enabled --}}
-            @if ($settings['icon'] === 'yes')
-                <div class="mb-2">
-                    <i class="fas fa-star"></i>
+                    <p>
+                        {{ Str::limit($product->description, $settings['excerpt-hide'] ?? 100) }}
+                    </p>
                 </div>
-            @endif
-
-            {{-- Excerpt (limited if excerpt-hide set) --}}
-            @if (!empty($settings['excerpt-hide']))
-                <p class="text-gray-600">
-                    {{ Str::limit($post->excerpt, (int) $settings['excerpt-hide']) }}
-                </p>
-            @endif
-
-            {{-- Get Price button --}}
-            @if ($settings['get-price'] === 'yes')
-                <button class="mt-4 px-4 py-2 bg-blue-600 text-white rounded">
-                    Get Price
-                </button>
-            @endif
+            @endforeach
         </div>
-    @endforeach
+    @endif
 </div>

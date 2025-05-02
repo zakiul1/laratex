@@ -5,62 +5,57 @@ namespace Plugins\SeoPost\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class SeoPostController extends Controller
 {
     /**
-     * Display the shortcode generator form.
+     * Show the SEO Post shortcode generator / settings form.
      */
     public function configForm()
     {
-        // Default values from config
+        // 1) Load defaults from config/seopost.php
         $defaults = config('seopost');
 
-        // Available styles (blade files under resources/views/shortcode)
+        // 2) If the table exists, load any saved row
+        $dbValues = [];
+        if (Schema::hasTable('seopost_settings')) {
+            $row = DB::table('seopost_settings')->first();
+            if ($row) {
+                $dbValues = (array) $row;
+                // remove fields you don’t want editable
+                unset($dbValues['id'], $dbValues['created_at'], $dbValues['updated_at']);
+            }
+        }
+
+        // 3) Merge saved values on top of defaults
+        $settings = array_merge($defaults, $dbValues);
+
+        // 4) Gather available style templates
         $files = File::files(__DIR__ . '/../../resources/views/shortcode');
         $styles = collect($files)
             ->map(fn($file) => $file->getBasename('.blade.php'))
             ->toArray();
 
-        return view('seopost-admin::config', compact('defaults', 'styles'));
+        // 5) Render the admin view, passing defaults, styles, and settings
+        return view('seopost-admin::config', compact('defaults', 'styles', 'settings'));
     }
 
     /**
-     * Validate input and build the [seopost] shortcode.
+     * Handle form POST to save settings.
      */
-    public function generate(Request $request)
+    public function save(Request $request)
     {
-        $validated = $request->validate([
-            'cat'          => 'nullable|integer',
-            'column'       => 'required|integer',
-            'img'          => 'required|in:yes,no',
-            'tcol'         => 'required|integer',
-            'mcol'         => 'required|integer',
-            'orderby'      => 'required|string',
-            'get-price'    => 'required|in:yes,no',
-            'order'        => 'required|in:ASC,DESC',
-            'style'        => 'required|string',
-            'taxo'         => 'nullable|string',
-            'c-class'      => 'nullable|string',
-            'post-id'      => 'nullable|integer',
-            'excerpt-hide' => 'nullable|integer',
-            'icon'         => 'required|in:yes,no',
-            'bg'           => 'required|in:yes,no',
-        ]);
+        $data = $request->only(array_keys(config('seopost')));
 
-        // Build attribute string
-        $attrs = [];
-        foreach ($validated as $key => $value) {
-            if ($value !== null && $value !== '') {
-                $attrs[] = $key . '="' . $value . '"';
-            }
-        }
+        // Upsert into seopost_settings table
+        DB::table('seopost_settings')->updateOrInsert(
+            ['id' => 1],       // you could key off a single row
+            $data + ['updated_at' => now()]
+        );
 
-        // Final shortcode
-        $shortcode = '[seopost ' . implode(' ', $attrs) . ']';
-
-        return redirect()
-            ->route('seopost.config')
-            ->with('shortcode', $shortcode);
+        return redirect()->route('seopost.config')
+            ->with('success', 'SeoPost settings saved.');
     }
 }

@@ -9,12 +9,23 @@ return new class extends Migration {
     {
         Schema::create('term_taxonomy_images', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('term_taxonomy_id')
-                ->constrained('term_taxonomies', 'term_taxonomy_id')
-                ->cascadeOnDelete();
-            $table->string('path');
+            $table->unsignedBigInteger('term_taxonomy_id');
+            $table->unsignedBigInteger('media_id');
             $table->timestamps();
+
+            $table
+                ->foreign('term_taxonomy_id')
+                ->references('term_taxonomy_id')
+                ->on('term_taxonomies')
+                ->cascadeOnDelete();
+
+            $table
+                ->foreign('media_id')
+                ->references('id')
+                ->on('media')
+                ->cascadeOnDelete();
         });
+
     }
 
     public function down(): void

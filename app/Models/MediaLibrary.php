@@ -1,5 +1,4 @@
 <?php
-// app/Models/MediaLibrary.php
 
 namespace App\Models;
 
@@ -7,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media as SpatieMedia;
+use Spatie\Image\Enums\Fit;
 
 class MediaLibrary extends Model implements HasMedia
 {
@@ -14,6 +14,9 @@ class MediaLibrary extends Model implements HasMedia
 
     protected $guarded = [];
 
+    /**
+     * Define your media collections.
+     */
     public function registerMediaCollections(): void
     {
         $this
@@ -22,28 +25,27 @@ class MediaLibrary extends Model implements HasMedia
             ->withResponsiveImages();
     }
 
+    /**
+     * Define your media conversions.
+     */
     public function registerMediaConversions(SpatieMedia $media = null): void
     {
-        // 150×150 square thumbnail, generated immediately
+        // Thumbnail: scale entire image into 150x150 box, pad with white
         $this
             ->addMediaConversion('thumbnail')
-            ->width(150)
-            ->height(150)
-            ->crop('crop-center', 150, 150) // center-crop
-            ->sharpen(10)
-            ->nonQueued();
+            ->nonQueued()                     // generate immediately
+            ->fit(Fit::Contain, 150, 150)     // no crop, preserve aspect ratio
+            ->background('ffffff');           // white fill for empty space
 
-        // 300×300 max medium
+        // Medium: max 300×300, maintain aspect ratio
         $this
             ->addMediaConversion('medium')
-            ->width(300)
-            ->height(300)
+            ->fit(Fit::Max, 300, 300)
             ->sharpen(10);
 
-        // 1024×1024 max large
+        // Large: max 1024×1024, maintain aspect ratio
         $this
             ->addMediaConversion('large')
-            ->width(1024)
-            ->height(1024);
+            ->fit(Fit::Max, 1024, 1024);
     }
 }

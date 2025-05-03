@@ -4,9 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Models\ProductImage;
-use App\Models\TermTaxonomy;
-use App\Models\Media;
 
 class Product extends Model
 {
@@ -19,12 +16,11 @@ class Product extends Model
         'price',
         'stock',
         'status',
-        'featured_image',    // legacy single‐path column (optional)
-        // no category_id here
+        // no legacy single-path column needed here
     ];
 
     /**
-     * Raw gallery uploads (one‐to‐many).
+     * One-to-many: gallery images (if used).
      */
     public function images()
     {
@@ -32,7 +28,7 @@ class Product extends Model
     }
 
     /**
-     * Many‐to‐many term_taxonomy (your categories).
+     * Many-to-many: product ⇄ categories.
      */
     public function taxonomies()
     {
@@ -46,23 +42,15 @@ class Product extends Model
     }
 
     /**
-     * Multiple “featured” Media items (via product_media pivot).
+     * Many-to-many pivot to the Media model for featured images.
      */
     public function featuredMedia()
     {
         return $this->belongsToMany(
             Media::class,
-            'product_media',    // pivot table: product_id, media_id
+            'product_media',    // pivot table
             'product_id',
             'media_id'
         );
-    }
-
-    /**
-     * Helper for the old single‐image column (if you still need it).
-     */
-    public function featuredImage()
-    {
-        return $this->belongsTo(Media::class, 'featured_media_id');
     }
 }

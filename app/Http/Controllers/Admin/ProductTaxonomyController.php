@@ -176,4 +176,7 @@ class ProductTaxonomyController extends Controller
             ->route('product-taxonomies.index')
             ->with('success', 'Category deleted.');
     }
+
+
+
 }

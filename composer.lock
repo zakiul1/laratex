@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3fcf86210ac1a1c4caa30cfc912370c3",
+    "content-hash": "2a107497b4eb8dc154ac2d1060aee78f",
     "packages": [
         {
             "name": "aponahmed/blockeditor-php-client",

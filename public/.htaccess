@@ -1,5 +1,9 @@
 <IfModule mod_rewrite.c>
+    # Allow Apache to follow symlinks (so public/storage → storage/app/public works)
+    Options +FollowSymLinks
+
     <IfModule mod_negotiation.c>
+        # Disable MultiViews and Indexes so Laravel handles routing
         Options -MultiViews -Indexes
     </IfModule>
 

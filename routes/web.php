@@ -29,7 +29,13 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [PageController::class, 'home'])
     ->name('home');
 
-
+Route::get('storage/{path}', function ($path) {
+    $full = storage_path('app/public/' . $path);
+    if (!File::exists($full)) {
+        abort(404);
+    }
+    return Response::file($full);
+})->where('path', '.*');
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
@@ -174,7 +180,10 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::resource('products', ProductController::class)
         ->names('products');
 
-
+    Route::post(
+        '/products/categories',
+        [ProductController::class, 'ajaxCategoryStore']
+    )->name('admin.products.categories.store');
 
 
     Route::resource('product-taxonomies', ProductTaxonomyController::class);
@@ -191,7 +200,8 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
 // in routes/web.php, inside the admin group:
 
 Route::prefix('admin/media')->name('admin.media.')->group(function () {
-    Route::get('/', [MediaController::class, 'index'])->name('index');
+    Route::get('/', [MediaController::class, 'index'])->middleware(['auth', 'verified'])->name('index');
+
     Route::delete(
         '/bulk-delete',
         [MediaController::class, 'bulkDelete']

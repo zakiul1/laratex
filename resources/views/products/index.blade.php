@@ -1,11 +1,8 @@
-{{-- resources/views/products/index.blade.php --}}
 @extends('layouts.dashboard')
 
 @section('content')
     @php
         use Illuminate\Support\Facades\Storage;
-        use App\Models\Media;
-        use Illuminate\Support\Arr;
     @endphp
 
     <div class="max-w-7xl mx-auto px-4 py-6">
@@ -23,23 +20,6 @@
             </div>
         @endif
 
-        {{-- Category Filter --}}
-        {{--      <div class="mb-4">
-            <form method="GET" class="flex items-center space-x-2">
-                <label for="filter_category" class="text-sm font-medium">Filter by Category:</label>
-                <select name="filter_category" id="filter_category" class="border rounded p-1 text-sm">
-                    <option value="">All Categories</option>
-                    @foreach ($allCats as $cat)
-                        <option value="{{ $cat->term_taxonomy_id }}"
-                            {{ request('filter_category') == $cat->term_taxonomy_id ? 'selected' : '' }}>
-                            {{ $cat->term->name }}
-                        </option>
-                    @endforeach
-                </select>
-                <button type="submit" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm">Apply</button>
-            </form>
-        </div>  --}}
-
         <div class="overflow-x-auto bg-white shadow rounded-lg">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50 text-left text-sm font-semibold text-gray-700">
@@ -54,23 +34,29 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 text-sm text-gray-700">
-                    @forelse ($products as $product)
+                    @forelse($products as $product)
                         <tr>
                             <td class="px-4 py-2">
                                 {{ $loop->iteration + ($products->currentPage() - 1) * $products->perPage() }}
                             </td>
 
+                            {{-- FEATURED IMAGE --}}
                             <td class="px-4 py-2">
                                 @php
-                                    // grab the first related Media model
                                     $media = $product->featuredMedia->first();
-                                    // build a public URL to its stored path
-                                    $firstUrl = $media ? Storage::disk('public')->url($media->path) : null;
+                                    // try Spatie's getUrl(), fallback to disk path
+if ($media && method_exists($media, 'getUrl')) {
+    $url = $media->getUrl();
+} elseif ($media && $media->path) {
+    $url = Storage::disk('public')->url($media->path);
+                                    } else {
+                                        $url = null;
+                                    }
                                 @endphp
 
-                                @if ($firstUrl)
-                                    <img src="{{ $firstUrl }}" alt="Image"
-                                        class="w-16 h-16 object-cover rounded border">
+                                @if ($url)
+                                    <img src="{{ $url }}" alt="{{ $product->name }}"
+                                        class="w-16 h-16 object-cover rounded border" />
                                 @else
                                     <span class="text-gray-400">No Image</span>
                                 @endif
@@ -93,7 +79,7 @@
                                         Edit
                                     </a>
                                     <form action="{{ route('products.destroy', $product) }}" method="POST"
-                                        onsubmit="return confirm('Are you sure you want to delete this product?');">
+                                        onsubmit="return confirm('Are you sure?');">
                                         @csrf @method('DELETE')
                                         <button type="submit"
                                             class="text-xs px-3 py-1 rounded bg-red-600 hover:bg-red-700 text-white">
@@ -111,7 +97,6 @@
                         </tr>
                     @endforelse
                 </tbody>
-
             </table>
         </div>
 

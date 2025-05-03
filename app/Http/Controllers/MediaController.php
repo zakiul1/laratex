@@ -26,8 +26,7 @@ class MediaController extends Controller
         if ($request->filled('category')) {
             $query->whereHas(
                 'categories',
-                fn($q) =>
-                $q->where('term_taxonomies.term_taxonomy_id', $request->category)
+                fn($q) => $q->where('term_taxonomies.term_taxonomy_id', $request->category)
             );
         }
 
@@ -42,7 +41,7 @@ class MediaController extends Controller
 
         // 6) Load categories for the dropdown
         $categories = TermTaxonomy::select('term_taxonomies.*')
-            ->join('terms', 'term_taxonomies.term_id', '=', 'terms.id')
+            ->join('terms', 'term_taxonomies.term_id', 'terms.id')
             ->where('taxonomy', 'media_category')
             ->orderBy('terms.name', 'asc')
             ->with('term')
@@ -53,23 +52,33 @@ class MediaController extends Controller
                 'parent' => $tax->parent,
             ]);
 
-        // 7) If AJAX/JSON request, return JSON payload
-        if ($request->wantsJson() || $request->ajax() || $request->expectsJson()) {
-            $data = $paginated->getCollection()->map(function (Media $m) {
-                $fullUrl = $m->getUrl();
-                // fallback to fullUrl if thumb not generated
-                $thumbUrl = $m->hasGeneratedConversion('thumbnail')
-                    ? $m->getUrl('thumbnail')
-                    : $fullUrl;
+        // helper to shape each Media item
+        $shape = function (Media $m) {
+            $fullUrl = $m->getUrl();
+            $thumbUrl = $m->hasGeneratedConversion('thumbnail') ? $m->getUrl('thumbnail') : $fullUrl;
+            $mediumUrl = $m->hasGeneratedConversion('medium') ? $m->getUrl('medium') : $fullUrl;
+            $largeUrl = $m->hasGeneratedConversion('large') ? $m->getUrl('large') : $fullUrl;
 
-                return [
-                    'id' => $m->id,
-                    'url' => $fullUrl,
-                    'thumbnail' => $thumbUrl,
-                    'filename' => $m->filename,
-                    'categories' => $m->categories->pluck('term_taxonomy_id')->toArray(),
-                ];
-            });
+            // determine original image width
+            $path = $m->getPath();
+            $info = @getimagesize($path);
+            $origWidth = $info ? $info[0] : 2048;
+
+            return [
+                'id' => $m->id,
+                'thumbnail' => $thumbUrl,
+                'medium' => $mediumUrl,
+                'large' => $largeUrl,
+                'original' => $fullUrl,
+                'originalWidth' => $origWidth,
+                'filename' => $m->filename,
+                'categories' => $m->categories->pluck('term_taxonomy_id')->toArray(),
+            ];
+        };
+
+        // 7) JSON / AJAX response
+        if ($request->wantsJson() || $request->ajax() || $request->expectsJson()) {
+            $data = $paginated->getCollection()->map($shape);
 
             return response()->json([
                 'data' => $data,
@@ -83,23 +92,10 @@ class MediaController extends Controller
             ]);
         }
 
-        // 8) For initial Blade render: shape the first page just like JSON
-        $initialMedia = collect($paginated->items())->map(function (Media $m) {
-            $fullUrl = $m->getUrl();
-            $thumbUrl = $m->hasGeneratedConversion('thumbnail')
-                ? $m->getUrl('thumbnail')
-                : $fullUrl;
+        // 8) Initial Blade render: same shape
+        $initialMedia = collect($paginated->items())->map($shape);
 
-            return [
-                'id' => $m->id,
-                'url' => $fullUrl,
-                'thumbnail' => $thumbUrl,
-                'filename' => $m->filename,
-                'categories' => $m->categories->pluck('term_taxonomy_id')->toArray(),
-            ];
-        });
-
-        // 9) Return the view with initial data + paginator + categories
+        // 9) Render view
         return view('media.index', [
             'initialMedia' => $initialMedia,
             'mediaPaginator' => $paginated,

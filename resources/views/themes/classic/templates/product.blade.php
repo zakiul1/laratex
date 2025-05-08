@@ -1,41 +1,47 @@
-{{-- resources/views/themes/classic/templates/product.blade.php --}}
-@php
-    use Illuminate\Support\Facades\Storage;
-@endphp
-
 @extends('themes.classic.layout')
 
 @section('content')
     <div class="bg-white py-12 font-[oswald]">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+
+            {{-- PRODUCT DETAIL GRID --}}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {{-- IMAGE + ZOOM ICON --}}
+                {{-- IMAGE --}}
                 <div class="relative">
-                    @php $img = $product->featured_image; @endphp
-                    @if ($img && Storage::disk('public')->exists($img))
-                        <img src="{{ Storage::url($img) }}" alt="{{ $product->name }}"
-                            class="w-full h-64 sm:h-80 md:h-96 rounded-lg object-cover shadow" />
+                    @php $media = $product->featuredMedia->first(); @endphp
+
+                    @if ($media)
+                        <div class="w-full aspect-w-16 aspect-h-9 rounded-lg overflow-hidden shadow">
+                            <x-responsive-image :media="$media" class="w-full h-full object-cover"
+                                alt="{{ $product->name }}" />
+                        </div>
                     @else
                         <div
-                            class="w-full h-64 sm:h-80 md:h-96 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
+                            class="w-full h-64 sm:h-80 md:h-96 bg-gray-100 
+                   rounded-lg flex items-center justify-center text-gray-400">
                             No Image
                         </div>
                     @endif
                 </div>
 
+
                 {{-- DETAILS --}}
                 <div class="flex flex-col">
                     {{-- Breadcrumb --}}
                     <nav class="text-sm sm:text-base text-gray-500 mb-4" aria-label="Breadcrumb">
-                        <ol class="list-reset flex flex-wrap space-x-2">
-                            <li><a href="{{ route('home') }}" class="hover:underline">Home</a></li>
-                            <li>/</li>
+                        <ol class="flex flex-wrap space-x-2">
                             <li>
-                                <a href="{{ route('categories.show', $category->slug) }}" class="hover:underline">
-                                    {{ strtoupper($category->name) }}
-                                </a>
+                                <a href="{{ route('home') }}" class="hover:underline">Home</a>
                             </li>
                             <li>/</li>
+                            @if ($category)
+                                <li>
+                                    <a href="{{ route('categories.show', $category->slug) }}" class="hover:underline">
+                                        {{ strtoupper($category->name) }}
+                                    </a>
+                                </li>
+                                <li>/</li>
+                            @endif
                             <li class="font-semibold">{{ strtoupper($product->name) }}</li>
                         </ol>
                     </nav>
@@ -47,23 +53,96 @@
 
                     {{-- Description --}}
                     <div class="mb-6">
-                        <span class="font-semibold text-gray-700">Description</span>
-                        <p class="mt-2 text-sm sm:text-base text-gray-800">{{ $product->description }}</p>
+                        <span class="font-semibold text-gray-700">Details:</span>
+
+                        @if (!empty($product->description))
+                            @php
+                                // split by newlines (handles \r\n or \n)
+                                $items = preg_split('/\r\n|\r|\n/', trim($product->description));
+                            @endphp
+
+                            <ul class="list-disc list-inside mt-2 text-sm text-gray-800 space-y-1">
+                                @foreach ($items as $item)
+                                    @if (trim($item) !== '')
+                                        <li>{{ $item }}</li>
+                                    @endif
+                                @endforeach
+                            </ul>
+                        @else
+                            <p class="mt-2 text-sm text-gray-800">No description available.</p>
+                        @endif
                     </div>
+
 
                     {{-- SKU & Category --}}
                     <div class="flex flex-col sm:flex-row sm:space-x-8 mb-8 text-gray-700">
-                        <div><span class="font-semibold">SKU:</span> {{ $product->sku }}</div>
-                        <div><span class="font-semibold">Category:</span> {{ strtoupper($category->name) }}</div>
+                        @if (!empty($product->sku))
+                            <div><span class="font-semibold">SKU:</span> {{ $product->sku }}</div>
+                        @endif
+                        @if ($category)
+                            <div>
+                                <span class="font-semibold">Category:</span>
+                                {{ strtoupper($category->name) }}
+                            </div>
+                        @endif
                     </div>
 
                     {{-- Enquiry Button --}}
-                    <a href="{{-- route('inquiry.create', ['product' => $product->slug]) --}}"
-                        class="inline-block w-full sm:w-auto text-center px-4 sm:px-6 py-3 bg-black text-white font-semibold rounded shadow hover:bg-gray-800 transition">
+                    <a href="#"
+                        class="inline-block w-full sm:w-auto text-center px-4 sm:px-6 py-3 
+                               bg-black text-white font-semibold rounded shadow hover:bg-gray-800 transition">
                         ENQUIRE NOW
                     </a>
                 </div>
             </div>
+
+            {{-- FEATURED PRODUCTS --}}
+            @if (!empty($featuredProducts) && $featuredProducts->isNotEmpty())
+                <div class="mt-16">
+                    <h2 class="text-3xl font-bold mb-6">
+                        {{ $featuredCategory->term->name }}
+                    </h2>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        @foreach ($featuredProducts as $fp)
+                            @php
+                                $fm = $fp->featuredMedia->first();
+                                $fpUrl = $fm ? $fm->original_url : null;
+                            @endphp
+
+                            <div class="bg-white rounded-lg shadow p-4 flex flex-col">
+                                <a href="{{ route('products.show', $fp->slug) }}" class="flex-1">
+                                    @if ($fpUrl)
+                                        <img src="{{ $fpUrl }}" alt="{{ $fp->name }}"
+                                            class="w-full h-48 object-cover rounded mb-4" />
+                                    @else
+                                        <div
+                                            class="w-full h-48 bg-gray-100 rounded mb-4 flex items-center justify-center text-gray-400">
+                                            No Image
+                                        </div>
+                                    @endif
+
+                                    <h3 class="text-xl font-semibold mb-2">
+                                        {{ $fp->name }}
+                                    </h3>
+                                    <p class="text-gray-600 mb-4">
+                                        {{ \Illuminate\Support\Str::limit($fp->description ?? '', 80) }}
+                                    </p>
+                                </a>
+
+                                @if (!is_null($fp->price))
+                                    <div class="mt-auto">
+                                        <span class="text-lg font-bold">
+                                            ৳{{ number_format($fp->price, 2) }}
+                                        </span>
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
         </div>
     </div>
 @endsection

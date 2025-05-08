@@ -6,7 +6,9 @@ use Aponahmed\HtmlBuilder\ElementFactory;
 use App\Models\Contact;
 use App\Models\Post;
 use App\Models\PostMeta;
+use App\Models\Product;
 use App\Models\SiteSetting;
+use App\Models\TermTaxonomy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -15,15 +17,47 @@ class PageController extends Controller
     /**
      * Show the front‐page (or redirect to a named page slug).
      */
+    /*   public function home()
+      {
+          // If you have a SiteSetting home‐slug, use it; otherwise just list pages
+          $settings = SiteSetting::firstOrCreate([]);
+          $slug = $settings->home_page_slug ?: 'home';
+
+          // If you want to render a “page” template:
+          return $this->show($slug);
+      } */
+
+
+
     public function home()
     {
-        // If you have a SiteSetting home‐slug, use it; otherwise just list pages
+        // 1) Determine which "page" to render
         $settings = SiteSetting::firstOrCreate([]);
         $slug = $settings->home_page_slug ?: 'home';
 
-        // If you want to render a “page” template:
+        // 2) Grab the "Featured Products" category (taxonomy = 'product')
+        $featuredCategory = TermTaxonomy::with('term')
+            ->where('taxonomy', 'product')
+            ->whereHas('term', fn($q) => $q->where('name', 'Featured Products'))
+            ->first();
+
+        // dd($featuredCategory);
+        // 3) Pull its products (if we found it), eager-loading featuredMedia
+        $featuredProducts = $featuredCategory
+            ? $featuredCategory
+                ->products()
+                ->with('featuredMedia')
+                ->get()
+            : collect();
+
+        // dd($featuredCategory->products);
+        // 4) Share both with every view (so your home.blade can use them)
+        view()->share(compact('featuredCategory', 'featuredProducts'));
+
+        // 5) Delegate to your normal page-rendering
         return $this->show($slug);
     }
+
 
     public function index()
     {
@@ -135,7 +169,7 @@ class PageController extends Controller
 
     public function update(Request $request, Post $page)
     {
-        // 1) Validate (same rules, slug unique ignores current ID)
+        // 1) Validate, now using featured_media_ids[] from your form
         $data = $request->validate([
             'title' => 'required|string',
             'content' => 'nullable|string',
@@ -144,8 +178,9 @@ class PageController extends Controller
             'template' => 'nullable|string',
             'type' => 'required|string|in:page',
 
-            'featured_images' => 'nullable|array',
-            'featured_images.*' => 'integer|exists:media,id',
+            // ← changed from featured_images to match your input name
+            'featured_media_ids' => 'nullable|array',
+            'featured_media_ids.*' => 'integer|exists:media,id',
 
             'seo.title' => 'nullable|string|max:255',
             'seo.robots' => 'nullable|string|in:Index & Follow,NoIndex & Follow,NoIndex & NoFollow,No Archive,No Snippet',
@@ -163,17 +198,21 @@ class PageController extends Controller
             $base = Str::slug($data['title']);
             $slug = $base;
             $i = 1;
-            while (Post::where('slug', $slug)->where('id', '!=', $page->id)->exists()) {
+            while (
+                Post::where('slug', $slug)
+                    ->where('id', '!=', $page->id)
+                    ->exists()
+            ) {
                 $slug = "{$base}-{$i}";
                 $i++;
             }
             $data['slug'] = $slug;
         }
 
-        // 3) Assign updated featured_images
-        $data['featured_images'] = $request->input('featured_images', []);
+        // 3) Map your media IDs into the featured_images attribute
+        $data['featured_images'] = $data['featured_media_ids'] ?? [];
 
-        // 4) Extract custom metas again
+        // 4) Build metaData from the parallel keys/values arrays
         $metaData = [];
         if (!empty($data['meta_keys'])) {
             foreach ($data['meta_keys'] as $idx => $key) {
@@ -184,19 +223,24 @@ class PageController extends Controller
             }
         }
 
-        // 5) Update the page record
-        $page->update($data);
+        // 5) Update the page—make sure 'featured_images' is fillable on your model
+        $page->update([
+            'title' => $data['title'],
+            'content' => $data['content'] ?? null,
+            'slug' => $data['slug'],
+            'status' => $data['status'],
+            'template' => $data['template'] ?? null,
+            'type' => $data['type'],
+            'featured_images' => $data['featured_images'],
+        ]);
 
         // 6) Update SEO meta
         $page->seoMeta()->updateOrCreate(
             ['meta_key' => 'seo'],
-            [
-                'meta_key' => 'seo',
-                'meta_value' => json_encode($data['seo']),
-            ]
+            ['meta_value' => json_encode($data['seo'])]
         );
 
-        // 7) Replace old custom metas with new ones
+        // 7) Replace old custom metas
         PostMeta::where('post_id', $page->id)->delete();
         foreach ($metaData as $m) {
             PostMeta::create([

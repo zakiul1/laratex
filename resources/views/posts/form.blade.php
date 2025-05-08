@@ -260,7 +260,9 @@
         }) {
             return {
                 images: initial || [],
+
                 init() {},
+
                 openMedia() {
                     document.dispatchEvent(new CustomEvent('media-open', {
                         detail: {
@@ -271,7 +273,8 @@
                                     if (!this.images.find(x => x.id === i.id)) {
                                         this.images.push({
                                             id: i.id,
-                                            url: i.url
+                                            // use the thumbnail URL your browser returns
+                                            url: i.thumbnail
                                         });
                                     }
                                 });
@@ -279,8 +282,9 @@
                         }
                     }));
                 },
-                removeImage(i) {
-                    this.images.splice(i, 1);
+
+                removeImage(index) {
+                    this.images.splice(index, 1);
                 }
             };
         }
@@ -293,6 +297,7 @@
                 newName: '',
                 newParent: '',
                 showAdd: false,
+
                 get flatList() {
                     let roots = this.all.filter(c => c.parent === 0),
                         subs = this.all.filter(c => c.parent !== 0),
@@ -302,17 +307,22 @@
                             ...r,
                             indent: ''
                         });
-                        subs.filter(s => s.parent === r.id).forEach(s => out.push({
-                            ...s,
-                            indent: '— '
-                        }));
+                        subs
+                            .filter(s => s.parent === r.id)
+                            .forEach(s => out.push({
+                                ...s,
+                                indent: '— '
+                            }));
                     });
                     return out;
                 },
+
                 get filteredList() {
-                    return this.flatList.filter(c => c.name.toLowerCase().includes(this.search
-                        .toLowerCase()));
+                    return this.flatList.filter(c =>
+                        c.name.toLowerCase().includes(this.search.toLowerCase())
+                    );
                 },
+
                 async addCategory() {
                     if (!this.newName.trim()) return;
                     let token = document.querySelector('meta[name="csrf-token"]').content;
@@ -333,9 +343,9 @@
                         return;
                     }
                     if (!res.ok) throw new Error('Failed to create category');
-                    let j = await res.json();
-                    this.all.push(j);
-                    this.selected.push(j.id);
+                    let json = await res.json();
+                    this.all.push(json);
+                    this.selected.push(json.id);
                     this.newName = '';
                     this.newParent = '';
                 }

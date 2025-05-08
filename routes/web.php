@@ -21,6 +21,7 @@ use App\Http\Controllers\SiteSettingController;
 use App\Http\Controllers\ThemeController;
 use App\Http\Controllers\ThemeCustomizeController;
 use App\Http\Controllers\WidgetController;
+use App\Models\Product;
 use App\Models\ThemeSetting;
 use App\Models\SiteSetting;
 use Illuminate\Support\Facades\Route;
@@ -218,6 +219,10 @@ Route::prefix('admin/media')->name('admin.media.')->group(function () {
         '/categories',
         [MediaController::class, 'storeCategory']
     )->name('categories.store');
+
+    Route::get('/browser', [MediaController::class, 'browserIndex'])
+        ->name('admin.media.browserIndex');
+
 });
 
 require __DIR__ . '/auth.php';
@@ -228,6 +233,7 @@ Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('categ
 // Public product page (outside the admin group)
 Route::get('/product/{slug}', [ProductController::class, 'show'])
     ->name('products.show');
+
 
 Route::get('/pages/{slug}', [PageController::class, 'show'])
     ->where('slug', '[A-Za-z0-9\-]+')

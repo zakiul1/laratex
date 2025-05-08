@@ -16,12 +16,18 @@
         <!-- Tabs -->
         <div class="px-4 py-2 border-b border-gray-200 flex space-x-4">
             <button @click="tab = 'library'"
-                :class="tab === 'library' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-blue-600'"
+                :class="tab === 'library'
+                    ?
+                    'border-b-2 border-blue-600 text-blue-600' :
+                    'text-gray-600 hover:text-blue-600'"
                 class="px-4 py-2 font-medium transition-colors">
                 Library
             </button>
             <button @click="tab = 'upload'"
-                :class="tab === 'upload' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-blue-600'"
+                :class="tab === 'upload'
+                    ?
+                    'border-b-2 border-blue-600 text-blue-600' :
+                    'text-gray-600 hover:text-blue-600'"
                 class="px-4 py-2 font-medium transition-colors">
                 Upload
             </button>
@@ -33,44 +39,12 @@
             <!-- LIBRARY TAB -->
             <div x-show="tab === 'library'" class="space-y-6">
 
-                <!-- Filters & Search -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                        <select x-model="filterType" @change="loadLibrary(1)"
-                            class="w-full border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="all">All Media</option>
-                            <option value="image">Images</option>
-                            <option value="video">Videos</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                        <select x-model="filterDate" @change="loadLibrary(1)"
-                            class="w-full border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="all">All Dates</option>
-                            <template x-for="opt in dateOptions" :key="opt.value">
-                                <option :value="opt.value" x-text="opt.label"></option>
-                            </template>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
-                        <input type="text" x-model.debounce.500ms="searchTerm" placeholder="Search media..."
-                            @keyup.enter="loadLibrary(1)"
-                            class="w-full border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-                    </div>
-                </div>
-
-                <!-- Error Message -->
-                <div x-show="loadError" class="bg-red-100 text-red-700 p-4 rounded-lg" x-text="loadError"></div>
-
                 <!-- Selected & Insert -->
                 <div class="flex items-center justify-between">
                     <div class="flex space-x-2 overflow-x-auto py-2">
                         <template x-for="img in images.filter(i => selectedIds.includes(i.id))" :key="img.id">
                             <div class="w-16 h-16 relative flex-shrink-0 bg-white border rounded-lg shadow-sm">
-                                <img :src="img.url" class="w-full h-full object-contain p-1" />
+                                <img :src="img.thumbnail" class="w-full h-full object-contain p-1" />
                                 <button @click="toggleSelect(img)"
                                     class="absolute -top-2 -right-2 bg-white rounded-full text-red-600 text-xs p-1 shadow hover:bg-red-100 transition-colors">
                                     ×
@@ -87,24 +61,29 @@
                     </button>
                 </div>
 
-                <!-- Loading Spinner -->
+                <!-- Loading & Error -->
+                <div x-show="loadError" class="bg-red-100 text-red-700 p-4 rounded-lg" x-text="loadError"></div>
                 <div x-show="isLoading" class="flex justify-center py-12">
                     <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
                 </div>
 
                 <!-- Image Grid -->
-                <div x-show="!isLoading" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                <div x-show="!isLoading" class="grid gap-2 justify-center"
+                    style="grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));">
                     <template x-for="img in images" :key="img.id">
                         <div @click="toggleSelect(img)"
                             :class="selectedIds.includes(img.id) ?
                                 'border-blue-500 scale-105' :
                                 'border-gray-200 hover:border-blue-300'"
-                            class="relative cursor-pointer rounded-lg overflow-hidden bg-white border-2 transition-transform duration-200">
-                            <img :src="img.url" class="w-full h-32 object-cover" loading="lazy" />
+                            class="w-[150px] h-[150px] overflow-hidden rounded-lg bg-white border-2 cursor-pointer transition-transform duration-200">
+                            <img :src="img.thumbnail" class="w-full h-full object-cover" loading="lazy" />
                         </div>
                     </template>
+
                     <template x-if="!isLoading && images.length === 0">
-                        <p class="col-span-full text-center text-gray-500 py-8">No media found.</p>
+                        <p class="col-span-full text-center text-gray-500 py-8">
+                            No media found.
+                        </p>
                     </template>
                 </div>
 
@@ -122,18 +101,13 @@
                         Next
                     </button>
                 </div>
-
             </div>
 
             <!-- UPLOAD TAB -->
             <div x-show="tab === 'upload'" class="space-y-6">
-
-                <!-- Success Banner -->
                 <div x-show="showSuccess" class="p-4 bg-green-100 text-green-800 rounded-lg text-center">
                     Upload complete! Switching to Library...
                 </div>
-
-                <!-- Error Message -->
                 <div x-show="uploadError" class="bg-red-100 text-red-700 p-4 rounded-lg" x-text="uploadError"></div>
 
                 <!-- Dropzone -->
@@ -174,6 +148,14 @@
                     </template>
                 </div>
 
+                <!-- Upload All Button -->
+                <div class="text-right">
+                    <button @click="uploadAll()"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                        :disabled="uploads.length === 0">
+                        Upload Files
+                    </button>
+                </div>
             </div>
         </div>
     </div>

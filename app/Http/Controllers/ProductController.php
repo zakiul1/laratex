@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Models\SiteSetting;
 use App\Models\Term;
 use App\Models\TermTaxonomy;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
 
@@ -50,7 +52,6 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
-        //dd($request->all());
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|unique:products,slug',
@@ -65,22 +66,34 @@ class ProductController extends Controller
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
 
-        // Slug collision-proofing
+        // 1) Slug collision-proofing
         $base = $slug = $data['slug'] ?? Str::slug($data['name']);
         for ($i = 1; Product::where('slug', $slug)->exists(); $i++) {
             $slug = "{$base}-{$i}";
         }
         $data['slug'] = $slug;
 
-        $product = Product::create($data);
+        // 2) Create the product
+        $product = Product::create([
+            'name' => $data['name'],
+            'slug' => $data['slug'],
+            'description' => $data['description'] ?? null,
+            'price' => $data['price'] ?? null,
+            'stock' => $data['stock'] ?? null,
+            'status' => $data['status'],
+        ]);
 
-        // Sync featured images
+        // 3) Sync featured images
         $product->featuredMedia()->sync($data['featured_media_ids'] ?? []);
 
-        // Sync categories
-        $product->taxonomies()->sync($data['taxonomy_ids']);
+        // 4) Sync categories with explicit object_type
+        $sync = [];
+        foreach ($data['taxonomy_ids'] as $tid) {
+            $sync[$tid] = ['object_type' => 'product'];
+        }
+        $product->taxonomies()->sync($sync);
 
-        // Optional gallery uploads
+        // 5) Handle gallery uploads
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $img) {
                 $path = $img->store('products/gallery', 'public');
@@ -91,9 +104,11 @@ class ProductController extends Controller
             }
         }
 
-        return redirect()->route('products.index')
+        return redirect()
+            ->route('products.index')
             ->with('success', 'Product created successfully.');
     }
+
 
     public function edit(Product $product)
     {
@@ -127,20 +142,38 @@ class ProductController extends Controller
 
         // Slug collision-proofing
         $base = $slug = $data['slug'] ?? Str::slug($data['name']);
-        for ($i = 1; Product::where('slug', $slug)->where('id', '!=', $product->id)->exists(); $i++) {
+        for (
+            $i = 1;
+            Product::where('slug', $slug)
+                ->where('id', '!=', $product->id)
+                ->exists();
+            $i++
+        ) {
             $slug = "{$base}-{$i}";
         }
         $data['slug'] = $slug;
 
-        $product->update($data);
+        // 1) Update only the fillable fields
+        $product->update([
+            'name' => $data['name'],
+            'slug' => $data['slug'],
+            'description' => $data['description'] ?? null,
+            'price' => $data['price'] ?? null,
+            'stock' => $data['stock'] ?? null,
+            'status' => $data['status'],
+        ]);
 
-        // Re-sync featured images
+        // 2) Re-sync featured images
         $product->featuredMedia()->sync($data['featured_media_ids'] ?? []);
 
-        // Re-sync categories
-        $product->taxonomies()->sync($data['taxonomy_ids']);
+        // 3) Re-sync categories with object_type = 'product'
+        $sync = [];
+        foreach ($data['taxonomy_ids'] as $tid) {
+            $sync[$tid] = ['object_type' => 'product'];
+        }
+        $product->taxonomies()->sync($sync);
 
-        // New gallery uploads
+        // 4) New gallery uploads
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $img) {
                 $path = $img->store('products/gallery', 'public');
@@ -151,7 +184,8 @@ class ProductController extends Controller
             }
         }
 
-        return redirect()->route('products.index')
+        return redirect()
+            ->route('products.index')
             ->with('success', 'Product updated successfully.');
     }
 
@@ -207,6 +241,56 @@ class ProductController extends Controller
             'id' => $tt->term_taxonomy_id,
             'name' => $term->name,
         ]);
+    }
+
+
+    // in App\Http\Controllers\ProductController.php
+
+
+
+    // in App\Http\Controllers\ProductController.php
+
+    public function show(string $slug)
+    {
+        // 1) Find the product (404 if missing)
+        $product = Product::with(['featuredMedia', 'taxonomies.term'])
+            ->where('slug', $slug)
+            ->firstOrFail();
+
+        // 2) Pick its category
+        $category = optional($product->taxonomies->first())->term;
+
+        // 3) Grab “Featured Products” (as before)
+        $featuredCategory = TermTaxonomy::with(['term', 'products.featuredMedia'])
+            ->where('taxonomy', 'product')
+            ->whereHas('term', fn($q) => $q->where('name', 'Featured Products'))
+            ->first();
+
+        $featuredProducts = $featuredCategory
+            ? $featuredCategory->products
+            : collect();
+
+        // 4) Resolve your active theme
+        if (Schema::hasTable('site_settings')) {
+            $settings = SiteSetting::firstOrCreate([]);
+            $theme = $settings->active_theme ?: 'classic';
+        } else {
+            $theme = env('ACTIVE_THEME', 'classic');
+        }
+
+        // 5) Build & verify view path
+        $view = "themes.{$theme}.templates.product";
+        if (!view()->exists($view)) {
+            abort(404, "Template not found: {$view}");
+        }
+
+        // 6) Finally render
+        return view($view, compact(
+            'product',
+            'category',
+            'featuredCategory',
+            'featuredProducts'
+        ));
     }
 
 }

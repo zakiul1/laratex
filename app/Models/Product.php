@@ -4,11 +4,18 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
 {
     use HasFactory;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'name',
         'slug',
@@ -16,41 +23,49 @@ class Product extends Model
         'price',
         'stock',
         'status',
-        // no legacy single-path column needed here
     ];
 
     /**
-     * One-to-many: gallery images (if used).
+     * One-to-many relation for gallery images.
+     *
+     * @return HasMany
      */
-    public function images()
+    public function images(): HasMany
     {
         return $this->hasMany(ProductImage::class);
     }
 
     /**
-     * Many-to-many: product ⇄ categories.
+     * Many-to-many relation to categories (term_taxonomies) via pivot.
+     * Filters on object_type = 'product'.
+     *
+     * @return BelongsToMany
      */
-    public function taxonomies()
+    public function taxonomies(): BelongsToMany
     {
-        return $this->morphToMany(
+        return $this->belongsToMany(
             TermTaxonomy::class,
-            'object',
-            'term_relationships',
-            'object_id',
-            'term_taxonomy_id'
-        );
+            'term_relationships',  // pivot table
+            'object_id',           // this model's FK
+            'term_taxonomy_id'     // foreign key on pivot
+        )
+            ->wherePivot('object_type', 'product')
+            ->withPivot('object_type')
+            ->withTimestamps();
     }
 
     /**
      * Many-to-many pivot to the Media model for featured images.
+     *
+     * @return BelongsToMany
      */
-    public function featuredMedia()
+    public function featuredMedia(): BelongsToMany
     {
         return $this->belongsToMany(
             Media::class,
             'product_media',    // pivot table
-            'product_id',
-            'media_id'
+            'product_id',       // this model's FK
+            'media_id'          // foreign key on pivot
         );
     }
 }

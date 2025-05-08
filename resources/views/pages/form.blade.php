@@ -174,7 +174,8 @@
                                 arr.forEach(item => {
                                     if (!this.previewIds.includes(item.id)) {
                                         this.previewIds.push(item.id);
-                                        this.previewUrls.push(item.url);
+                                        // use thumbnail instead of url
+                                        this.previewUrls.push(item.thumbnail);
                                     }
                                 });
                             }

@@ -4,6 +4,10 @@ use Spatie\MediaLibrary\Support\PathGenerator\DefaultPathGenerator;
 use Spatie\MediaLibrary\Support\UrlGenerator\DefaultUrlGenerator;
 
 return [
+    /*
+     * The model that should be used for media items.
+     */
+    'media_model' => \App\Models\Media::class,
 
     /*
      * The disk on which MediaLibrary will store originals & conversions.
@@ -42,5 +46,4 @@ return [
     /*
      * (The rest of your optimizer, jobs, responsive images, etc remain as you had them.)
      */
-
 ];

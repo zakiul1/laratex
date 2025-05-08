@@ -2,6 +2,7 @@
 
 @php
     $count = $categories->count();
+    //dd($categories);
 @endphp
 
 @if ($count)

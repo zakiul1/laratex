@@ -120,36 +120,37 @@
 @push('scripts')
     <script>
         /**
-         * Alpine component factory.
-         * @param {Array<{id:number,url:string}>} initialImages
+         * Alpine component factory for taxonomy images.
+         * @param {Array<{id: number, thumbnail: string}>} initialImages
          */
         function taxonomyForm(initialImages) {
             return {
+                // List of selected media items (with id & thumbnail)
                 images: initialImages.slice(),
 
                 /**
                  * Handler for when media is selected.
+                 * Pushes new items with their thumbnail URL.
                  */
                 onMediaSelected(item) {
                     if (!this.images.find(i => i.id === item.id)) {
                         this.images.push({
                             id: item.id,
-                            url: item.url
+                            thumbnail: item.thumbnail
                         });
                     }
                 },
 
                 /**
                  * Open the media library modal.
-                 * Provide both callback & onSelect for compatibility.
                  */
                 openMediaLibrary() {
                     document.dispatchEvent(new CustomEvent('media-open', {
                         detail: {
                             multiple: true,
                             callback: item => this.onMediaSelected(item),
-                            onSelect: item => this.onMediaSelected(item)
-                        }
+                            onSelect: item => this.onMediaSelected(item),
+                        },
                     }));
                 },
 
@@ -159,7 +160,7 @@
                 removeImage(idx) {
                     this.images.splice(idx, 1);
                 }
-            }
+            };
         }
     </script>
 @endpush

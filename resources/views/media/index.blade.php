@@ -21,12 +21,147 @@
 
         /* Enhanced upload modal styles */
         .upload-modal {
-            max-width: 600px;
+            max-width: 800px;
+            /* Spacious width */
             width: 90%;
-            max-height: 80vh;
+            max-height: 90vh;
+            /* Increased height for better visibility */
+            overflow-y: auto;
+            background: #ffffff;
+            /* Simple white background */
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            /* Subtle shadow */
+            padding: 20px;
+            color: #333333;
+            /* Dark text for contrast */
+        }
+
+        .upload-modal h2 {
+            font-size: 1.5rem;
+            /* Standard heading size */
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2a5298;
+            /* Blue heading */
+        }
+
+        .upload-modal .file-preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 1rem;
+            padding: 1rem 0;
+            max-height: 400px;
+            /* Increased max height */
             overflow-y: auto;
         }
 
+        .upload-modal .file-preview {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .upload-modal .file-preview:hover {
+            transform: scale(1.05);
+        }
+
+        .upload-modal .file-preview img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+        }
+
+        .upload-modal .file-preview .progress-bar-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #e5e7eb;
+        }
+
+        .upload-modal .file-preview .progress-bar {
+            height: 100%;
+            background: #4f46e5;
+            border-radius: 2px;
+        }
+
+        .upload-modal label {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #333333;
+            margin-bottom: 8px;
+        }
+
+        .upload-modal select,
+        .upload-modal input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            background: #ffffff;
+            color: #333333;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .upload-modal select:focus,
+        .upload-modal input[type="text"]:focus {
+            border-color: #4f46e5;
+        }
+
+        .upload-modal .flex.gap-2 input[type="text"] {
+            flex: 1;
+        }
+
+        .upload-modal button {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.3s ease;
+        }
+
+        .upload-modal button.bg-indigo-600 {
+            background: #4f46e5;
+            color: #ffffff;
+        }
+
+        .upload-modal button.bg-indigo-600:hover {
+            background: #4338ca;
+            transform: translateY(-1px);
+        }
+
+        .upload-modal button.bg-gray-200 {
+            background: #e5e7eb;
+            color: #333333;
+        }
+
+        .upload-modal button.bg-gray-200:hover {
+            background: #d1d5db;
+            transform: translateY(-1px);
+        }
+
+        .upload-modal .flex.justify-end.gap-3 {
+            position: sticky;
+            bottom: 0;
+            background: #ffffff;
+            padding-top: 15px;
+            margin-top: 15px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .upload-modal p {
+            color: #dc2626;
+            font-size: 0.9rem;
+        }
+
+        /* Existing styles for other elements */
         .file-preview-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -281,23 +416,26 @@
                     });
                     this.loadMedia(this.currentPage);
                 },
-
                 async bulkDelete() {
                     if (!confirm(`Delete ${this.selected.length} items?`)) return;
+
                     await fetch(window.mediaRoutes.bulkDelete, {
-                        method: 'POST',
+                        method: 'DELETE', // ← use DELETE
                         headers: {
                             'X-CSRF-TOKEN': document.querySelector(
                                 'meta[name="csrf-token"]').content,
                             'Content-Type': 'application/json',
+                            'Accept': 'application/json',
                         },
                         body: JSON.stringify({
-                            ids: this.selected,
+                            ids: this.selected
                         }),
                     });
+
                     this.selected = [];
                     this.loadMedia(this.currentPage);
                 },
+
 
                 getCategoryNames(item) {
                     const categories = item.categories || [];
@@ -444,10 +582,10 @@
         <template x-if="uploadModalOpen">
             <div x-transition x-transition:enter="modal-enter-active" x-transition:leave="modal-leave-active"
                 class="fixed inset-0 bg-black/70 flex items-center justify-center p-6 z-50">
-                <div class="upload-modal bg-white rounded-xl shadow-2xl p-8 max-w-lg w-full space-y-6">
-                    <h2 class="text-2xl font-semibold text-gray-800">Upload Media</h2>
+                <div class="upload-modal">
+                    <h2>Upload Media</h2>
 
-                    <div x-show="uploadErrors.length" class="bg-red-50 text-red-700 p-4 rounded-lg">
+                    <div x-show="uploadErrors.length" class="bg-red-50 text-red-700 p-4 rounded-lg mb-4">
                         <template x-for="err in uploadErrors" :key="err">
                             <p x-text="err" class="text-sm"></p>
                         </template>
@@ -455,7 +593,7 @@
 
                     <div class="space-y-6">
                         <div>
-                            <label class="block mb-2 text-sm font-medium text-gray-700">Select Files</label>
+                            <label>Select Files</label>
                             <label
                                 class="flex items-center justify-center w-full h-32 border-2 border-gray-200 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 transition">
                                 <div class="text-center">
@@ -470,7 +608,7 @@
                                 </div>
                                 <input type="file" @change="handleFileChange" multiple class="hidden" />
                             </label>
-                            <div class="file-preview-grid">
+                            <div class="file-preview-grid mt-2">
                                 <template x-for="(file, index) in selectedFiles" :key="index">
                                     <div class="file-preview relative group">
                                         <img :src="file.url" class="w-full h-24 object-cover rounded-lg" />
@@ -490,7 +628,7 @@
                         </div>
 
                         <div>
-                            <label class="block mb-2 text-sm font-medium text-gray-700">Category</label>
+                            <label>Category</label>
                             <select x-model="uploadCategory"
                                 class="w-full border border-gray-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 shadow-sm">
                                 <option value="" disabled>Select category</option>
@@ -502,7 +640,7 @@
                         </div>
 
                         <div>
-                            <label class="block mb-2 text-sm font-medium text-gray-700">Or Create New Category</label>
+                            <label>Or Create New Category</label>
                             <div class="flex gap-2">
                                 <input type="text" x-model="newCategoryName" placeholder="New category name"
                                     class="flex-1 border border-gray-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 shadow-sm" />

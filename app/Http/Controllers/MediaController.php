@@ -164,6 +164,7 @@ class MediaController extends Controller
 
     public function bulkDelete(Request $request)
     {
+        // dd($request->all());
         $ids = $request->input('ids', []);
         if (!is_array($ids) || empty($ids)) {
             return response()->json(['error' => 'No IDs provided'], 422);

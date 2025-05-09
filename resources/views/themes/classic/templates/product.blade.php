@@ -11,7 +11,7 @@
                     @php $media = $product->featuredMedia->first(); @endphp
 
                     @if ($media)
-                        <div class="w-full aspect-w-16 aspect-h-9 rounded-lg overflow-hidden shadow">
+                        <div class="w-full aspect-w-16 aspect-h-9 rounded-lg overflow-hidden shadow p-4">
                             <x-responsive-image :media="$media" class="w-full h-full object-cover"
                                 alt="{{ $product->name }}" />
                         </div>
@@ -105,16 +105,15 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         @foreach ($featuredProducts as $fp)
-                            @php
-                                $fm = $fp->featuredMedia->first();
-                                $fpUrl = $fm ? $fm->original_url : null;
-                            @endphp
+                            @php $fm = $fp->featuredMedia->first(); @endphp
 
                             <div class="bg-white rounded-lg shadow p-4 flex flex-col">
                                 <a href="{{ route('products.show', $fp->slug) }}" class="flex-1">
-                                    @if ($fpUrl)
-                                        <img src="{{ $fpUrl }}" alt="{{ $fp->name }}"
-                                            class="w-full h-48 object-cover rounded mb-4" />
+                                    @if ($fm)
+                                        <div class="w-full aspect-w-16 aspect-h-9 rounded-lg overflow-hidden  mb-4">
+                                            <x-responsive-image :media="$fm" class="w-full h-full object-cover"
+                                                alt="{{ $fp->name }}" />
+                                        </div>
                                     @else
                                         <div
                                             class="w-full h-48 bg-gray-100 rounded mb-4 flex items-center justify-center text-gray-400">
@@ -122,9 +121,7 @@
                                         </div>
                                     @endif
 
-                                    <h3 class="text-xl font-semibold mb-2">
-                                        {{ $fp->name }}
-                                    </h3>
+                                    <h3 class="text-xl text-center font-semibold mb-2">{{ $fp->name }}</h3>
                                     <p class="text-gray-600 mb-4">
                                         {{ \Illuminate\Support\Str::limit($fp->description ?? '', 80) }}
                                     </p>
@@ -132,14 +129,13 @@
 
                                 @if (!is_null($fp->price))
                                     <div class="mt-auto">
-                                        <span class="text-lg font-bold">
-                                            ৳{{ number_format($fp->price, 2) }}
-                                        </span>
+                                        <span class="text-lg font-bold">৳{{ number_format($fp->price, 2) }}</span>
                                     </div>
                                 @endif
                             </div>
                         @endforeach
                     </div>
+
                 </div>
             @endif
 

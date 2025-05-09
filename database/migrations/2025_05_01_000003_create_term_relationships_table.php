@@ -5,35 +5,42 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::create('term_relationships', function (Blueprint $table) {
-            // references a row in term_taxonomies
+            // primary key
+            $table->id();
+
+            // link to your term_taxonomies table
             $table->unsignedBigInteger('term_taxonomy_id');
 
-            // polymorphic: will hold a Post ID or a Media ID
+            // polymorphic object ID (e.g. product, post, media)
             $table->unsignedBigInteger('object_id');
 
-            // must be 'post' or 'media' (or any other object type you add)
-            $table->string('object_type')->nullable();
+            // object type enum (product, post, media, etc.)
+            $table->string('object_type')
+                ->default('product')
+                ->comment('e.g. "product", "post", "media"');
 
-            // add these two lines:
+            // timestamps for pivot
             $table->timestamps();
 
-            // composite primary key to prevent duplicates
-            $table->primary(
-                ['term_taxonomy_id', 'object_id', 'object_type'],
-                'term_rel_pk'
-            );
-
-            // foreign key on the taxonomy side
+            // foreign key constraint
             $table->foreign('term_taxonomy_id')
                 ->references('term_taxonomy_id')
                 ->on('term_taxonomies')
                 ->onDelete('cascade');
 
-            // no FK on object_id because it's polymorphic
-            // add an index for faster lookups by type+id
+            // prevent duplicate assignments of the same object to the same taxonomy
+            $table->unique(
+                ['term_taxonomy_id', 'object_id', 'object_type'],
+                'term_rel_unique'
+            );
+
+            // index to speed up lookups by type + id
             $table->index(
                 ['object_type', 'object_id'],
                 'term_rel_obj_idx'
@@ -41,6 +48,9 @@ return new class extends Migration {
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::dropIfExists('term_relationships');

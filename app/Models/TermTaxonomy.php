@@ -140,4 +140,14 @@ class TermTaxonomy extends Model
             ->withPivot('object_type')
             ->withTimestamps();
     }
+
+    public function posts()
+    {
+        return $this->belongsToMany(
+            Post::class,
+            'term_relationships',
+            'term_taxonomy_id',
+            'post_id'
+        );
+    }
 }

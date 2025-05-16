@@ -12,4 +12,8 @@ class Term extends Model
     {
         return $this->hasMany(TermTaxonomy::class);
     }
+    public function posts()
+    {
+        return $this->belongsToMany(Post::class, 'term_post', 'term_id', 'post_id');
+    }
 }

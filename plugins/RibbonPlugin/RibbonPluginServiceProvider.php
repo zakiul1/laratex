@@ -15,18 +15,18 @@ class RibbonPluginServiceProvider extends ServiceProvider
 
         // 2) If the table doesn't exist, run only our migrations now
         $this->app->booted(function () {
-            if (! Schema::hasTable('ribbon_settings')) {
+            if (!Schema::hasTable('ribbon_settings')) {
                 Artisan::call('migrate', [
-                    '--path'     => realpath(__DIR__ . '/database/migrations'),
+                    '--path' => realpath(__DIR__ . '/database/migrations'),
                     '--realpath' => true,
-                    '--force'    => true,
+                    '--force' => true,
                 ]);
             }
         });
 
         // 3) Load views
         $this->loadViewsFrom(__DIR__ . '/resources/views/settings', 'ribbon-plugin');
-        $this->loadViewsFrom(__DIR__ . '/resources/views/front',   'ribbon-plugin-front');
+        $this->loadViewsFrom(__DIR__ . '/resources/views/front', 'ribbon-plugin-front');
 
         // 4) Load routes
         $this->loadRoutesFrom(__DIR__ . '/routes/web.php');
@@ -38,7 +38,7 @@ class RibbonPluginServiceProvider extends ServiceProvider
                 $items[] = [
                     'label' => 'Ribbon Settings',
                     'route' => 'ribbon-plugin.settings.edit',
-                    'icon'  => 'lucide-activity',
+                    'icon' => 'lucide-activity',
                 ];
                 return $items;
             });

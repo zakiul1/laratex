@@ -38,14 +38,37 @@ class Post extends Model
         return $this->belongsTo(User::class, 'author_id');
     }
 
+    /**
+     * All the TermTaxonomy entries attached to this post,
+     * filtered on object_type = 'post'.
+     */
     public function categories()
     {
         return $this->belongsToMany(
             TermTaxonomy::class,
-            'term_relationships',
-            'object_id',
-            'term_taxonomy_id'
-        );
+            'term_relationships',  // pivot table
+            'object_id',           // this model’s FK in pivot
+            'term_taxonomy_id'     // related model’s FK
+        )
+            ->wherePivot('object_type', 'post')
+            ->withPivot('object_type')
+            ->withTimestamps();
+    }
+
+    /**
+     * Alias for plugin queries.
+     */
+    public function termTaxonomies()
+    {
+        return $this->categories();
+    }
+
+    /**
+     * (Optional) Another alias if you prefer `->taxonomies()`.
+     */
+    public function taxonomies()
+    {
+        return $this->categories();
     }
 
     public function meta()
@@ -94,5 +117,18 @@ class Post extends Model
     public function syncCategories(array $categoryIds): void
     {
         $this->categories()->sync($categoryIds);
+    }
+
+    /**
+     * Legacy terms() relation—if other parts of Laratex CMS still use it.
+     */
+    public function terms()
+    {
+        return $this->belongsToMany(
+            \App\Models\Term::class,
+            'term_post',
+            'post_id',
+            'term_id'
+        );
     }
 }

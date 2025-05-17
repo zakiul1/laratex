@@ -40,10 +40,13 @@
                 gap-6
             ">
             @foreach ($items as $item)
+                {{--  @dd($item) --}}
+                {{-- Each item in the grid --}}
                 <div class="bg-white rounded-lg p-4  flex flex-col items-center text-center">
                     {{-- Clickable Responsive Image --}}
                     @if ($opts['show_image'] && ($media = $item->featuredMedia->first()))
-                        <a href="{{ $isProductTax ? route('products.show', $item) : route('posts.show', $item) }}">
+                        <a
+                            href="{{ $isProductTax ? route('products.show', $item->slug) : route('posts.show', $item->slug) }}">
                             <x-responsive-image :media="$media" class="w-full h-auto object-cover rounded mb-4" />
                         </a>
                     @endif
@@ -68,7 +71,7 @@
                             Get Price
                         </button>
                     @elseif($opts['button_type'] === 'read_more')
-                        <a href="{{ $isProductTax ? route('products.show', $item) : route('posts.show', $item) }}"
+                        <a href="{{ $isProductTax ? route('products.show', $item->slug) : route('posts.show', $item) }}"
                             class="mt-auto px-4 pb-1 text-blue-600 font-medium
                              border-b-2 border-blue-600 hover:text-blue-800">
                             Read More

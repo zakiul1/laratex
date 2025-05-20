@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\Media;
 use App\Models\TermTaxonomyImage;
 use App\Models\Product;
+use App\Models\Post;
 
 class TermTaxonomy extends Model
 {
@@ -64,7 +65,7 @@ class TermTaxonomy extends Model
     /**
      * The term this taxonomy belongs to.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function term(): BelongsTo
     {
@@ -74,7 +75,7 @@ class TermTaxonomy extends Model
     /**
      * Parent taxonomy in the same table.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function parentTaxonomy(): BelongsTo
     {
@@ -84,7 +85,7 @@ class TermTaxonomy extends Model
     /**
      * Child taxonomies (if any) in the same table.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function children(): HasMany
     {
@@ -94,7 +95,7 @@ class TermTaxonomy extends Model
     /**
      * All the media items attached to this taxonomy.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     * @return BelongsToMany
      */
     public function media(): BelongsToMany
     {
@@ -112,7 +113,7 @@ class TermTaxonomy extends Model
     /**
      * Additional images linked to this taxonomy.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function images(): HasMany
     {
@@ -126,7 +127,7 @@ class TermTaxonomy extends Model
     /**
      * All products attached to this taxonomy.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     * @return BelongsToMany
      */
     public function products(): BelongsToMany
     {
@@ -141,13 +142,21 @@ class TermTaxonomy extends Model
             ->withTimestamps();
     }
 
-    public function posts()
+    /**
+     * All posts attached to this taxonomy via the term_relationships pivot.
+     *
+     * @return BelongsToMany
+     */
+    public function posts(): BelongsToMany
     {
         return $this->belongsToMany(
             Post::class,
             'term_relationships',
             'term_taxonomy_id',
-            'post_id'
-        );
+            'object_id'
+        )
+            ->wherePivot('object_type', 'post')
+            ->withPivot('object_type')
+            ->withTimestamps();
     }
 }

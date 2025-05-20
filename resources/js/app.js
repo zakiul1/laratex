@@ -5,6 +5,7 @@ import collapse from "@alpinejs/collapse";
 import focus from "@alpinejs/focus";
 import Sortable from "sortablejs";
 import Notification from "@aponahmed/notify";
+import './dynamicgrid-cart.js';
 
 // ** Side-effect imports only **
 import registerMediaBrowser from "./mediaBrowser";

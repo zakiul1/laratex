@@ -17,11 +17,44 @@ class PostController extends Controller
 {
     public function index(Request $request)
     {
-        $postsPaged = Post::orderBy('created_at', 'desc')->paginate(10);
-        $postsAll = Post::select('id', 'title', 'slug', 'type', 'status', 'created_at')->orderBy('created_at', 'desc')->get();
+        // Base query (with eager-loading)
+        $query = Post::with('taxonomies.term');
+
+        // Optional category filter
+        if ($cid = $request->get('filter_category')) {
+            $query->whereHas('taxonomies', fn($q) => $q->where('term_taxonomy_id', $cid));
+        }
+
+        // **1)** All posts for any summary/statistics your view might need
+        $postsAll = (clone $query)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // **2)** Paginated posts for the table
+        $postsPaged = (clone $query)
+            ->orderBy('created_at', 'desc')
+            ->paginate(10)
+            ->withQueryString();
+
+        // Category dropdown data
+        $allCategories = TermTaxonomy::select('term_taxonomies.*')
+            ->join('terms', 'term_taxonomies.term_id', '=', 'terms.id')
+            ->where('taxonomy', 'category')
+            ->with('term')
+            ->orderBy('terms.name')
+            ->get();
+
+        // Any other filters your view uses
         $types = ['post' => 'Post', 'page' => 'Page', 'custom' => 'Custom'];
         $statuses = ['published' => 'Published', 'draft' => 'Draft'];
-        return view('posts.index', compact('postsAll', 'types', 'statuses', 'postsPaged'));
+
+        return view('posts.index', compact(
+            'postsAll',
+            'postsPaged',
+            'allCategories',
+            'types',
+            'statuses'
+        ));
     }
 
     public function create()

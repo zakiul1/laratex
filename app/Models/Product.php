@@ -16,14 +16,17 @@ class Product extends Model
      *
      * @var array<int, string>
      */
+    // in App\Models\Product
     protected $fillable = [
         'name',
         'slug',
         'description',
+        'content',  // ← newly added
         'price',
         'stock',
         'status',
     ];
+
 
     /**
      * One-to-many relation for gallery images.

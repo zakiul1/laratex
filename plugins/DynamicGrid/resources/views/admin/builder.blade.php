@@ -1,10 +1,10 @@
+{{-- resources/views/admin/dynamicgrid/builder.blade.php --}}
 @extends('layouts.dashboard')
 
 @section('content')
-    <div class=" py-8">
+    <div class="py-8">
         <h1 class="text-2xl font-bold mb-6">Dynamic Grid Shortcode Builder</h1>
         <div class="bg-white p-6 shadow rounded-lg space-y-6">
-
             @if (session('shortcode'))
                 <div class="space-y-2">
                     <label class="font-medium">Generated Shortcode</label>
@@ -84,54 +84,52 @@
                     @endforeach
                 </div>
 
-                {{-- excerpt words (feature_post only) --}}
+                {{-- excerpt words --}}
                 <div id="excerpt_wrapper" class="mb-4">
                     <label class="block font-medium">Excerpt Words</label>
                     <input type="number" name="excerpt_words" value="{{ old('excerpt_words', $config['excerpt_words']) }}"
                         min="0" class="w-full border p-2 rounded" />
                 </div>
 
-                {{-- show image (all except single_post) --}}
-                <div id="show_image_wrapper" class="flex items-center mb-6">
+                {{-- show description (single_post/layout1 only) --}}
+                <div id="description_wrapper" class="flex items-center mb-4">
+                    <input type="checkbox" id="show_description" name="show_description" value="1"
+                        {{ old('show_description', $config['show_description']) ? 'checked' : '' }} class="h-4 w-4 mr-2" />
+                    <label for="show_description" class="font-medium">Show Description</label>
+                </div>
+
+                {{-- show image --}}
+                <div id="show_image_wrapper" class="flex items-center mb-4">
                     <input type="checkbox" id="show_image" name="show_image" value="1"
                         {{ old('show_image', $config['show_image']) ? 'checked' : '' }} class="h-4 w-4 mr-2" />
                     <label for="show_image" class="font-medium">Show Image</label>
                 </div>
 
-                {{-- button type (feature_post only) --}}
+                {{-- button type --}}
                 <div id="button_wrapper" class="mb-4">
                     <label class="block font-medium">Button Type</label>
-                    <select name="button_type" class="w-full border p-2 rounded">
-                        <option value="none"
-                            {{ old('button_type', $config['button_type']) == 'none' ? 'selected' : '' }}>None</option>
-                        <option value="read_more"
-                            {{ old('button_type', $config['button_type']) == 'read_more' ? 'selected' : '' }}>Read More
-                        </option>
-                        <option value="price"
-                            {{ old('button_type', $config['button_type']) == 'price' ? 'selected' : '' }}>Price
-                        </option>
-                    </select>
+                    <select id="button_type" name="button_type" class="w-full border p-2 rounded"></select>
                 </div>
 
-                {{-- heading (always) --}}
+                {{-- heading --}}
                 <div id="heading_wrapper" class="mb-6">
                     <label class="block font-medium">Heading (optional)</label>
                     <input type="text" name="heading" value="{{ old('heading', $config['heading']) }}"
                         class="w-full border p-2 rounded" />
                 </div>
 
-                {{-- post ID (all except single_post) --}}
+                {{-- post ID --}}
                 <div id="post_id_wrapper" class="mb-6">
                     <label class="block font-medium">Post ID</label>
                     <input type="number" name="post_id" value="{{ old('post_id', $config['post_id']) }}"
                         class="w-full border p-2 rounded" />
                 </div>
 
-                {{-- new: products amount (single_post only) --}}
-                <div id="product_amount_wrapper" class="mb-6" style="display:none;">
+                {{-- products amount --}}
+                <div id="product_amount_wrapper" class="mb-6">
                     <label class="block font-medium">Products Amount</label>
                     <input type="number" name="product_amount"
-                        value="{{ old('product_amount', $config['product_amount'] ?? '') }}" min="1"
+                        value="{{ old('product_amount', $config['product_amount']) }}" min="1"
                         class="w-full border p-2 rounded" />
                 </div>
 
@@ -141,55 +139,124 @@
             </form>
         </div>
     </div>
+@endsection
 
+@push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const layouts = @json($layouts);
+            const buttonOptions = {
+                default: [{
+                    value: 'none',
+                    label: 'None'
+                }, {
+                    value: 'read_more',
+                    label: 'Read More'
+                }, {
+                    value: 'price',
+                    label: 'Price'
+                }],
+                priceOnly: [{
+                    value: 'none',
+                    label: 'None'
+                }, {
+                    value: 'price',
+                    label: 'Price'
+                }],
+            };
+
             const typeSelect = document.getElementById('type');
             const layoutSelect = document.getElementById('layout');
-            const copyBtn = document.getElementById('copy-btn');
+            const buttonTypeSelect = document.getElementById('button_type');
 
-            // 1) update layouts on type change
-            typeSelect.addEventListener('change', () => {
-                layoutSelect.innerHTML = '';
-                Object.entries(layouts[typeSelect.value] || {}).forEach(([k, label]) => {
-                    const o = new Option(label, k);
-                    if (k === "{{ old('layout', $config['layout']) }}") o.selected = true;
-                    layoutSelect.add(o);
-                });
-                handleTypeChange();
-            });
-
-            // 2) toggle wrappers
             function toggle(id, show) {
                 document.getElementById(id).style.display = show ? '' : 'none';
             }
 
-            function handleTypeChange() {
-                const t = typeSelect.value;
-                // single_post: hide image & post_id, show product_amount
-                toggle('show_image_wrapper', t !== 'single_post');
-                toggle('post_id_wrapper', t !== 'single_post');
-                toggle('product_amount_wrapper', t === 'single_post');
-
-                // feature_post: hide columns + excerpt + button
-                toggle('columns_wrapper', t !== 'feature_post');
-                toggle('excerpt_wrapper', t !== 'feature_post');
-                toggle('button_wrapper', t !== 'feature_post');
-            }
-
-            handleTypeChange();
-
-            // copy shortcode
-            if (copyBtn) {
-                copyBtn.addEventListener('click', () => {
-                    const ta = document.getElementById('shortcode');
-                    ta.select();
-                    document.execCommand('copy');
-                    copyBtn.textContent = 'Copied!';
-                    setTimeout(() => copyBtn.textContent = 'Copy', 1500);
+            function populateButtonOptions(opts) {
+                buttonTypeSelect.innerHTML = '';
+                opts.forEach(o => {
+                    const el = new Option(o.label, o.value);
+                    // preserve old selection if present
+                    if (o.value === '{{ old('button_type', $config['button_type']) }}') {
+                        el.selected = true;
+                    }
+                    buttonTypeSelect.add(el);
                 });
             }
+
+            function handleTypeLayoutChange() {
+                const t = typeSelect.value;
+                const l = layoutSelect.value;
+
+                if (t === 'single_post') {
+                    // hide image & post_id for all single_post layouts
+                    toggle('show_image_wrapper', false);
+                    toggle('post_id_wrapper', false);
+                    toggle('product_amount_wrapper', true);
+
+                    // only for layout1 hide excerpt & show description; restrict button to priceOnly
+                    if (l === 'layout1') {
+                        toggle('excerpt_wrapper', false);
+                        toggle('description_wrapper', true);
+                        toggle('button_wrapper', true);
+                        populateButtonOptions(buttonOptions.priceOnly);
+                    } else {
+                        // other single_post layouts
+                        toggle('excerpt_wrapper', false);
+                        toggle('description_wrapper', false);
+                        toggle('button_wrapper', true);
+                        populateButtonOptions(buttonOptions.default);
+                    }
+
+                    // columns never shown on single_post
+                    toggle('columns_wrapper', false);
+                } else if (t === 'feature_post') {
+                    // feature_post uses columns, excerpt, default buttons
+                    toggle('columns_wrapper', true);
+                    toggle('excerpt_wrapper', true);
+                    toggle('description_wrapper', false);
+                    toggle('show_image_wrapper', true);
+                    toggle('post_id_wrapper', true);
+                    toggle('product_amount_wrapper', false);
+                    toggle('button_wrapper', true);
+                    populateButtonOptions(buttonOptions.default);
+                } else {
+                    // widget_post and others: minimal
+                    toggle('columns_wrapper', false);
+                    toggle('excerpt_wrapper', false);
+                    toggle('description_wrapper', false);
+                    toggle('show_image_wrapper', true);
+                    toggle('post_id_wrapper', true);
+                    toggle('product_amount_wrapper', false);
+                    toggle('button_wrapper', true);
+                    populateButtonOptions(buttonOptions.default);
+                }
+            }
+
+            // rebuild layout-options when type changes
+            typeSelect.addEventListener('change', () => {
+                layoutSelect.innerHTML = '';
+                Object.entries(layouts[typeSelect.value] || {}).forEach(([k, label]) => {
+                    layoutSelect.add(new Option(label, k));
+                });
+                handleTypeLayoutChange();
+            });
+            // re-run toggles on layout change
+            layoutSelect.addEventListener('change', handleTypeLayoutChange);
+
+            // initial
+            handleTypeLayoutChange();
+
+            // copy shortcode
+            document.getElementById('copy-btn')?.addEventListener('click', () => {
+                const ta = document.getElementById('shortcode');
+                ta.select();
+                document.execCommand('copy');
+                const btn = document.getElementById('copy-btn');
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = 'Copy', 1500);
+            });
         });
     </script>
-@endsection
+@endpush

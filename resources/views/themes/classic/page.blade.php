@@ -20,4 +20,6 @@
             {!! apply_filters('the_content', $pageOutput) !!}
         </div>
     </div>
+
+    @include('partials.dynamicgrid-cart-scripts')
 @endsection

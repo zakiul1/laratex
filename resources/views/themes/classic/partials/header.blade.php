@@ -3,12 +3,10 @@
     {!! apply_filters('frontend_ribbon', '') !!}
 </div>
 
-
 @php
     // themeSettings is provided by ThemeServiceProvider::boot()
     $opts = $themeSettings->options ?? [];
     $logo = $themeSettings->logo;
-
     $siteTitle = data_get($opts, 'site_title', config('app.name'));
     $titleColor = data_get($opts, 'site_title_color', '#000000');
     $tagline = data_get($opts, 'tagline', '');
@@ -21,7 +19,7 @@
 @endphp
 
 <header x-data="{ mobileOpen: false, activeIndex: null }" class="bg-white shadow">
-    <div class="container mx-auto  sm:px-6  py-4 flex items-center justify-between">
+    <div class="container mx-auto sm:px-6 py-4 flex items-center justify-between">
         {{-- Logo / Site Identity --}}
         <a href="{{ route('home') }}" class="flex items-center space-x-2 sm:space-x-3">
             @if ($logo)
@@ -56,7 +54,7 @@
                     @if ($hasChildren)
                         <div x-show="activeIndex === {{ $i }}" x-cloak
                             x-on:mouseenter="activeIndex = {{ $i }}" x-on:mouseleave="activeIndex = null"
-                            class="absolute top-full text-sm left-0 w-screen max-w-xs bg-white shadow-lg border border-gray-200 p-4 flex flex-col gap-2 z-50">
+                            class="absolute top-full left-0 w-screen max-w-xs bg-white shadow-lg border border-gray-200 p-4 flex flex-col gap-2 z-50 text-sm">
                             @foreach ($item->children as $child)
                                 <div>
                                     <a href="{{ $child->url }}"
@@ -83,11 +81,22 @@
             @endforeach
         </nav>
 
-        {{-- Search, Inquiry & Mobile Toggle --}}
+        {{-- Search, Cart, Inquiry & Mobile Toggle --}}
         <div class="flex items-center space-x-3 sm:space-x-4">
+            {{-- Search --}}
             <button class="text-gray-700 hover:text-gray-900">
                 <x-lucide-search class="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
+
+  {{-- Dynamic Cart (hidden badge until JS activates) --}}
+           {{--  <button id="dynamicCartBtn" class="relative text-gray-700 hover:text-gray-900">
+                <x-lucide-shopping-cart class="w-5 h-5 sm:w-6 sm:h-6" />
+                <span id="dynamicCartCount"
+                    class="absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 text-xs font-semibold text-white bg-red-600 rounded-full"
+                    style="display: none;">
+                    0
+                </span>
+            </button>  --}}
 
             @if ($phone)
                 <a href="tel:{{ $phone }}"
@@ -96,6 +105,7 @@
                 </a>
             @endif
 
+            {{-- Mobile Menu Toggle --}}
             <button @click="mobileOpen = !mobileOpen" class="lg:hidden focus:outline-none">
                 <x-lucide-menu class="w-6 h-6 sm:w-7 sm:h-7" />
             </button>

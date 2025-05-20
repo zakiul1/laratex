@@ -30,4 +30,5 @@
     </div>
 
     {{-- Featured Products --}}
+    @include('partials.dynamicgrid-cart-scripts')
 @endsection

@@ -188,6 +188,9 @@
     </div>
 
     @stack('scripts')
+    {{-- Only load on pages where your grid appears --}}
+
+
 </body>
 
 </html>

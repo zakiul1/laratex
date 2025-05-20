@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Aponahmed\HtmlBuilder\ElementFactory;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\SiteSetting;
@@ -19,11 +20,7 @@ class ProductController extends Controller
         $query = Product::with(['taxonomies.term', 'featuredMedia']);
 
         if ($tid = $request->get('filter_category')) {
-            $query->whereHas(
-                'taxonomies',
-                fn($q) =>
-                $q->where('term_taxonomy_id', $tid)
-            );
+            $query->whereHas('taxonomies', fn($q) => $q->where('term_taxonomy_id', $tid));
         }
 
         $products = $query->latest()->paginate(10);
@@ -56,6 +53,7 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|unique:products,slug',
             'description' => 'nullable|string',
+            'content' => 'nullable|string',
             'price' => 'nullable|numeric',
             'stock' => 'nullable|integer',
             'status' => 'required|boolean',
@@ -66,18 +64,19 @@ class ProductController extends Controller
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
 
-        // 1) Slug collision-proofing
+        // Slug collision-proofing
         $base = $slug = $data['slug'] ?? Str::slug($data['name']);
         for ($i = 1; Product::where('slug', $slug)->exists(); $i++) {
             $slug = "{$base}-{$i}";
         }
         $data['slug'] = $slug;
 
-        // 2) Create the product
+        // 2) Create the product (including block-editor content)
         $product = Product::create([
             'name' => $data['name'],
             'slug' => $data['slug'],
             'description' => $data['description'] ?? null,
+            'content' => $data['content'] ?? null,
             'price' => $data['price'] ?? null,
             'stock' => $data['stock'] ?? null,
             'status' => $data['status'],
@@ -86,7 +85,7 @@ class ProductController extends Controller
         // 3) Sync featured images
         $product->featuredMedia()->sync($data['featured_media_ids'] ?? []);
 
-        // 4) Sync categories with explicit object_type
+        // 4) Sync categories with object_type = 'product'
         $sync = [];
         foreach ($data['taxonomy_ids'] as $tid) {
             $sync[$tid] = ['object_type' => 'product'];
@@ -109,7 +108,6 @@ class ProductController extends Controller
             ->with('success', 'Product created successfully.');
     }
 
-
     public function edit(Product $product)
     {
         $product->load('taxonomies.term', 'images', 'featuredMedia');
@@ -130,6 +128,7 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'slug' => "nullable|string|unique:products,slug,{$product->id}",
             'description' => 'nullable|string',
+            'content' => 'nullable|string',
             'price' => 'nullable|numeric',
             'stock' => 'nullable|integer',
             'status' => 'required|boolean',
@@ -144,20 +143,19 @@ class ProductController extends Controller
         $base = $slug = $data['slug'] ?? Str::slug($data['name']);
         for (
             $i = 1;
-            Product::where('slug', $slug)
-                ->where('id', '!=', $product->id)
-                ->exists();
+            Product::where('slug', $slug)->where('id', '!=', $product->id)->exists();
             $i++
         ) {
             $slug = "{$base}-{$i}";
         }
         $data['slug'] = $slug;
 
-        // 1) Update only the fillable fields
+        // 1) Update product (including block-editor content)
         $product->update([
             'name' => $data['name'],
             'slug' => $data['slug'],
             'description' => $data['description'] ?? null,
+            'content' => $data['content'] ?? null,
             'price' => $data['price'] ?? null,
             'stock' => $data['stock'] ?? null,
             'status' => $data['status'],
@@ -166,7 +164,7 @@ class ProductController extends Controller
         // 2) Re-sync featured images
         $product->featuredMedia()->sync($data['featured_media_ids'] ?? []);
 
-        // 3) Re-sync categories with object_type = 'product'
+        // 3) Re-sync categories
         $sync = [];
         foreach ($data['taxonomy_ids'] as $tid) {
             $sync[$tid] = ['object_type' => 'product'];
@@ -204,10 +202,6 @@ class ProductController extends Controller
             ->with('success', 'Product deleted successfully.');
     }
 
-
-    /**
-     * AJAX endpoint: create a product category on the fly.
-     */
     public function ajaxCategoryStore(Request $request)
     {
         $data = $request->validate([
@@ -221,13 +215,11 @@ class ProductController extends Controller
             return response()->json(['message' => 'Category already exists'], 409);
         }
 
-        // create term
         $term = Term::create([
             'name' => $data['name'],
             'slug' => $slug,
         ]);
 
-        // create taxonomy entry
         $tt = TermTaxonomy::create([
             'term_id' => $term->id,
             'taxonomy' => 'product',
@@ -243,24 +235,17 @@ class ProductController extends Controller
         ]);
     }
 
-
-    // in App\Http\Controllers\ProductController.php
-
-
-
-    // in App\Http\Controllers\ProductController.php
-
     public function show(string $slug)
     {
-        // 1) Find the product (404 if missing)
         $product = Product::with(['featuredMedia', 'taxonomies.term'])
             ->where('slug', $slug)
             ->firstOrFail();
 
-        // 2) Pick its category
+        // Render block-editor JSON to HTML
+        $contentHtml = ElementFactory::json2html($product->content ?: '[]');
+
         $category = optional($product->taxonomies->first())->term;
 
-        // 3) Grab “Featured Products” (as before)
         $featuredCategory = TermTaxonomy::with(['term', 'products.featuredMedia'])
             ->where('taxonomy', 'product')
             ->whereHas('term', fn($q) => $q->where('name', 'Featured Products'))
@@ -270,7 +255,6 @@ class ProductController extends Controller
             ? $featuredCategory->products
             : collect();
 
-        // 4) Resolve your active theme
         if (Schema::hasTable('site_settings')) {
             $settings = SiteSetting::firstOrCreate([]);
             $theme = $settings->active_theme ?: 'classic';
@@ -278,19 +262,17 @@ class ProductController extends Controller
             $theme = env('ACTIVE_THEME', 'classic');
         }
 
-        // 5) Build & verify view path
         $view = "themes.{$theme}.templates.product";
         if (!view()->exists($view)) {
             abort(404, "Template not found: {$view}");
         }
 
-        // 6) Finally render
         return view($view, compact(
             'product',
             'category',
             'featuredCategory',
-            'featuredProducts'
+            'featuredProducts',
+            'contentHtml'
         ));
     }
-
 }

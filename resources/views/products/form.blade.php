@@ -1,8 +1,6 @@
-{{-- resources/views/products/form.blade.php --}}
 @extends('layouts.dashboard')
 
 @section('content')
-
 
     @php
         use App\Models\Media;
@@ -18,25 +16,17 @@
 
         if (empty($initialFeatured) && $isEdit && $product->featuredMedia->count()) {
             $initialFeatured = $product->featuredMedia
-                ->map(
-                    fn($m) => [
-                        'id' => $m->id,
-                        'url' => $m->getUrl('thumbnail'),
-                    ],
-                )
+                ->map(fn($m) => ['id' => $m->id, 'url' => $m->getUrl('thumbnail')])
                 ->toArray();
         }
 
         // Categories for the checkbox list
-        $cats = $taxonomies->map(
-            fn($t) => [
-                'id' => $t->term_taxonomy_id,
-                'name' => $t->term->name,
-            ],
-        );
+        $cats = $taxonomies->map(fn($t) => ['id' => $t->term_taxonomy_id, 'name' => $t->term->name]);
         $selectedCats = old('taxonomy_ids', $isEdit ? $product->taxonomies->pluck('term_taxonomy_id')->toArray() : []);
     @endphp
 
+    <!-- Block Editor Styles -->
+    <link rel="stylesheet" href="{{ asset('blockeditor/styles.css') }}">
 
     <form method="POST" action="{{ $isEdit ? route('products.update', $product->id) : route('products.store') }}"
         enctype="multipart/form-data" class="grid grid-cols-1 lg:grid-cols-3 gap-6" x-data="productForm({ initial: {{ json_encode($initialFeatured) }} })">
@@ -65,6 +55,15 @@
                 <input type="text" name="name" value="{{ old('name', $product->name ?? '') }}"
                     class="w-full border rounded p-2 @error('name') border-red-500 @enderror">
                 @error('name')
+                    <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Block Editor --}}
+            <div>
+                <div id="customAreaBuilder" class="w-full bg-white"></div>
+                <textarea id="layoutData" name="content" class="hidden">{{ old('content', $product->content ?? '') }}</textarea>
+                @error('content')
                     <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                 @enderror
             </div>
@@ -197,6 +196,10 @@
 
     @include('media.browser-modal')
 
+    @push('scripts')
+        <script src="{{ asset('blockeditor/bundle.js') }}"></script>
+    @endpush
+
     <script>
         function categoryBox({
             cats,
@@ -259,9 +262,7 @@
                             onSelect: items => {
                                 const arr = Array.isArray(items) ? items : [items];
                                 arr.forEach(i => {
-                                    if (!this.images.find(x => x.id === i.id)) {
-                                        this.images.push(i);
-                                    }
+                                    if (!this.images.find(x => x.id === i.id)) this.images.push(i);
                                 });
                             }
                         }

@@ -15,43 +15,10 @@
             </a>
         </div>
 
-        {{-- Filters --}}
+        {{-- Search Only --}}
         <div class="bg-white shadow rounded p-4">
-            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-                <div>
-                    <input x-model="search" type="text" placeholder="Search title…"
-                        class="w-full border rounded px-3 py-2 focus:ring focus:border-blue-500" />
-                </div>
-                <div>
-                    <select x-model="filterType" class="w-full border rounded px-3 py-2">
-                        <option value="">All Types</option>
-                        <template x-for="[key,label] in Object.entries(types)" :key="key">
-                            <option :value="key" x-text="label"></option>
-                        </template>
-                    </select>
-                </div>
-                <div>
-                    <select x-model="filterStatus" class="w-full border rounded px-3 py-2">
-                        <option value="">All Statuses</option>
-                        <template x-for="[key,label] in Object.entries(statuses)" :key="key">
-                            <option :value="key" x-text="label"></option>
-                        </template>
-                    </select>
-                </div>
-                <div>
-                    <select x-model.number="perPage" class="w-full border rounded px-3 py-2">
-                        <option value="10">10 / page</option>
-                        <option value="25">25 / page</option>
-                        <option value="50">50 / page</option>
-                        <option value="100">100 / page</option>
-                    </select>
-                </div>
-                <div class="flex justify-end">
-                    <button @click="resetFilters()" type="button" class="border px-4 py-2 rounded hover:bg-gray-100">
-                        Reset
-                    </button>
-                </div>
-            </div>
+            <input x-model="search" type="text" placeholder="Search title…"
+                class="w-full border rounded px-3 py-2 focus:ring focus:border-blue-500" />
         </div>
 
         {{-- Table --}}
@@ -66,12 +33,7 @@
                                 <span x-text="sortDir==='asc' ? '▲' : '▼'"></span>
                             </template>
                         </th>
-                        <th class="p-3 text-left cursor-pointer" @click="sortBy('type')">
-                            Type
-                            <template x-if="sortKey==='type'">
-                                <span x-text="sortDir==='asc' ? '▲' : '▼'"></span>
-                            </template>
-                        </th>
+                        <th class="p-3 text-left">Categories</th>
                         <th class="p-3 text-left cursor-pointer" @click="sortBy('status')">
                             Status
                             <template x-if="sortKey==='status'">
@@ -90,6 +52,7 @@
                 <tbody>
                     <template x-for="post in paginatedData()" :key="post.id">
                         <tr class="border-b even:bg-gray-50 hover:bg-gray-100">
+                            {{-- Image or “—” --}}
                             <td class="p-2">
                                 <template x-if="post.featured_image">
                                     <img :src="`/storage/${post.featured_image}`" class="h-10 w-10 object-cover rounded" />
@@ -98,28 +61,44 @@
                                     <span class="text-gray-400">—</span>
                                 </template>
                             </td>
+
+                            {{-- Title --}}
                             <td class="p-2" x-text="post.title"></td>
-                            <td class="p-2 capitalize" x-text="post.type"></td>
+
+                            {{-- Categories --}}
+                            <td class="p-2">
+                                <template x-if="post.taxonomies.length">
+                                    <span x-text="post.taxonomies.map(c => c.term.name).join(', ')"></span>
+                                </template>
+                                <template x-if="!post.taxonomies.length">
+                                    <span class="text-gray-400">—</span>
+                                </template>
+                            </td>
+
+                            {{-- Status --}}
                             <td class="p-2 capitalize" x-text="post.status"></td>
+
+                            {{-- Created --}}
                             <td class="p-2"
-                                x-text="(new Date(post.created_at)).toLocaleDateString('en-US', {
-                                    month: 'short',
-                                    day:   'numeric',
-                                    year:  'numeric'
+                                x-text="(new Date(post.created_at)).toLocaleDateString('en-US',{
+                                    month:'short',day:'numeric',year:'numeric'
                                 })">
                             </td>
+
+                            {{-- Actions --}}
                             <td class="p-2 text-right space-x-2">
                                 <a :href="viewUrl(post)" target="_blank" class="text-green-600 hover:underline">View</a>
                                 <a :href="`/admin/posts/${post.id}/edit`" class="text-indigo-600 hover:underline">Edit</a>
-                                <button @click="deletePost(post.id)" class="text-red-600 hover:underline">
-                                    Delete
-                                </button>
+                                <button @click="confirmDelete(post.id)" class="text-red-600 hover:underline">Delete</button>
                             </td>
                         </tr>
                     </template>
+
                     <template x-if="filteredData().length === 0">
                         <tr>
-                            <td colspan="6" class="p-4 text-center text-gray-500">No posts found.</td>
+                            <td colspan="6" class="p-4 text-center text-gray-500">
+                                No posts found.
+                            </td>
                         </tr>
                     </template>
                 </tbody>
@@ -132,7 +111,6 @@
                 class="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50">
                 &laquo;
             </button>
-
             <template x-for="page in totalPages()" :key="page">
                 <button @click="currentPage = page" x-text="page"
                     :class="{
@@ -140,7 +118,6 @@
                         'px-3 py-1 border rounded hover:bg-gray-100': true
                     }"></button>
             </template>
-
             <button :disabled="currentPage === totalPages()" @click="currentPage++"
                 class="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50">
                 &raquo;
@@ -152,50 +129,29 @@
 @push('scripts')
     <script>
         function postsTable() {
-            // Point directly at /admin/posts as the base, then append /{id}
             const baseUrl = "{{ url('admin/posts') }}";
 
             return {
-                posts: @json($postsAll),
+                // only load real “post” items here:
+                posts: @json($postsAll->where('type', 'post')->values()),
+
                 search: '',
-                filterType: '',
-                filterStatus: '',
-                perPage: 10,
                 sortKey: 'created_at',
                 sortDir: 'desc',
                 currentPage: 1,
-                types: @json($types),
-                statuses: @json($statuses),
+                perPage: 10,
 
-                viewUrl(item) {
-                    switch (item.type) {
-                        case 'page':
-                            return `/pages/${item.slug}`;
-                        case 'post':
-                            return `/posts/${item.slug}`;
-                        default:
-                            return `/${item.type}s/${item.slug}`;
-                    }
-                },
-
-                resetFilters() {
-                    this.search = '';
-                    this.filterType = '';
-                    this.filterStatus = '';
-                    this.perPage = 10;
-                    this.currentPage = 1;
-                    this.sortKey = 'created_at';
-                    this.sortDir = 'desc';
+                viewUrl(post) {
+                    return `/posts/${post.slug}`;
                 },
 
                 filteredData() {
-                    return this.posts.filter(post => {
-                        const matchesSearch = !this.search ||
-                            post.title.toLowerCase().includes(this.search.toLowerCase());
-                        const matchesType = !this.filterType || post.type === this.filterType;
-                        const matchesStatus = !this.filterStatus || post.status === this.filterStatus;
-                        return matchesSearch && matchesType && matchesStatus;
-                    });
+                    // always reset to page 1 on new filtering
+                    this.currentPage = 1;
+                    return this.posts.filter(p =>
+                        !this.search ||
+                        p.title.toLowerCase().includes(this.search.toLowerCase())
+                    );
                 },
 
                 sortedData() {
@@ -217,7 +173,7 @@
                 },
 
                 totalPages() {
-                    return Math.ceil(this.filteredData().length / this.perPage);
+                    return Math.max(1, Math.ceil(this.filteredData().length / this.perPage));
                 },
 
                 sortBy(field) {
@@ -229,12 +185,15 @@
                     }
                 },
 
+                confirmDelete(id) {
+                    // you can replace this with a custom modal if you like,
+                    // but we’ll stick with the built-in confirm for now
+                    if (!confirm('Are you sure you want to delete this post?')) return;
+                    this.deletePost(id);
+                },
+
                 async deletePost(id) {
-                    if (!confirm('Delete this post?')) return;
-
-                    const url = `${baseUrl}/${id}`;
-
-                    const res = await fetch(url, {
+                    const res = await fetch(`${baseUrl}/${id}`, {
                         method: 'DELETE',
                         headers: {
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -242,15 +201,15 @@
                         },
                     });
 
-                    if (!res.ok) {
-                        console.error('Delete failed', res.status, res.statusText);
-                        return;
-                    }
-
-                    // remove from front-end state
-                    this.posts = this.posts.filter(p => p.id !== id);
-                    if (this.currentPage > this.totalPages()) {
-                        this.currentPage = this.totalPages() || 1;
+                    if (res.ok) {
+                        // remove from front-end list immediately
+                        this.posts = this.posts.filter(p => p.id !== id);
+                        if (this.currentPage > this.totalPages()) {
+                            this.currentPage = this.totalPages();
+                        }
+                        ntfy('Post deleted successfully');
+                    } else {
+                        ntfy('Failed to delete post', 'error');
                     }
                 },
             }

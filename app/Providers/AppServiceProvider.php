@@ -23,6 +23,11 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
+
+        $this->app->bind(
+            \Spatie\MediaLibrary\Support\UrlGenerator\UrlGenerator::class,
+            \App\MediaLibrary\PublicUrlGenerator::class
+        );
         // 2) Bind the HookManager so plugins can register actions/filters
         $this->app->singleton(HookManager::class, fn() => new HookManager());
     }

@@ -9,10 +9,12 @@ class Slider extends Model
         'name',
         'slug',
         'layout',
+        'location',
+        'heading',      // ← new
+        'slogan',       // ← new
         'show_indicators',
         'show_arrows',
         'autoplay',
-        'location',
         'is_active'
     ];
 

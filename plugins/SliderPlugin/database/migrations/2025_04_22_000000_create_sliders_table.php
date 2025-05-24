@@ -15,11 +15,15 @@ class CreateSlidersTable extends Migration
                 $t->string('slug')->unique();
                 $t->enum('layout', ['pure', 'with-content'])
                     ->default('pure');
-
-                // Removed ->after('autoplay') — column order will follow definition order
                 $t->string('location')
                     ->default('header')
                     ->comment('header|footer|sidebar');
+
+                // NEW!
+                $t->text('heading')->nullable()
+                    ->comment('Shown only when layout = with-content');
+                $t->text('slogan')->nullable()
+                    ->comment('Shown only when layout = with-content');
 
                 $t->boolean('show_indicators')->default(true);
                 $t->boolean('show_arrows')->default(true);

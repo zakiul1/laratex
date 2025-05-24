@@ -11,7 +11,7 @@
                     @php $media = $product->featuredMedia->first(); @endphp
 
                     @if ($media)
-                        <div class="w-full aspect-w-16 aspect-h-9 rounded-lg overflow-hidden shadow p-4">
+                        <div class="w-full aspect-w-16 aspect-h-9  overflow-hidden  p-4">
                             <x-responsive-image :media="$media" class="w-full h-full object-cover"
                                 alt="{{ $product->name }}" />
                         </div>

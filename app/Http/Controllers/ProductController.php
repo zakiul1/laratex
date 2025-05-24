@@ -237,15 +237,18 @@ class ProductController extends Controller
 
     public function show(string $slug)
     {
+        // 1) Load product with relations
         $product = Product::with(['featuredMedia', 'taxonomies.term'])
             ->where('slug', $slug)
             ->firstOrFail();
 
-        // Render block-editor JSON to HTML
+        // 2) Render block-editor JSON → HTML
         $contentHtml = ElementFactory::json2html($product->content ?: '[]');
 
+        // 3) Grab its primary category
         $category = optional($product->taxonomies->first())->term;
 
+        // 4) Featured products logic
         $featuredCategory = TermTaxonomy::with(['term', 'products.featuredMedia'])
             ->where('taxonomy', 'product')
             ->whereHas('term', fn($q) => $q->where('name', 'Featured Products'))
@@ -255,6 +258,7 @@ class ProductController extends Controller
             ? $featuredCategory->products
             : collect();
 
+        // 5) Determine active theme
         if (Schema::hasTable('site_settings')) {
             $settings = SiteSetting::firstOrCreate([]);
             $theme = $settings->active_theme ?: 'classic';
@@ -262,17 +266,20 @@ class ProductController extends Controller
             $theme = env('ACTIVE_THEME', 'classic');
         }
 
+        // 6) Pick the view
         $view = "themes.{$theme}.templates.product";
         if (!view()->exists($view)) {
             abort(404, "Template not found: {$view}");
         }
 
-        return view($view, compact(
-            'product',
-            'category',
-            'featuredCategory',
-            'featuredProducts',
-            'contentHtml'
-        ));
+        // 7) Return, passing contentHtml _as_ pageOutput
+        return view($view, [
+            'product' => $product,
+            'category' => $category,
+            'featuredCategory' => $featuredCategory,
+            'featuredProducts' => $featuredProducts,
+            'pageOutput' => $contentHtml,
+        ]);
     }
+
 }

@@ -5,7 +5,7 @@ return [
     'layouts' => [
         'single_post' => [
             'layout1' => 'Catalog Grid Layout Price Button',
-            'layout2' => 'Single Layout 2',
+            'layout2' => 'Catalog Grid Layout Read More Button',
         ],
         'feature_post' => [
             'layout1' => 'Feature Layout 1',

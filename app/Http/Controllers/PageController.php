@@ -266,35 +266,59 @@ class PageController extends Controller
 
     public function show(string $slug)
     {
-        $page = Post::where('slug', $slug)
-            ->where('type', 'page')
+        // 1) Load either a page or a product
+        $post = Post::where('slug', $slug)
+            ->whereIn('type', ['page', 'product'])
             ->where('status', 'Published')
             ->firstOrFail();
 
-        $pageOutput = $this->buildPageOutput($page);
+        // 2) Always build the "pageOutput" (HTML from your JSON blocks)
+        $pageOutput = $this->buildPageOutput($post);
         $site = site_settings();
         $themeSettings = theme_settings();
         $theme = getActiveTheme();
 
+        // 3) If it’s the home page override, and a "home" view exists:
         if (
-            $slug === ($site->home_page_slug ?? 'home')
+            $post->type === 'page'
+            && $slug === ($site->home_page_slug ?? 'home')
             && view()->exists("themes.{$theme}.home")
         ) {
-            return view("themes.{$theme}.home", compact('page', 'pageOutput', 'site', 'themeSettings'));
+            return view(
+                "themes.{$theme}.home",
+                compact('post', 'pageOutput', 'site', 'themeSettings')
+            );
         }
 
-        $view = "themes.{$theme}.templates.{$page->template}";
-        if ($page->template && view()->exists($view)) {
-            if ($page->template === 'contact') {
+        // 4) If it’s a page, load whatever page‐template is set (or fallback to page.blade.php)
+        if ($post->type === 'page') {
+            $tpl = $post->template;
+            $view = $tpl && view()->exists("themes.{$theme}.templates.{$tpl}")
+                ? "themes.{$theme}.templates.{$tpl}"
+                : "themes.{$theme}.page";
+
+            // contact gets extra data
+            if ($tpl === 'contact') {
                 $contact = Contact::first();
-                return view($view, compact('page', 'pageOutput', 'site', 'themeSettings', 'contact'));
+                return view($view, compact(
+                    'post',
+                    'pageOutput',
+                    'site',
+                    'themeSettings',
+                    'contact'
+                ));
             }
-            return view($view, compact('page', 'pageOutput', 'site', 'themeSettings'));
+
+            return view($view, compact('post', 'pageOutput', 'site', 'themeSettings'));
         }
 
-        return view("themes.{$theme}.page", compact('page', 'pageOutput', 'site', 'themeSettings'));
+        // 5) Otherwise it must be a product: render your product template
+        //    and pass in the exact same $pageOutput
+        return view(
+            "themes.{$theme}.templates.product",
+            compact('post', 'pageOutput', 'site', 'themeSettings')
+        );
     }
-
     private function buildPageOutput(Post $page)
     {
         $json = $page->content ?: '[]';

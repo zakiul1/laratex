@@ -3,26 +3,34 @@
 namespace Plugins\DynamicGrid\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Term;
+use App\Models\TermTaxonomy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Http;
-use App\Models\Term;
-use App\Models\TermTaxonomy;
+use Illuminate\Validation\Rule;
 
 class DynamicGridController extends Controller
 {
     /**
-     * Show the shortcode builder form in the admin.
+     * Show the admin “Dynamic Grid” shortcode builder form.
      */
     public function builderForm()
     {
+        // Load our plugin’s config
         $config = config('dynamicgrid');
         $layouts = $config['layouts'];
-        $taxonomies = TermTaxonomy::distinct()->pluck('taxonomy')->toArray();
 
+        // Fetch all distinct taxonomy slugs
+        $taxonomies = TermTaxonomy::distinct('taxonomy')
+            ->pluck('taxonomy')
+            ->toArray();
+
+        // Seed the first taxonomy’s terms for the initial “Category” select
         $firstTax = $taxonomies[0] ?? null;
         $categories = $firstTax
             ? Term::whereHas('taxonomies', fn($q) => $q->where('taxonomy', $firstTax))
+                ->orderBy('name')
                 ->get(['id', 'name'])
             : collect();
 
@@ -35,63 +43,64 @@ class DynamicGridController extends Controller
     }
 
     /**
-     * Return JSON categories for a given taxonomy.
+     * AJAX: return JSON list of terms for the given taxonomy slug.
      */
-    public function getCategories($taxonomy)
+    public function getCategories(string $taxonomy)
     {
         $cats = Term::whereHas('taxonomies', fn($q) => $q->where('taxonomy', $taxonomy))
+            ->orderBy('name')
             ->get(['id', 'name']);
 
         return response()->json($cats);
     }
 
     /**
-     * Generate the [dynamicgrid] shortcode.
+     * Validate input & assemble the [dynamicgrid …] shortcode.
+     * Stores the result in session('shortcode') and redirects back.
      */
     public function generateShortcode(Request $req)
     {
         $defaults = config('dynamicgrid');
 
         $validated = $req->validate([
-            'taxonomy' => 'required|string',
-            'category_id' => 'nullable|integer',
-            'type' => 'required|in:single_post,feature_post,widget_post',
-            'layout' => 'required|string',
-            'columns.*' => 'sometimes|integer|min:1',
-            'excerpt_words' => 'sometimes|integer|min:0',
-            'show_image' => 'sometimes|boolean',
-            'show_description' => 'sometimes|boolean',
-            'button_type' => 'required|in:none,read_more,price',
-            'heading' => 'nullable|string',
-            'post_id' => 'nullable|integer',
-            'product_amount' => 'sometimes|integer|min:1',
+            'taxonomy' => ['required', 'string'],
+            'category_id' => ['nullable', 'integer'],
+            'type' => ['required', Rule::in(array_keys($defaults['layouts']))],
+            'layout' => ['required', 'string'],
+            'columns.*' => ['sometimes', 'integer', 'min:1'],
+            'excerpt_words' => ['sometimes', 'integer', 'min:0'],
+            'show_image' => ['sometimes', 'boolean'],
+            'show_description' => ['sometimes', 'boolean'],
+            'button_type' => ['required', Rule::in(['none', 'read_more', 'price'])],
+            'heading' => ['nullable', 'string'],
+            'post_id' => ['nullable', 'integer'],
+            'product_amount' => ['sometimes', 'integer', 'min:1'],
         ]);
 
+        // Merge with plugin defaults
         $data = array_merge($defaults, $validated);
 
-        $data['show_image'] = $req->has('show_image') ? '1' : '0';
-        $data['show_description'] = $req->has('show_description') ? '1' : '0';
-
+        // Build the shortcode attributes
         $attrs = [
             'taxonomy' => $data['taxonomy'],
-            'category_id' => $data['category_id'],
+            'category_id' => $data['category_id'] ?? '',
             'type' => $data['type'],
             'layout' => $data['layout'],
-            'product_amount' => $data['product_amount'],
             'button_type' => $data['button_type'],
+            'product_amount' => $data['product_amount'] ?? '',
         ];
 
-        if ($data['show_description'] === '1') {
+        if ($req->has('show_description')) {
             $attrs['show_description'] = '1';
         }
-        if (!empty(trim($data['heading']))) {
-            $attrs['heading'] = trim($data['heading']);
+        if ($req->has('show_image')) {
+            $attrs['show_image'] = '1';
         }
         if (!empty($data['excerpt_words'])) {
             $attrs['excerpt_words'] = intval($data['excerpt_words']);
         }
-        if ($data['show_image'] === '1') {
-            $attrs['show_image'] = '1';
+        if (!empty(trim($data['heading']))) {
+            $attrs['heading'] = trim($data['heading']);
         }
         if ($data['type'] === 'feature_post' && is_array($data['columns'])) {
             foreach ($data['columns'] as $device => $count) {
@@ -99,6 +108,7 @@ class DynamicGridController extends Controller
             }
         }
 
+        // Assemble the final shortcode string
         $shortcode = '[dynamicgrid';
         foreach ($attrs as $key => $val) {
             $shortcode .= " {$key}=\"" . e($val) . '"';
@@ -109,12 +119,10 @@ class DynamicGridController extends Controller
     }
 
     /**
-     * Handle the frontend “Request Price” AJAX form submit.
+     * Front-end handler for the “Request Price” AJAX form.
      */
     public function requestPrice(Request $req)
     {
-
-
         $validator = Validator::make($req->all(), [
             'name' => 'required|string|max:99',
             'email' => 'required|email|max:256',
@@ -136,7 +144,7 @@ class DynamicGridController extends Controller
 
         $data = $validator->validated();
 
-        // Build HTML list of product links
+        // Build HTML list of selected products
         $htmlList = '<ul>';
         foreach ($data['products'] as $prod) {
             $title = e($prod['title']);
@@ -145,23 +153,19 @@ class DynamicGridController extends Controller
         }
         $htmlList .= '</ul>';
 
-        // Compose the full message
         $fullMessage = nl2br(e($data['message']))
             . "<br/><br/>Selected Products:<br/>{$htmlList}";
-        // dd($fullMessage);
 
-        // Send to external API using Laravel HTTP client with extended timeout & retries
-        // dd($fullMessage);
         try {
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
-                'X-API-Key' => 'KE3718bbc060626178b19fce51a6ea7Y',
+                'X-API-Key' => config('dynamicgrid.request_price_api_key'),
             ])
                 ->timeout(30)
                 ->connectTimeout(10)
                 ->retry(3, 100)
-                ->post('http://edesk.test/api/send', [
-                    'ip' => '192.27.27.1',
+                ->post(config('dynamicgrid.request_price_endpoint'), [
+                    'ip' => $req->ip(),
                     'name' => $data['name'],
                     'email' => $data['email'],
                     'whatsapp' => $data['whatsapp'] ?? '',
@@ -176,7 +180,7 @@ class DynamicGridController extends Controller
                 'message' => $body['message'] ?? 'Request sent successfully!',
                 'api_response' => $body,
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'API Error: ' . $e->getMessage(),

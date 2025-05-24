@@ -14,9 +14,9 @@ Route::middleware(['web', 'auth'])
         Route::post('/builder/generate', [DynamicGridController::class, 'generateShortcode'])
             ->name('generate');
 
-        // AJAX for categories dropdown
+        // ← rename this to “categories” so we can easily reference it
         Route::get('/categories/{taxonomy}', [DynamicGridController::class, 'getCategories'])
-            ->name('builder.categories');
+            ->name('categories');
     });
 
 // Public endpoint for submitting the “Request Price” form

@@ -46,9 +46,9 @@ class Post extends Model
     {
         return $this->belongsToMany(
             TermTaxonomy::class,
-            'term_relationships',  // pivot table
-            'object_id',           // this model’s FK in pivot
-            'term_taxonomy_id'     // related model’s FK
+            'term_relationships',    // pivot table
+            'object_id',             // this model’s FK in pivot
+            'term_taxonomy_id'       // related model’s FK
         )
             ->wherePivot('object_type', 'post')
             ->withPivot('object_type')
@@ -112,11 +112,19 @@ class Post extends Model
      |-----------------------------------------*/
 
     /**
-     * Sync the given category IDs against this post.
+     * Sync the given category IDs against this post,
+     * always stamping the pivot with object_type = 'post'.
      */
     public function syncCategories(array $categoryIds): void
     {
-        $this->categories()->sync($categoryIds);
+        // build [ term_taxonomy_id => [ 'object_type' => 'post' ] ]
+        $syncData = collect($categoryIds)
+            ->mapWithKeys(fn($id) => [
+                $id => ['object_type' => 'post']
+            ])
+            ->toArray();
+
+        $this->categories()->sync($syncData);
     }
 
     /**

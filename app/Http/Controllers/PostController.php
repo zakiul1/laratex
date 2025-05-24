@@ -9,7 +9,6 @@ use App\Models\PostMeta;
 use App\Models\Term;
 use App\Models\TermTaxonomy;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -17,7 +16,7 @@ class PostController extends Controller
 {
     public function index(Request $request)
     {
-        // Base query (with eager-loading)
+        // Base query with eager‐loading
         $query = Post::with('taxonomies.term');
 
         // Optional category filter
@@ -25,12 +24,12 @@ class PostController extends Controller
             $query->whereHas('taxonomies', fn($q) => $q->where('term_taxonomy_id', $cid));
         }
 
-        // **1)** All posts for any summary/statistics your view might need
+        // 1) All posts
         $postsAll = (clone $query)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // **2)** Paginated posts for the table
+        // 2) Paginated posts
         $postsPaged = (clone $query)
             ->orderBy('created_at', 'desc')
             ->paginate(10)
@@ -44,7 +43,6 @@ class PostController extends Controller
             ->orderBy('terms.name')
             ->get();
 
-        // Any other filters your view uses
         $types = ['post' => 'Post', 'page' => 'Page', 'custom' => 'Custom'];
         $statuses = ['published' => 'Published', 'draft' => 'Draft'];
 
@@ -63,17 +61,23 @@ class PostController extends Controller
         $post = new Post(['type' => 'post']);
         $allCategories = TermTaxonomy::with('term')->where('taxonomy', 'category')->get();
         $selected = [];
-        return view('posts.create', compact('templates', 'post', 'allCategories', 'selected'));
+
+        return view('posts.create', compact(
+            'templates',
+            'post',
+            'allCategories',
+            'selected'
+        ));
     }
 
     public function store(Request $request)
     {
         // 1) Build & dedupe slug
         $input = $request->all();
-
         $input['slug'] = $request->filled('slug')
             ? Str::slug($request->input('slug'))
             : Str::slug($request->input('title'));
+
         $base = $input['slug'];
         $i = 1;
         while (Post::where('slug', $input['slug'])->exists()) {
@@ -81,7 +85,7 @@ class PostController extends Controller
         }
         $request->merge($input);
 
-        // 2) Validate, including featured_media_ids
+        // 2) Validate
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'slug' => ['required', 'string', Rule::unique('posts', 'slug')],
@@ -90,13 +94,13 @@ class PostController extends Controller
             'content' => 'nullable|string',
             'template' => 'nullable|string',
 
-            // use featured_media_ids to match product controller
             'featured_media_ids' => 'nullable|array',
             'featured_media_ids.*' => 'integer|exists:media,id',
 
             'meta' => 'nullable|array',
             'meta.*.key' => 'required|string|min:1',
             'meta.*.value' => 'nullable|string',
+
             'seo.title' => 'nullable|string|max:255',
             'seo.robots' => 'nullable|string|in:Index & Follow,NoIndex & Follow,NoIndex & NoFollow,No Archive,No Snippet',
             'seo.description' => 'nullable|string',
@@ -109,27 +113,47 @@ class PostController extends Controller
         // attach author
         $validated['author_id'] = auth()->id();
 
-        // ensure unique IDs
-        $featured = array_values(array_unique($validated['featured_media_ids'] ?? [], SORT_NUMERIC));
-        $validated['featured_images'] = $featured;
+        // featured images JSON
+        $validated['featured_images'] = array_values(
+            array_unique($validated['featured_media_ids'] ?? [], SORT_NUMERIC)
+        );
 
         // 3) Create post
         $post = Post::create($validated);
 
-        // 4) metas
+        // 4) Metas
         if (!empty($validated['meta'])) {
             foreach ($validated['meta'] as $m) {
-                PostMeta::create(['post_id' => $post->id, 'meta_key' => $m['key'], 'meta_value' => $m['value']]);
+                PostMeta::create([
+                    'post_id' => $post->id,
+                    'meta_key' => $m['key'],
+                    'meta_value' => $m['value'],
+                ]);
             }
         }
-        $post->seoMeta()->updateOrCreate(['meta_key' => 'seo'], ['meta_value' => json_encode($validated['seo'] ?? [])]);
+        $post->seoMeta()->updateOrCreate(
+            ['meta_key' => 'seo'],
+            ['meta_value' => json_encode($validated['seo'] ?? [])]
+        );
 
-        // 5) categories
-        $post->syncCategories($validated['categories'] ?? []);
+        // 5) Categories (with default fallback)
+        $categoryIds = $validated['categories'] ?? [];
+        if (empty($categoryIds)) {
+            $term = Term::firstOrCreate(
+                ['slug' => 'uncategorized'],
+                ['name' => 'Uncategorized']
+            );
+            $tax = TermTaxonomy::firstOrCreate(
+                ['taxonomy' => 'category', 'term_id' => $term->id],
+                ['parent' => 0, 'status' => 1, 'description' => null, 'count' => 0]
+            );
+            $categoryIds = [$tax->term_taxonomy_id];
+        }
+        $post->syncCategories($categoryIds);
 
-        // 6) featured images JSON stored in model via cast, no extra sync needed
-
-        return redirect()->route('posts.index')->with('success', 'Post created successfully.');
+        return redirect()
+            ->route('posts.index')
+            ->with('success', 'Post created successfully.');
     }
 
     public function edit(Post $post)
@@ -138,19 +162,27 @@ class PostController extends Controller
         $allCategories = TermTaxonomy::with('term')->where('taxonomy', 'category')->get();
         $selected = $post->categories->pluck('term_taxonomy_id')->toArray();
 
-        // custom metas
-        $customMeta = $post->meta()->whereNotIn('meta_key', ['seo', 'featured_image'])
-            ->get()->map(fn($m) => ['key' => $m->meta_key, 'value' => $m->meta_value])->toArray();
+        // Custom metas
+        $customMeta = $post->meta()
+            ->whereNotIn('meta_key', ['seo', 'featured_image'])
+            ->get()
+            ->map(fn($m) => ['key' => $m->meta_key, 'value' => $m->meta_value])
+            ->toArray();
 
-        // normalize SEO
+        // Normalize SEO
         $rawSeo = optional($post->seoMeta)->meta_value;
-        $seoMeta = is_string($rawSeo) ? json_decode($rawSeo, true) : (is_array($rawSeo) ? $rawSeo : []);
+        $seoMeta = is_string($rawSeo)
+            ? json_decode($rawSeo, true)
+            : (is_array($rawSeo) ? $rawSeo : []);
 
-        // initial featured array for Alpine
-        $initialFeatured = collect(old('featured_media_ids', $post->featured_images ?? []))
+        // Initial featured for Alpine
+        $initialFeatured = collect(
+            old('featured_media_ids', $post->featured_images ?? [])
+        )
             ->map(fn($id) => ($m = Media::find($id)) ? ['id' => $m->id, 'url' => $m->getUrl('thumbnail')] : null)
-            ->filter()->values()->toArray();
-        // dd($initialFeatured);
+            ->filter()
+            ->values()
+            ->toArray();
 
         return view('posts.edit', compact(
             'post',
@@ -165,18 +197,24 @@ class PostController extends Controller
 
     public function update(Request $request, Post $post)
     {
-        // similar slug dedupe
+        // Slug dedupe
         $input = $request->all();
         $input['slug'] = $request->filled('slug')
             ? Str::slug($request->input('slug'))
             : Str::slug($request->input('title'));
+
         $base = $input['slug'];
         $i = 1;
-        while (Post::where('slug', $input['slug'])->where('id', '!=', $post->id)->exists()) {
+        while (
+            Post::where('slug', $input['slug'])
+                ->where('id', '!=', $post->id)
+                ->exists()
+        ) {
             $input['slug'] = "{$base}-" . $i++;
         }
         $request->merge($input);
 
+        // Validate
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'slug' => ['required', 'string', Rule::unique('posts', 'slug')->ignore($post->id)],
@@ -197,29 +235,59 @@ class PostController extends Controller
             'categories.*' => 'integer|exists:term_taxonomies,term_taxonomy_id',
         ]);
 
-        // unique featured IDs
-        $featured = array_values(array_unique($validated['featured_media_ids'] ?? [], SORT_NUMERIC));
-        $validated['featured_images'] = $featured;
+        // Featured images
+        $validated['featured_images'] = array_values(
+            array_unique($validated['featured_media_ids'] ?? [], SORT_NUMERIC)
+        );
 
         $post->update($validated);
 
-        // metas
-        $post->meta()->whereNotIn('meta_key', ['seo', 'featured_image'])->delete();
+        // Metas
+        $post->meta()
+            ->whereNotIn('meta_key', ['seo', 'featured_image'])
+            ->delete();
         foreach ($validated['meta'] ?? [] as $m) {
-            $post->meta()->updateOrCreate(['meta_key' => $m['key']], ['meta_value' => $m['value']]);
+            $post->meta()->updateOrCreate(
+                ['meta_key' => $m['key']],
+                ['meta_value' => $m['value']]
+            );
         }
-        $post->seoMeta()->updateOrCreate(['meta_key' => 'seo'], ['meta_value' => json_encode($validated['seo'] ?? [])]);
+        $post->seoMeta()->updateOrCreate(
+            ['meta_key' => 'seo'],
+            ['meta_value' => json_encode($validated['seo'] ?? [])]
+        );
 
-        // categories
-        $post->syncCategories($validated['categories'] ?? []);
+        // Categories fallback
+        $categoryIds = $validated['categories'] ?? [];
+        if (empty($categoryIds)) {
+            $term = Term::firstOrCreate(
+                ['slug' => 'uncategorized'],
+                ['name' => 'Uncategorized']
+            );
+            $tax = TermTaxonomy::firstOrCreate(
+                ['taxonomy' => 'category', 'term_id' => $term->id],
+                ['parent' => 0, 'status' => 1, 'description' => null, 'count' => 0]
+            );
+            $categoryIds = [$tax->term_taxonomy_id];
+        }
+        $post->syncCategories($categoryIds);
 
-        return redirect()->route('posts.index')->with('success', 'Post updated successfully.');
+        return redirect()
+            ->route('posts.index')
+            ->with('success', 'Post updated successfully.');
     }
 
-    public function destroy(Post $post)
+    public function destroy(Request $request, Post $post)
     {
         $post->delete();
-        return redirect()->route('posts.index')->with('success', 'Post deleted successfully.');
+
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Post deleted'], 200);
+        }
+
+        return redirect()
+            ->route('posts.index')
+            ->with('success', 'Post deleted successfully.');
     }
 
     private function buildPageOutput(Post $page)
@@ -231,14 +299,28 @@ class PostController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'parent' => ['nullable', 'integer', Rule::exists('term_taxonomies', 'term_taxonomy_id')]
+            'parent' => ['nullable', 'integer', Rule::exists('term_taxonomies', 'term_taxonomy_id')],
         ]);
+
         $slug = Str::slug($data['name']);
         if (Term::where('slug', $slug)->exists()) {
             return response()->json(['message' => 'Category already exists'], 409);
         }
+
         $term = Term::create(['name' => $data['name'], 'slug' => $slug]);
-        $tt = TermTaxonomy::create(['term_id' => $term->id, 'taxonomy' => 'category', 'parent' => $data['parent'] ?? 0, 'status' => 1, 'description' => null, 'count' => 0]);
-        return response()->json(['id' => $tt->term_taxonomy_id, 'name' => $term->name, 'parent' => $tt->parent]);
+        $tt = TermTaxonomy::create([
+            'term_id' => $term->id,
+            'taxonomy' => 'category',
+            'parent' => $data['parent'] ?? 0,
+            'status' => 1,
+            'description' => null,
+            'count' => 0,
+        ]);
+
+        return response()->json([
+            'id' => $tt->term_taxonomy_id,
+            'name' => $term->name,
+            'parent' => $tt->parent,
+        ]);
     }
 }

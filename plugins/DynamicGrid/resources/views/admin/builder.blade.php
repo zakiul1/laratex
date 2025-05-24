@@ -5,6 +5,7 @@
     <div class="py-8">
         <h1 class="text-2xl font-bold mb-6">Dynamic Grid Shortcode Builder</h1>
         <div class="bg-white p-6 shadow rounded-lg space-y-6">
+            {{-- 1) Generated Shortcode --}}
             @if (session('shortcode'))
                 <div class="space-y-2">
                     <label class="font-medium">Generated Shortcode</label>
@@ -21,32 +22,30 @@
             <form method="POST" action="{{ route('admin.dynamicgrid.generate') }}">
                 @csrf
 
-                {{-- taxonomy --}}
+                {{-- 2) Taxonomy --}}
                 <div class="mb-4">
                     <label class="block font-medium">Taxonomy</label>
                     <select id="taxonomy" name="taxonomy" class="w-full border p-2 rounded">
+                        <option value="">— Select Taxonomy —</option>
                         @foreach ($taxonomies as $taxo)
-                            <option value="{{ $taxo }}" {{ old('taxonomy') == $taxo ? 'selected' : '' }}>
-                                {{ $taxo }}
-                            </option>
+                            @if ($taxo !== 'media_category')
+                                <option value="{{ $taxo }}" {{ old('taxonomy') == $taxo ? 'selected' : '' }}>
+                                    {{ ucwords(str_replace('_', ' ', $taxo)) }}
+                                </option>
+                            @endif
                         @endforeach
                     </select>
                 </div>
 
-                {{-- category --}}
+                {{-- 3) Category (AJAX‐populated) --}}
                 <div class="mb-4">
                     <label class="block font-medium">Category</label>
                     <select id="category" name="category_id" class="w-full border p-2 rounded">
                         <option value="">— Select Category —</option>
-                        @foreach ($categories as $cat)
-                            <option value="{{ $cat->id }}" {{ old('category_id') == $cat->id ? 'selected' : '' }}>
-                                {{ $cat->name }}
-                            </option>
-                        @endforeach
                     </select>
                 </div>
 
-                {{-- type & layout --}}
+                {{-- 4) Type & Layout --}}
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block font-medium">Type</label>
@@ -72,11 +71,11 @@
                     </div>
                 </div>
 
-                {{-- columns (feature_post only) --}}
+                {{-- 5) Columns --}}
                 <div id="columns_wrapper" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     @foreach ($config['columns'] as $device => $cols)
                         <div>
-                            <label class="block font-medium">{{ ucfirst($device) }} columns</label>
+                            <label class="block font-medium">{{ ucfirst($device) }} Columns</label>
                             <input type="number" name="columns[{{ $device }}]"
                                 value="{{ old("columns.$device", $cols) }}" min="1"
                                 class="w-full border p-2 rounded" />
@@ -84,48 +83,48 @@
                     @endforeach
                 </div>
 
-                {{-- excerpt words --}}
+                {{-- 6) Excerpt Words --}}
                 <div id="excerpt_wrapper" class="mb-4">
                     <label class="block font-medium">Excerpt Words</label>
                     <input type="number" name="excerpt_words" value="{{ old('excerpt_words', $config['excerpt_words']) }}"
                         min="0" class="w-full border p-2 rounded" />
                 </div>
 
-                {{-- show description (single_post/layout1 only) --}}
+                {{-- 7) Show Description --}}
                 <div id="description_wrapper" class="flex items-center mb-4">
                     <input type="checkbox" id="show_description" name="show_description" value="1"
                         {{ old('show_description', $config['show_description']) ? 'checked' : '' }} class="h-4 w-4 mr-2" />
                     <label for="show_description" class="font-medium">Show Description</label>
                 </div>
 
-                {{-- show image --}}
+                {{-- 8) Show Image --}}
                 <div id="show_image_wrapper" class="flex items-center mb-4">
                     <input type="checkbox" id="show_image" name="show_image" value="1"
                         {{ old('show_image', $config['show_image']) ? 'checked' : '' }} class="h-4 w-4 mr-2" />
                     <label for="show_image" class="font-medium">Show Image</label>
                 </div>
 
-                {{-- button type --}}
+                {{-- 9) Button Type --}}
                 <div id="button_wrapper" class="mb-4">
                     <label class="block font-medium">Button Type</label>
                     <select id="button_type" name="button_type" class="w-full border p-2 rounded"></select>
                 </div>
 
-                {{-- heading --}}
+                {{-- 10) Heading --}}
                 <div id="heading_wrapper" class="mb-6">
                     <label class="block font-medium">Heading (optional)</label>
                     <input type="text" name="heading" value="{{ old('heading', $config['heading']) }}"
                         class="w-full border p-2 rounded" />
                 </div>
 
-                {{-- post ID --}}
+                {{-- 11) Post ID --}}
                 <div id="post_id_wrapper" class="mb-6">
                     <label class="block font-medium">Post ID</label>
                     <input type="number" name="post_id" value="{{ old('post_id', $config['post_id']) }}"
                         class="w-full border p-2 rounded" />
                 </div>
 
-                {{-- products amount --}}
+                {{-- 12) Products Amount --}}
                 <div id="product_amount_wrapper" class="mb-6">
                     <label class="block font-medium">Products Amount</label>
                     <input type="number" name="product_amount"
@@ -147,72 +146,91 @@
             const layouts = @json($layouts);
             const buttonOptions = {
                 default: [{
-                    value: 'none',
-                    label: 'None'
-                }, {
-                    value: 'read_more',
-                    label: 'Read More'
-                }, {
-                    value: 'price',
-                    label: 'Price'
-                }],
+                        value: 'none',
+                        label: 'None'
+                    },
+                    {
+                        value: 'read_more',
+                        label: 'Read More'
+                    },
+                    {
+                        value: 'price',
+                        label: 'Price'
+                    },
+                ],
                 priceOnly: [{
-                    value: 'none',
-                    label: 'None'
-                }, {
-                    value: 'price',
-                    label: 'Price'
-                }],
+                        value: 'none',
+                        label: 'None'
+                    },
+                    {
+                        value: 'price',
+                        label: 'Price'
+                    },
+                ],
+                readMoreOnly: [{
+                        value: 'none',
+                        label: 'None'
+                    },
+                    {
+                        value: 'read_more',
+                        label: 'Read More'
+                    },
+                ],
             };
 
             const typeSelect = document.getElementById('type');
             const layoutSelect = document.getElementById('layout');
-            const buttonTypeSelect = document.getElementById('button_type');
+            const buttonType = document.getElementById('button_type');
 
             function toggle(id, show) {
                 document.getElementById(id).style.display = show ? '' : 'none';
             }
 
-            function populateButtonOptions(opts) {
-                buttonTypeSelect.innerHTML = '';
+            function populateButtons(opts) {
+                buttonType.innerHTML = '';
                 opts.forEach(o => {
-                    const el = new Option(o.label, o.value);
-                    // preserve old selection if present
+                    const opt = new Option(o.label, o.value);
                     if (o.value === '{{ old('button_type', $config['button_type']) }}') {
-                        el.selected = true;
+                        opt.selected = true;
                     }
-                    buttonTypeSelect.add(el);
+                    buttonType.add(opt);
                 });
             }
 
-            function handleTypeLayoutChange() {
+            function handleTypeLayout() {
                 const t = typeSelect.value;
                 const l = layoutSelect.value;
 
+                // hide/show wrappers common to single_post
                 if (t === 'single_post') {
-                    // hide image & post_id for all single_post layouts
                     toggle('show_image_wrapper', false);
                     toggle('post_id_wrapper', false);
                     toggle('product_amount_wrapper', true);
+                    toggle('columns_wrapper', false);
 
-                    // only for layout1 hide excerpt & show description; restrict button to priceOnly
                     if (l === 'layout1') {
+                        // Catalog Grid Layout = price button only
                         toggle('excerpt_wrapper', false);
                         toggle('description_wrapper', true);
                         toggle('button_wrapper', true);
-                        populateButtonOptions(buttonOptions.priceOnly);
+                        populateButtons(buttonOptions.priceOnly);
+
+                    } else if (l === 'layout2') {
+                        // Catalog Grid Layout Read More Button
+                        toggle('excerpt_wrapper', false);
+                        toggle('description_wrapper', true);
+                        toggle('button_wrapper', true);
+                        populateButtons(buttonOptions.readMoreOnly);
+
                     } else {
-                        // other single_post layouts
+                        // default single_post layouts
                         toggle('excerpt_wrapper', false);
                         toggle('description_wrapper', false);
                         toggle('button_wrapper', true);
-                        populateButtonOptions(buttonOptions.default);
+                        populateButtons(buttonOptions.default);
                     }
 
-                    // columns never shown on single_post
-                    toggle('columns_wrapper', false);
                 } else if (t === 'feature_post') {
-                    // feature_post uses columns, excerpt, default buttons
                     toggle('columns_wrapper', true);
                     toggle('excerpt_wrapper', true);
                     toggle('description_wrapper', false);
@@ -220,9 +238,9 @@
                     toggle('post_id_wrapper', true);
                     toggle('product_amount_wrapper', false);
                     toggle('button_wrapper', true);
-                    populateButtonOptions(buttonOptions.default);
+                    populateButtons(buttonOptions.default);
+
                 } else {
-                    // widget_post and others: minimal
                     toggle('columns_wrapper', false);
                     toggle('excerpt_wrapper', false);
                     toggle('description_wrapper', false);
@@ -230,25 +248,22 @@
                     toggle('post_id_wrapper', true);
                     toggle('product_amount_wrapper', false);
                     toggle('button_wrapper', true);
-                    populateButtonOptions(buttonOptions.default);
+                    populateButtons(buttonOptions.default);
                 }
             }
 
-            // rebuild layout-options when type changes
+            // when type changes, repopulate layouts and re-run toggles
             typeSelect.addEventListener('change', () => {
                 layoutSelect.innerHTML = '';
                 Object.entries(layouts[typeSelect.value] || {}).forEach(([k, label]) => {
                     layoutSelect.add(new Option(label, k));
                 });
-                handleTypeLayoutChange();
+                handleTypeLayout();
             });
-            // re-run toggles on layout change
-            layoutSelect.addEventListener('change', handleTypeLayoutChange);
+            layoutSelect.addEventListener('change', handleTypeLayout);
+            handleTypeLayout();
 
-            // initial
-            handleTypeLayoutChange();
-
-            // copy shortcode
+            // copy-to-clipboard
             document.getElementById('copy-btn')?.addEventListener('click', () => {
                 const ta = document.getElementById('shortcode');
                 ta.select();
@@ -257,6 +272,46 @@
                 btn.textContent = 'Copied!';
                 setTimeout(() => btn.textContent = 'Copy', 1500);
             });
+
+            // AJAX Category Loader
+            const taxonomyEl = document.getElementById('taxonomy');
+            const categoryEl = document.getElementById('category');
+            const baseUrl = "{{ url('admin/plugins/dynamicgrid/categories') }}";
+            const oldCategory = "{{ old('category_id', '') }}";
+
+            async function loadCategories(tax) {
+                categoryEl.innerHTML = '<option>Loading…</option>';
+                if (!tax) {
+                    categoryEl.innerHTML = '<option value="">— Select Category —</option>';
+                    return;
+                }
+                try {
+                    const res = await fetch(`${baseUrl}/${encodeURIComponent(tax)}`, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    const cats = await res.json();
+                    let html = '<option value="">— Select Category —</option>';
+                    if (cats.length) {
+                        cats.forEach(c => {
+                            html +=
+                                `<option value="${c.id}"${c.id==oldCategory?' selected':''}>${c.name}</option>`;
+                        });
+                    } else {
+                        html = '<option value="">— No categories —</option>';
+                    }
+                    categoryEl.innerHTML = html;
+                } catch {
+                    categoryEl.innerHTML = '<option value="">— Error loading —</option>';
+                }
+            }
+
+            taxonomyEl.addEventListener('change', e => loadCategories(e.target.value));
+
+            @if (old('taxonomy'))
+                loadCategories("{{ old('taxonomy') }}");
+            @endif
         });
     </script>
 @endpush

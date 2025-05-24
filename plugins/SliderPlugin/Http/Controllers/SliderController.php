@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Plugins\SliderPlugin\Models\Slider;
 use Plugins\SliderPlugin\Models\SliderItem;
+use App\Models\Media;             // ← import your Laratex Media model
 
 class SliderController extends Controller
 {
@@ -29,25 +30,25 @@ class SliderController extends Controller
         $data = $this->validateSlider($request);
         $slider = Slider::create($data);
 
-        // run saveItems once to add all slides
         $this->saveItems($request, $slider);
 
         return redirect()
             ->route('slider-plugin.sliders.index')
-            ->with('success', 'Slider Plugin created successfully.');
+            ->with('success', 'Slider created successfully.');
     }
 
     public function edit($id)
     {
         $slider = Slider::with('items')->findOrFail($id);
 
-        // reuse old input on validation error, otherwise map real items
         $items = old('items')
             ? old('items')
             : $slider->items->map(function (SliderItem $it) {
                 return [
                     'id' => $it->id,
                     'existing_image_path' => $it->image_path,
+                    'media_id' => $it->media_id,
+                    'media_preview_url' => $it->media ? $it->media->getUrl() : null,
                     'content' => $it->content,
                 ];
             })->toArray();
@@ -62,28 +63,17 @@ class SliderController extends Controller
 
         $slider->update($data);
 
-        // ⚠️ Delete ALL old slides and re-add from the form
+        // remove all old slides
         $slider->items()->delete();
         $this->saveItems($request, $slider);
 
-        return back()->with('success', 'Slider Plugin updated successfully.');
+        return back()->with('success', 'Slider updated successfully.');
     }
 
     public function destroy($id)
     {
         Slider::findOrFail($id)->delete();
-        return back()->with('success', 'Slider Plugin removed.');
-    }
-
-    public function destroyItemImage($sliderId, $itemId)
-    {
-        $item = SliderItem::findOrFail($itemId);
-        abort_if($item->slider_id != $sliderId, 404);
-
-        Storage::disk('public')->delete($item->image_path);
-        $item->update(['image_path' => null]);
-
-        return back()->with('success', 'Slide image removed.');
+        return back()->with('success', 'Slider removed.');
     }
 
     protected function validateSlider(Request $request, $ignoreId = null): array
@@ -99,6 +89,9 @@ class SliderController extends Controller
             'show_arrows' => 'sometimes|boolean',
             'autoplay' => 'sometimes|boolean',
             'is_active' => 'sometimes|boolean',
+            // new fields:
+            'heading' => 'nullable|string|max:255',
+            'slogan' => 'nullable|string|max:255',
         ]);
 
         if (empty($data['slug'])) {
@@ -120,31 +113,47 @@ class SliderController extends Controller
     }
 
     /**
-     * Save every slide from the request, handling new uploads and existing paths.
+     * Save every slide from the request, handling:
+     *  1) New local uploads
+     *  2) Selected media-library images
+     *  3) Existing paths (edit)
      */
     protected function saveItems(Request $request, Slider $slider): void
     {
         $items = $request->input('items', []);
 
         foreach ($items as $index => $item) {
-            // 1) If user uploaded a new image
+            $path = null;
+            $media_id = null;
+
+            // 1) Local upload?
             if ($request->hasFile("items.{$index}.new_image")) {
                 $path = $request
                     ->file("items.{$index}.new_image")
                     ->store('sliders', 'public');
             }
-            // 2) Else if we have an existing path, reuse it
+            // 2) Media-library selection?
+            elseif (!empty($item['media_id'])) {
+                $media_id = $item['media_id'];
+                // grab path if you want legacy image_path
+                if ($media = Media::find($media_id)) {
+                    $path = $media->path; // or $media->getUrl() depending on how you store
+                }
+            }
+            // 3) existing saved path
             elseif (!empty($item['existing_image_path'])) {
                 $path = $item['existing_image_path'];
             }
-            // 3) Otherwise no image → skip
-            else {
+
+            // if after all that we have neither a path nor a media_id, skip
+            if (!$path && !$media_id) {
                 continue;
             }
 
             SliderItem::create([
                 'slider_id' => $slider->id,
                 'image_path' => $path,
+                'media_id' => $media_id,
                 'content' => [
                     'title' => $item['content']['title'] ?? '',
                     'subtitle' => $item['content']['subtitle'] ?? '',

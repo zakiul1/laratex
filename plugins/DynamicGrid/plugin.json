@@ -1,0 +1,21 @@
+{
+    "name": "dynamic-grid",
+    "title": "Dynamic Grid",
+    "description": "Manage and display customizable, filterable grids of items via hooks",
+    "version": "1.0.0",
+    "author": {
+      "name": "Md Jakiul Islam",
+      "email": "you@example.com"
+    },
+    "provider": "Plugins\\DynamicGrid\\DynamicGridServiceProvider",
+    "migrations": [
+      "database/migrations/2025_05_20_000000_create_dynamic_grids_table.php",
+      "database/migrations/2025_05_20_000001_create_dynamic_grid_items_table.php"
+    ],
+    "hooks": {
+      "admin_sidebar_menu": true,
+      "theme.sections": true,
+      "plugin.activate.dynamic-grid": true
+    }
+  }
+  

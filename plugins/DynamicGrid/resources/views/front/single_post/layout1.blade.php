@@ -23,7 +23,7 @@
         No items found for “{{ $opts['taxonomy'] }}” & category {{ $opts['category_id'] }}.
     </div>
 @else
-    <div x-data="dynamicGridCart()" x-init="init()" class="relative single-layout1 space-y-6">
+    <div x-data="dynamicGridCart()" x-init="init()" class="relative single-layout1 !ml-0">
         {{-- Optional heading --}}
         @if (!empty($opts['heading']))
             <h2 class="text-4xl font-bold text-center">{{ $opts['heading'] }}</h2>
@@ -46,11 +46,11 @@
                     $url = $isProductTax ? route('products.show', $item->slug) : route('posts.show', $item->slug);
                 @endphp
 
-                <div class="bg-white rounded-lg p-4 flex flex-col items-center text-center">
+                <div class="bg-white rounded-lg  flex flex-col items-center text-center">
                     @if (!empty($opts['show_image']) && $media)
                         <a href="{{ $url }}">
                             <x-responsive-image :media="$media" alt="{{ $title }}"
-                                class="w-full h-auto object-cover rounded mb-4" />
+                                class="w-full h-auto object-cover  mb-4" />
                         </a>
                     @endif
 

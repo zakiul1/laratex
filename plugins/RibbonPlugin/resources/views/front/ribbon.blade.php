@@ -12,7 +12,7 @@
         color: var(--ribbon-text);
         height: {{ $ribbon->height }}px;
       ">
-        <div class="container mx-auto px-4 flex items-center justify-between">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
             <div class="flex space-x-4">
                 @if ($ribbon->left_text)
                     <span>{{ $ribbon->left_text }}</span>

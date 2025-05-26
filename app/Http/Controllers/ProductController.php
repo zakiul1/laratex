@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Aponahmed\HtmlBuilder\ElementFactory;
+use App\Models\Post;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\SiteSetting;
@@ -17,14 +18,20 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
+        // 1) Products query
         $query = Product::with(['taxonomies.term', 'featuredMedia']);
 
         if ($tid = $request->get('filter_category')) {
-            $query->whereHas('taxonomies', fn($q) => $q->where('term_taxonomy_id', $tid));
+            $query->whereHas(
+                'taxonomies',
+                fn($q) =>
+                $q->where('term_taxonomy_id', $tid)
+            );
         }
 
         $products = $query->latest()->paginate(10);
 
+        // 2) All product categories
         $allCats = TermTaxonomy::select('term_taxonomies.*')
             ->join('terms', 'term_taxonomies.term_id', 'terms.id')
             ->where('taxonomy', 'product')
@@ -32,9 +39,19 @@ class ProductController extends Controller
             ->orderBy('terms.name')
             ->get();
 
-        return view('products.index', compact('products', 'allCats'));
-    }
+        // 3) Load your “Products” page so Blade has $page
+        //    Adjust the slug or lookup however your pages are stored
+        $page = Post::where('type', 'page')
+            ->where('slug', 'products')  // change 'products' to match your slug
+            ->first();
+        // dd($page);             // or ->firstOrFail() if you want 404
 
+        // —OR, if you have a dedicated Page model:
+        // $page = Page::where('slug','products')->first();
+
+        // 4) Pass $page into the view
+        return view('products.index', compact('products', 'allCats', 'page'));
+    }
     public function create()
     {
         $taxonomies = TermTaxonomy::select('term_taxonomies.*')

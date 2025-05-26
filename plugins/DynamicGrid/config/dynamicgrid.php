@@ -8,7 +8,7 @@ return [
             'layout2' => 'Catalog Grid Layout Read More Button',
         ],
         'feature_post' => [
-            'layout1' => 'Feature Layout 1',
+            'layout1' => 'Services-Overview',
             'layout2' => 'Feature Layout 2',
         ],
         'widget_post' => [

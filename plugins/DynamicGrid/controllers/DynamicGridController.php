@@ -80,7 +80,7 @@ class DynamicGridController extends Controller
         // Merge with plugin defaults
         $data = array_merge($defaults, $validated);
 
-        // Build the shortcode attributes
+        // Build the initial shortcode attributes
         $attrs = [
             'taxonomy' => $data['taxonomy'],
             'category_id' => $data['category_id'] ?? '',
@@ -105,6 +105,13 @@ class DynamicGridController extends Controller
         if ($data['type'] === 'feature_post' && is_array($data['columns'])) {
             foreach ($data['columns'] as $device => $count) {
                 $attrs["columns_{$device}"] = intval($count);
+            }
+        }
+
+        // For feature_post + layout1, remove unwanted attributes
+        if ($data['type'] === 'feature_post' && $data['layout'] === 'layout1') {
+            foreach (['button_type', 'show_image', 'excerpt_words', 'columns_mobile', 'columns_tablet', 'columns_medium', 'columns_desktop', 'columns_large',] as $key) {
+                unset($attrs[$key]);
             }
         }
 
@@ -153,8 +160,7 @@ class DynamicGridController extends Controller
         }
         $htmlList .= '</ul>';
 
-        $fullMessage = nl2br(e($data['message']))
-            . "<br/><br/>Selected Products:<br/>{$htmlList}";
+        $fullMessage = nl2br(e($data['message'])) . "<br/><br/>Selected Products:<br/>{$htmlList}";
 
         try {
             $response = Http::withHeaders([

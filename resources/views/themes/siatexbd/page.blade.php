@@ -21,5 +21,5 @@
         </div>
     </div>
 
-    @include('partials.dynamicgrid-cart-scripts')
+
 @endsection

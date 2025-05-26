@@ -171,7 +171,7 @@
         {{-- Footer --}}
         @include('partials.footer')
     </div>
-
+    @include('partials.dynamic-cart')
     @stack('scripts')
 </body>
 

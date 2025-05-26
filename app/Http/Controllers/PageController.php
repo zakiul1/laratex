@@ -289,7 +289,9 @@ class PageController extends Controller
                 compact('post', 'pageOutput', 'site', 'themeSettings')
             );
         }
-
+        $page = Post::where('type', 'page')
+            ->where('slug', $slug)
+            ->firstOrFail();
         // 4) If it’s a page, load whatever page‐template is set (or fallback to page.blade.php)
         if ($post->type === 'page') {
             $tpl = $post->template;
@@ -309,7 +311,7 @@ class PageController extends Controller
                 ));
             }
 
-            return view($view, compact('post', 'pageOutput', 'site', 'themeSettings'));
+            return view($view, compact('post', 'page', 'pageOutput', 'site', 'themeSettings'));
         }
 
         // 5) Otherwise it must be a product: render your product template

@@ -201,7 +201,15 @@
                 const t = typeSelect.value;
                 const l = layoutSelect.value;
 
-                // hide/show wrappers common to single_post
+                // Specific override for feature_post layout1
+                if (t === 'feature_post' && l === 'layout1') {
+                    toggle('button_wrapper', false);
+                    toggle('show_image_wrapper', false);
+                    toggle('excerpt_wrapper', false);
+                    toggle('columns_wrapper', false);
+                    return;
+                }
+
                 if (t === 'single_post') {
                     toggle('show_image_wrapper', false);
                     toggle('post_id_wrapper', false);
@@ -209,21 +217,18 @@
                     toggle('columns_wrapper', false);
 
                     if (l === 'layout1') {
-                        // Catalog Grid Layout = price button only
                         toggle('excerpt_wrapper', false);
                         toggle('description_wrapper', true);
                         toggle('button_wrapper', true);
                         populateButtons(buttonOptions.priceOnly);
 
                     } else if (l === 'layout2') {
-                        // Catalog Grid Layout Read More Button
                         toggle('excerpt_wrapper', false);
                         toggle('description_wrapper', true);
                         toggle('button_wrapper', true);
                         populateButtons(buttonOptions.readMoreOnly);
 
                     } else {
-                        // default single_post layouts
                         toggle('excerpt_wrapper', false);
                         toggle('description_wrapper', false);
                         toggle('button_wrapper', true);
@@ -252,7 +257,6 @@
                 }
             }
 
-            // when type changes, repopulate layouts and re-run toggles
             typeSelect.addEventListener('change', () => {
                 layoutSelect.innerHTML = '';
                 Object.entries(layouts[typeSelect.value] || {}).forEach(([k, label]) => {
@@ -308,7 +312,6 @@
             }
 
             taxonomyEl.addEventListener('change', e => loadCategories(e.target.value));
-
             @if (old('taxonomy'))
                 loadCategories("{{ old('taxonomy') }}");
             @endif

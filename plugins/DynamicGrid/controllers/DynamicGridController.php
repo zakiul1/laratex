@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Term;
 use App\Models\TermTaxonomy;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
 class DynamicGridController extends Controller
@@ -17,16 +17,15 @@ class DynamicGridController extends Controller
      */
     public function builderForm()
     {
-        // Load our plugin’s config
         $config = config('dynamicgrid');
         $layouts = $config['layouts'];
 
-        // Fetch all distinct taxonomy slugs
+        // all distinct taxonomies
         $taxonomies = TermTaxonomy::distinct('taxonomy')
             ->pluck('taxonomy')
             ->toArray();
 
-        // Seed the first taxonomy’s terms for the initial “Category” select
+        // seed first category select
         $firstTax = $taxonomies[0] ?? null;
         $categories = $firstTax
             ? Term::whereHas('taxonomies', fn($q) => $q->where('taxonomy', $firstTax))
@@ -43,7 +42,7 @@ class DynamicGridController extends Controller
     }
 
     /**
-     * AJAX: return JSON list of terms for the given taxonomy slug.
+     * AJAX: Return JSON list of terms for a given taxonomy slug.
      */
     public function getCategories(string $taxonomy)
     {
@@ -56,7 +55,6 @@ class DynamicGridController extends Controller
 
     /**
      * Validate input & assemble the [dynamicgrid …] shortcode.
-     * Stores the result in session('shortcode') and redirects back.
      */
     public function generateShortcode(Request $req)
     {
@@ -70,17 +68,16 @@ class DynamicGridController extends Controller
             'columns.*' => ['sometimes', 'integer', 'min:1'],
             'excerpt_words' => ['sometimes', 'integer', 'min:0'],
             'show_image' => ['sometimes', 'boolean'],
-            'show_description' => ['sometimes', 'boolean'],
             'button_type' => ['required', Rule::in(['none', 'read_more', 'price'])],
             'heading' => ['nullable', 'string'],
             'post_id' => ['nullable', 'integer'],
             'product_amount' => ['sometimes', 'integer', 'min:1'],
         ]);
 
-        // Merge with plugin defaults
+        // merge user input onto defaults
         $data = array_merge($defaults, $validated);
 
-        // Build the initial shortcode attributes
+        // base attributes
         $attrs = [
             'taxonomy' => $data['taxonomy'],
             'category_id' => $data['category_id'] ?? '',
@@ -90,32 +87,48 @@ class DynamicGridController extends Controller
             'product_amount' => $data['product_amount'] ?? '',
         ];
 
-        if ($req->has('show_description')) {
-            $attrs['show_description'] = '1';
+        // post_id for feature_post
+        if ($data['type'] === 'feature_post' && !empty($data['post_id'])) {
+            $attrs['post_id'] = intval($data['post_id']);
         }
+
+        // show_image flag
         if ($req->has('show_image')) {
             $attrs['show_image'] = '1';
         }
+
+        // excerpt_words
         if (!empty($data['excerpt_words'])) {
             $attrs['excerpt_words'] = intval($data['excerpt_words']);
         }
-        if (!empty(trim($data['heading']))) {
+
+        // heading
+        if (trim($data['heading']) !== '') {
             $attrs['heading'] = trim($data['heading']);
         }
+
+        // columns for feature_post
         if ($data['type'] === 'feature_post' && is_array($data['columns'])) {
             foreach ($data['columns'] as $device => $count) {
                 $attrs["columns_{$device}"] = intval($count);
             }
         }
 
-        // For feature_post + layout1, remove unwanted attributes
+        // strip attrs for feature_post + layout1
         if ($data['type'] === 'feature_post' && $data['layout'] === 'layout1') {
             foreach (['button_type', 'show_image', 'excerpt_words', 'columns_mobile', 'columns_tablet', 'columns_medium', 'columns_desktop', 'columns_large',] as $key) {
                 unset($attrs[$key]);
             }
         }
 
-        // Assemble the final shortcode string
+        // strip attrs for feature_post + layout2
+        if ($data['type'] === 'feature_post' && $data['layout'] === 'layout2') {
+            foreach (['button_type', 'columns_mobile', 'columns_tablet', 'columns_medium', 'columns_desktop', 'columns_large',] as $key) {
+                unset($attrs[$key]);
+            }
+        }
+
+        // build the shortcode string
         $shortcode = '[dynamicgrid';
         foreach ($attrs as $key => $val) {
             $shortcode .= " {$key}=\"" . e($val) . '"';
@@ -151,7 +164,7 @@ class DynamicGridController extends Controller
 
         $data = $validator->validated();
 
-        // Build HTML list of selected products
+        // build HTML list
         $htmlList = '<ul>';
         foreach ($data['products'] as $prod) {
             $title = e($prod['title']);

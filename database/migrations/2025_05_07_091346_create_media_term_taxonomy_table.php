@@ -16,7 +16,7 @@ return new class extends Migration {
             // FK to the term_taxonomies table
             $table->unsignedBigInteger('term_taxonomy_id');
             // discriminator for polymorphic use (will be 'media')
-            $table->string('object_type')->nullable();
+            $table->string('object_type');
             // timestamps if you want to track when links were created/updated
             $table->timestamps();
 

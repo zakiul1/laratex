@@ -5,7 +5,7 @@
     use App\Models\Product;
     use App\Helpers\BlockRenderer;
 
-    // Determine which model to use
+    // Determine model & relation
     $isProductTax = $opts['taxonomy'] === 'product';
     $modelClass = $isProductTax ? Product::class : Post::class;
     $relation = $isProductTax ? 'taxonomies' : 'termTaxonomies';
@@ -15,9 +15,11 @@
         $relation,
         fn($q) => $q->where('taxonomy', $opts['taxonomy'])->where('term_id', $opts['category_id']),
     );
+
     if (!empty($opts['product_amount'])) {
         $query->take(intval($opts['product_amount']));
     }
+
     $items = $query->get();
 @endphp
 
@@ -26,29 +28,47 @@
         No items found.
     </div>
 @else
-    <div class="space-y-12">
+    {{-- Optional Heading --}}
+    @if (!empty($opts['heading']))
+        <h2 class="text-2xl font-bold text-blue-800 mb-6">{{ $opts['heading'] }}</h2>
+    @endif
+
+    <div class="space-y-12 !ml-0">
         @foreach ($items as $item)
             @php
                 $media = $item->featuredMedia->first();
+                $showImage = !empty($opts['show_image']) && $media;
+                $colClasses = $showImage ? 'md:col-span-2' : 'md:col-span-3';
                 $title = $isProductTax ? $item->name : $item->title;
                 $excerpt = Str::words(
                     strip_tags(BlockRenderer::render($item->description ?? $item->content)),
-                    3000,
+                    $opts['excerpt_words'] ?? 20,
                     '…',
                 );
             @endphp
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                @if ($media)
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+                @if ($showImage)
                     <div class="md:col-span-1">
                         <x-responsive-image :media="$media" alt="{{ $title }}"
                             class="w-full h-auto object-cover rounded" />
                     </div>
                 @endif
 
-                <div class="md:col-span-2 space-y-2">
+                <div class="{{ $colClasses }} space-y-2">
                     <h3 class="text-xl font-semibold text-blue-800">{{ $title }}</h3>
                     <p class="text-gray-700">{{ $excerpt }}</p>
+
+                    @if ($opts['button_type'] === 'read_more')
+                        <a href="{{ $isProductTax ? route('products.show', $item) : route('posts.show', $item) }}"
+                            class="inline-block mt-2 text-blue-600 font-medium">
+                            Read More
+                        </a>
+                    @elseif($opts['button_type'] === 'price' && $isProductTax && isset($item->price))
+                        <span class="inline-block mt-2 text-lg font-semibold">
+                            ${{ number_format($item->price, 2) }}
+                        </span>
+                    @endif
                 </div>
             </div>
         @endforeach

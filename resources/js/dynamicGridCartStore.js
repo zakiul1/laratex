@@ -1,3 +1,4 @@
+// dynamicGridCartStore.js
 import Alpine from "alpinejs";
 
 document.addEventListener("alpine:init", () => {
@@ -12,7 +13,22 @@ document.addEventListener("alpine:init", () => {
         errors: [],
 
         init() {
+            // Load existing cart from localStorage
+            try {
+                const saved = localStorage.getItem("dynamicCartItems");
+                if (saved) this.items = JSON.parse(saved);
+            } catch (e) {
+                console.error("Failed to parse saved cart", e);
+            }
             this.bindButtons();
+        },
+
+        save() {
+            // Persist current items array
+            localStorage.setItem(
+                "dynamicCartItems",
+                JSON.stringify(this.items)
+            );
         },
 
         bindButtons() {
@@ -25,6 +41,7 @@ document.addEventListener("alpine:init", () => {
 
                     if (!this.items.some((x) => x.id === id)) {
                         this.items.push({ id, title, img, url });
+                        this.save();
                         window.ntfy(`"${title}" added to cart`);
                     }
                 });
@@ -33,6 +50,7 @@ document.addEventListener("alpine:init", () => {
 
         remove(id) {
             this.items = this.items.filter((x) => x.id !== id);
+            this.save();
         },
 
         goToForm() {
@@ -54,7 +72,6 @@ document.addEventListener("alpine:init", () => {
             try {
                 let res = await fetch("/dynamicgrid/request-price", {
                     method: "POST",
-                    credentials: "same-origin",
                     headers: {
                         "Content-Type": "application/json",
                         Accept: "application/json",
@@ -62,6 +79,7 @@ document.addEventListener("alpine:init", () => {
                             'meta[name="csrf-token"]'
                         ).content,
                     },
+                    credentials: "same-origin",
                     body: JSON.stringify(payload),
                 });
 
@@ -75,7 +93,11 @@ document.addEventListener("alpine:init", () => {
                 window.ntfy(json.message || "Request sent!");
                 this.showForm = false;
                 this.items = [];
-                this.name = this.whatsapp = this.email = this.message = "";
+                this.name = "";
+                this.whatsapp = "";
+                this.email = "";
+                this.message = "";
+                localStorage.removeItem("dynamicCartItems");
             } catch (e) {
                 console.error(e);
                 window.ntfy("Error sending request", "error");
@@ -83,6 +105,5 @@ document.addEventListener("alpine:init", () => {
         },
     });
 
-    // bind immediately
     Alpine.store("dynamicCart").init();
 });

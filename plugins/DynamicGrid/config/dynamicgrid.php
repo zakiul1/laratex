@@ -1,5 +1,6 @@
 <?php
 // config/dynamicgrid.php
+
 return [
     // available layouts per type
     'layouts' => [
@@ -33,6 +34,6 @@ return [
     'button_type' => 'read_more',
     'heading' => '',
     'product_amount' => 5,
-    // NEW: whether to show the description/excerpt text
+    // whether to show the description/excerpt text
     'show_description' => false,
 ];

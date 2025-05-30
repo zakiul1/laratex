@@ -34,7 +34,7 @@
             @endif
         @endif
 
-        {{-- Single column on mobile, two columns on md+ --}}
+        {{-- Single column on mobile, two on md+ --}}
         <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
             @foreach ($items as $item)
                 @php
@@ -49,18 +49,20 @@
                 @endphp
 
                 <div class="flex flex-col md:flex-row md:space-x-6">
-                    {{-- Image --}}
+                    {{-- Image (4:3 aspect ratio) --}}
                     <div class="w-full md:w-1/3 flex-shrink-0 mb-4 md:mb-0">
                         @if (!empty($opts['show_image']) && $media)
-                            <a href="{{ $url }}" class="block overflow-hidden hover:shadow-md transition">
-                                <x-responsive-image :media="$media" alt="{{ $title }}"
-                                    class="w-full h-auto object-cover" />
-                            </a>
-                        @else
-                            <div
-                                class="w-full h-32 bg-gray-100 flex items-center justify-center rounded-lg text-gray-400">
-                                —
+                            <div class="overflow-hidden rounded-lg" style="aspect-ratio:4/3;">
+                                <a href="{{ $url }}" class="block w-full h-full">
+                                    <x-responsive-image :media="$media" alt="{{ $title }}"
+                                        class="w-full h-full object-cover" loading="lazy" width="400"
+                                        height="300" />
+                                </a>
                             </div>
+                        @else
+                            <div class="overflow-hidden rounded-lg bg-gray-100
+                                     flex items-center justify-center text-gray-400"
+                                style="aspect-ratio:4/3;">—</div>
                         @endif
                     </div>
 
@@ -88,9 +90,11 @@
 
                         @if (($opts['button_type'] ?? '') === 'price')
                             <button type="button"
-                                class="get-price-btn mt-4 px-4 py-2 text-blue-600 font-medium border-b-2 border-blue-600 hover:text-blue-800"
+                                class="get-price-btn mt-4 px-4 py-2 text-blue-600 font-medium
+                                     border-b-2 border-blue-600 hover:text-blue-800"
                                 data-id="{{ $item->id }}" data-title="{{ e($title) }}"
-                                data-image="{{ $media ? $media->getUrl() : '' }}" data-url="{{ $url }}">
+                                data-image="{{ $media ? $media->getUrl('thumbnail') : '' }}"
+                                data-url="{{ $url }}">
                                 Get Price
                             </button>
                         @endif

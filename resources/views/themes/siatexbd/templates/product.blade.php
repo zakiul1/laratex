@@ -28,7 +28,7 @@
             </nav>
 
             {{-- Product Detail Card --}}
-            <div class="bg-[#f6f6f6] p-12">
+            <div class="bg-text-gray-200 p-12">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
 
                     {{-- Left Column --}}

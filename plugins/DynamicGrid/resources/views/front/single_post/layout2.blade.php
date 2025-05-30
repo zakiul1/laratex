@@ -28,7 +28,9 @@
     <div class="space-y-8 !ml-0">
         {{-- Optional heading --}}
         @if (!empty($opts['heading']))
-            <h2 class="text-3xl font-bold text-center mb-2">{{ $opts['heading'] }}</h2>
+            <h2 class="text-3xl font-bold text-center mb-2">
+                {{ $opts['heading'] }}
+            </h2>
             @if (!empty($opts['subheading']))
                 <p class="text-gray-600 text-center max-w-2xl mx-auto mb-6">
                     {{ $opts['subheading'] }}
@@ -56,39 +58,15 @@
                         @if (!empty($opts['show_image']) && $media)
                             <div class="overflow-hidden rounded-lg" style="aspect-ratio:1/1;">
                                 <a href="{{ $url }}" class="block w-full h-full">
-                                    <picture>
-                                        {{-- AVIF if supported & generated --}}
-                                        @if (function_exists('imageavif') && $media->hasGeneratedConversion('thumbnail-avif'))
-                                            <source type="image/avif"
-                                                srcset="
-                                                    {{ $media->getUrl('thumbnail-avif') }} 150w,
-                                                    {{ $media->getUrl('medium-avif') }}    300w,
-                                                    {{ $media->getUrl('large-avif') }}     1024w
-                                                "
-                                                sizes="(max-width:768px)100vw,33vw">
-                                        @endif
-
-                                        {{-- WebP if generated --}}
-                                        @if ($media->hasGeneratedConversion('thumbnail-webp'))
-                                            <source type="image/webp"
-                                                srcset="
-                                                    {{ $media->getUrl('thumbnail-webp') }} 150w,
-                                                    {{ $media->getUrl('medium-webp') }}    300w,
-                                                    {{ $media->getUrl('large-webp') }}     1024w
-                                                "
-                                                sizes="(max-width:768px)100vw,33vw">
-                                        @endif
-
-                                        {{-- Fallback: your responsive component --}}
-                                        <x-responsive-image :media="$media" :breakpoints="$breakpoints"
-                                            sizes="(max-width:768px)100vw,33vw" width="400" height="400"
-                                            loading="lazy" class="w-full h-full object-contain rounded-lg"
-                                            alt="{{ $title }}" />
-                                    </picture>
+                                    <x-responsive-image :media="$media" :breakpoints="$breakpoints"
+                                        sizes="(max-width:768px) 100vw, 33vw" width="400" height="400"
+                                        loading="lazy" class="w-full h-full object-contain rounded-lg"
+                                        alt="{{ $title }}" />
                                 </a>
                             </div>
                         @else
-                            <div class="overflow-hidden rounded-lg bg-gray-100 flex items-center justify-center text-gray-400"
+                            <div class="overflow-hidden rounded-lg bg-gray-100
+                                        flex items-center justify-center text-gray-400"
                                 style="aspect-ratio:1/1;">
                                 —
                             </div>

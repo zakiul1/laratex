@@ -51,38 +51,12 @@
 
                 <div class="bg-white rounded-lg flex flex-col items-center text-center">
                     @if (!empty($opts['show_image']) && $media)
-                        {{-- square aspect container (1:1) --}}
+                        {{-- 1:1 aspect container --}}
                         <div class="w-full mb-4 overflow-hidden" style="aspect-ratio:1/1;">
                             <a href="{{ $url }}" class="block w-full h-full">
-                                <picture>
-                                    {{-- AVIF if supported & generated --}}
-                                    @if (function_exists('imageavif') && $media->hasGeneratedConversion('thumbnail-avif'))
-                                        <source type="image/avif"
-                                            srcset="
-                                                {{ $media->getUrl('thumbnail-avif') }} 150w,
-                                                {{ $media->getUrl('medium-avif') }}    300w,
-                                                {{ $media->getUrl('large-avif') }}     1024w
-                                            "
-                                            sizes="(max-width:640px)100vw,400px">
-                                    @endif
-
-                                    {{-- WebP if generated --}}
-                                    @if ($media->hasGeneratedConversion('thumbnail-webp'))
-                                        <source type="image/webp"
-                                            srcset="
-                                                {{ $media->getUrl('thumbnail-webp') }} 150w,
-                                                {{ $media->getUrl('medium-webp') }}    300w,
-                                                {{ $media->getUrl('large-webp') }}     1024w
-                                            "
-                                            sizes="(max-width:640px)100vw,400px">
-                                    @endif
-
-                                    {{-- JPEG/PNG fallback --}}
-                                    <x-responsive-image :media="$media" :breakpoints="$breakpoints"
-                                        sizes="(max-width:640px)100vw,400px" width="400" height="400"
-                                        loading="lazy" class="w-full h-full object-contain rounded-lg"
-                                        alt="{{ $title }}" />
-                                </picture>
+                                <x-responsive-image :media="$media" :breakpoints="$breakpoints"
+                                    sizes="(max-width:640px) 100vw, 400px" width="400" height="400" loading="lazy"
+                                    class="w-full h-full object-contain rounded-lg" alt="{{ $title }}" />
                             </a>
                         </div>
                     @endif

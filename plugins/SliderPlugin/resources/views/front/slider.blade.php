@@ -57,15 +57,17 @@
                                 class="absolute inset-0">
                                 @if ($media)
                                     <picture>
-                                        {{-- only include AVIF if supported on this server --}}
-                                        @if (function_exists('imageavif'))
+                                        {{-- AVIF if supported & generated --}}
+                                        @if (function_exists('imageavif') && $media->hasGeneratedConversion('large-avif'))
                                             <source type="image/avif" srcset="{{ $media->getUrl('large-avif') }}"
                                                 sizes="(min-width:1024px)50vw,100vw">
                                         @endif
 
-                                        {{-- WebP --}}
-                                        <source type="image/webp" srcset="{{ $media->getUrl('large-webp') }}"
-                                            sizes="(min-width:1024px)50vw,100vw">
+                                        {{-- WebP if generated --}}
+                                        @if ($media->hasGeneratedConversion('large-webp'))
+                                            <source type="image/webp" srcset="{{ $media->getUrl('large-webp') }}"
+                                                sizes="(min-width:1024px)50vw,100vw">
+                                        @endif
 
                                         {{-- fallback JPEG/PNG --}}
                                         <img src="{{ $media->getUrl('large') }}" alt=""
@@ -109,9 +111,9 @@
                             <div class="pl-7 text-right font-light mb-[15px]">
                                 <h2
                                     class="block text-[#666666]
-                                           text-[clamp(1.5rem,5vw,2.7rem)]
-                                           uppercase font-ropa-sans
-                                           leading-[1.2] tracking-normal">
+                                         text-[clamp(1.5rem,5vw,2.7rem)]
+                                         uppercase font-ropa-sans
+                                         leading-[1.2] tracking-normal">
                                     {{ $slider->heading }}
                                 </h2>
                             </div>

@@ -26,6 +26,7 @@ return [
      * and won’t require a running queue worker.
      */
     'queue_conversions_by_default' => false,
+    'driver' => 'imagick',
 
     /*
      * Folder name for conversions, relative to the disk root.

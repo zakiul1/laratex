@@ -14,9 +14,6 @@ class MediaLibrary extends Model implements HasMedia
 
     protected $guarded = [];
 
-    /**
-     * Define your media collections.
-     */
     public function registerMediaCollections(): void
     {
         $this
@@ -25,13 +22,9 @@ class MediaLibrary extends Model implements HasMedia
             ->withResponsiveImages();
     }
 
-    /**
-     * Define your media conversions, including properly sized crops
-     * and next-gen formats (WebP/AVIF).
-     */
     public function registerMediaConversions(Media $media = null): void
     {
-        // 1) Thumbnail: crop to exactly 200×200
+        // 1) Thumbnail: crop to 200×200
         $this
             ->addMediaConversion('thumbnail')
             ->fit(Fit::Crop, 200, 200)
@@ -44,27 +37,29 @@ class MediaLibrary extends Model implements HasMedia
             ->quality(80)
             ->nonQueued();
 
-        // 3) Large: max 1024×576 (keep aspect ratio)
+        // 3) Large: max 1024×576
         $this
             ->addMediaConversion('large')
             ->fit(Fit::Max, 1024, 576)
             ->quality(80);
 
-        // 4) Generate next-gen WebP & AVIF for each size
-        foreach (['thumbnail', 'medium', 'large'] as $size) {
-            // WebP version
-            $this
-                ->addMediaConversion("{$size}-webp")
-                ->format('webp')
-                ->quality(80)
-                ->nonQueued();
+        // Only register next-gen conversions if AVIF is supported
+        if (function_exists('imageavif')) {
+            foreach (['thumbnail', 'medium', 'large'] as $size) {
+                // WebP
+                $this
+                    ->addMediaConversion("{$size}-webp")
+                    ->format('webp')
+                    ->quality(80)
+                    ->nonQueued();
 
-            // AVIF version
-            $this
-                ->addMediaConversion("{$size}-avif")
-                ->format('avif')
-                ->quality(60)
-                ->nonQueued();
+                // AVIF
+                $this
+                    ->addMediaConversion("{$size}-avif")
+                    ->format('avif')
+                    ->quality(60)
+                    ->nonQueued();
+            }
         }
     }
 }

@@ -40,7 +40,7 @@
                    md:grid-cols-{{ $opts['columns']['medium'] }}
                    lg:grid-cols-{{ $opts['columns']['desktop'] }}
                    xl:grid-cols-{{ $opts['columns']['large'] }}
-                   gap-6">
+                   gap-8">
             @foreach ($items as $item)
                 @php
                     $media = $item->featuredMedia->first();
@@ -48,10 +48,10 @@
                     $url = $isProductTax ? route('products.show', $item->slug) : route('posts.show', $item->slug);
                 @endphp
 
-                <div class="bg-white rounded-lg flex flex-col items-center text-center p-4">
+                <div class="bg-white rounded-lg flex flex-col items-center text-center ">
                     @if (!empty($opts['show_image']) && $media)
                         {{-- aspect-ratio container (4:3) --}}
-                        <div class="w-full mb-4 overflow-hidden" style="aspect-ratio:4/3;">
+                        <div class="w-full mb-4 overflow-hidden" style="aspect-ratio:1/1;">
                             <a href="{{ $url }}" class="block w-full h-full">
                                 <picture>
                                     {{-- AVIF (only if supported & generated) --}}
@@ -84,8 +84,7 @@
                                         {{ $media->getUrl('large') }}     1024w
                                       "
                                         sizes="(max-width:640px)100vw,400px" width="400" height="300"
-                                        loading="lazy" class="w-full h-full object-cover rounded-lg"
-                                        alt="{{ $title }}">
+                                        loading="lazy" class="w-full h-full object-contain " alt="{{ $title }}">
                                 </picture>
                             </a>
                         </div>

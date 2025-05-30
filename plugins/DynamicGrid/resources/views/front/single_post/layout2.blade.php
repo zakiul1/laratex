@@ -53,7 +53,7 @@
                     {{-- Image (4:3 aspect ratio) --}}
                     <div class="w-full md:w-1/3 flex-shrink-0 mb-4 md:mb-0">
                         @if (!empty($opts['show_image']) && $media)
-                            <div class="overflow-hidden rounded-lg" style="aspect-ratio:4/3;">
+                            <div class="overflow-hidden " style="aspect-ratio:1/1;">
                                 <a href="{{ $url }}" class="block w-full h-full">
                                     <picture>
                                         {{-- AVIF if supported & generated --}}
@@ -86,7 +86,7 @@
                                             {{ $media->getUrl('large') }}     800w
                                           "
                                             sizes="(max-width:768px)100vw,33vw" width="400" height="300"
-                                            loading="lazy" class="w-full h-full object-cover"
+                                            loading="lazy" class="w-full h-full object-contain"
                                             alt="{{ $title }}">
                                     </picture>
                                 </a>

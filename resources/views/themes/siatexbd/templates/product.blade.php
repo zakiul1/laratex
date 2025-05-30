@@ -3,7 +3,7 @@
 @section('content')
     @php
         $media = $product->featuredMedia->first();
-        $mediaUrl = $media ? $media->getUrl() : '';
+        $mediaUrl = $media ? $media->getUrl('large') : '';
         $detailUrl = route('products.show', $product->slug);
     @endphp
 
@@ -23,13 +23,13 @@
                         </li>
                         <li>/</li>
                     @endif
-                    <li class="font-semibold">{{ $product->name }}</li>
+                    <li class="font-semibold" aria-current="page">{{ $product->name }}</li>
                 </ol>
             </nav>
 
             {{-- Product Detail Card --}}
-            <div class="bg-white rounded-lg shadow p-8">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div class="bg-[#f6f6f6] p-12">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
 
                     {{-- Left Column --}}
                     <div class="space-y-4">
@@ -50,7 +50,7 @@
                             @endif
                         </p>
                         {{-- Get Price --}}
-                        <button type="button"
+                        <button type="button" aria-label="Get price for {{ $product->name }}"
                             class="get-price-btn inline-block bg-blue-800 text-white px-6 py-3 hover:bg-blue-900 transition"
                             data-id="{{ $product->id }}" data-title="{{ e($product->name) }}"
                             data-image="{{ $mediaUrl }}" data-url="{{ $detailUrl }}">
@@ -61,12 +61,34 @@
                     {{-- Right Column --}}
                     <div>
                         @if ($media)
-                            <div class="aspect-w-16 aspect-h-9 overflow-hidden">
-                                <x-responsive-image :media="$media" class="w-full h-full object-cover"
-                                    alt="{{ $product->name }}" />
+                            <div class="overflow-hidden " style="aspect-ratio:1/1;">
+                                <a href="{{ $detailUrl }}" class="block w-full h-full">
+                                    <picture>
+                                        {{-- AVIF if supported & generated --}}
+                                        @if (function_exists('imageavif') && $media->hasGeneratedConversion('large-avif'))
+                                            <source type="image/avif" srcset="{{ $media->getUrl('large-avif') }}"
+                                                sizes="(max-width:768px)100vw,50vw">
+                                        @endif
+
+                                        {{-- WebP if generated --}}
+                                        @if ($media->hasGeneratedConversion('large-webp'))
+                                            <source type="image/webp" srcset="{{ $media->getUrl('large-webp') }}"
+                                                sizes="(max-width:768px)100vw,50vw">
+                                        @endif
+
+                                        {{-- JPEG/PNG fallback --}}
+                                        <img src="{{ $media->getUrl('large') }}"
+                                            srcset="
+                                            {{ $media->getUrl('medium') }} 400w,
+                                            {{ $media->getUrl('large') }}  800w
+                                          "
+                                            sizes="(max-width:768px)100vw,50vw" width="1024" height="576" loading="lazy"
+                                            class="w-full h-full object-contain" alt="{{ $product->name }}">
+                                    </picture>
+                                </a>
                             </div>
                         @else
-                            <div class="w-full h-80 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
+                            <div class="w-full h-80 flex items-center justify-center text-gray-400">
                                 —
                             </div>
                         @endif
@@ -78,9 +100,6 @@
             <div class="prose max-w-none">
                 {!! apply_filters('the_content', $pageOutput) !!}
             </div>
-
-            {{-- include the global cart UI --}}
-            @include('partials.dynamic-cart')
 
         </div>
     </div>

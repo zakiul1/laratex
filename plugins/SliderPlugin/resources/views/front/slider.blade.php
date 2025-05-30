@@ -18,6 +18,7 @@
     use App\Models\Media;
 
     $sliders = Slider::where('is_active', true)->with('items')->get();
+    $breakpoints = [150 => 'thumbnail', 300 => 'medium', 1024 => 'large'];
 @endphp
 
 @if ($sliders->isEmpty())
@@ -47,40 +48,26 @@
             }" x-init="init()"
                 @mouseenter="pause()" @mouseleave="start()">
 
-                <div class="flex flex-col lg:flex-row overflow-hidden bg-gray-100">
+                <div class="flex flex-col lg:flex-row overflow-hidden p-12 bg-[#f6f6f6]">
 
                     {{-- ◀ Image Carousel ▶ --}}
-                    <div class="relative w-full lg:w-1/2 overflow-hidden" style="aspect-ratio:16/9;">
+                    <div class="relative p-6 w-full lg:w-1/2 overflow-hidden" style="aspect-ratio:16/9;">
                         @foreach ($items as $i => $item)
                             @php $media = $item->media_id ? Media::find($item->media_id) : null; @endphp
                             <div x-show="current === {{ $i }}" x-transition.opacity.duration.700ms
                                 class="absolute inset-0">
                                 @if ($media)
-                                    <picture>
-                                        {{-- AVIF if supported & generated --}}
-                                        @if (function_exists('imageavif') && $media->hasGeneratedConversion('large-avif'))
-                                            <source type="image/avif" srcset="{{ $media->getUrl('large-avif') }}"
-                                                sizes="(min-width:1024px)50vw,100vw">
-                                        @endif
-
-                                        {{-- WebP if generated --}}
-                                        @if ($media->hasGeneratedConversion('large-webp'))
-                                            <source type="image/webp" srcset="{{ $media->getUrl('large-webp') }}"
-                                                sizes="(min-width:1024px)50vw,100vw">
-                                        @endif
-
-                                        {{-- fallback JPEG/PNG --}}
-                                        <img src="{{ $media->getUrl('large') }}" alt=""
-                                            loading="{{ $i === 0 ? 'eager' : 'lazy' }}"
-                                            fetchpriority="{{ $i === 0 ? 'high' : 'low' }}" width="1024"
-                                            height="576" sizes="(min-width:1024px)50vw,100vw"
-                                            class="w-full h-full object-cover">
-                                    </picture>
+                                    <x-responsive-image :media="$media" :breakpoints="$breakpoints"
+                                        class="w-full h-full object-contain"
+                                        alt="{{ $media->getCustomProperty('alt') ?? '' }}"
+                                        loading="{{ $i === 0 ? 'eager' : 'lazy' }}"
+                                        fetchpriority="{{ $i === 0 ? 'high' : 'low' }}"
+                                        sizes="(min-width:1024px)50vw,100vw" width="1024" height="576" />
                                 @else
                                     <img src="{{ Storage::url($item->image_path) }}" alt=""
                                         loading="{{ $i === 0 ? 'eager' : 'lazy' }}"
                                         fetchpriority="{{ $i === 0 ? 'high' : 'low' }}" width="1024" height="576"
-                                        sizes="(min-width:1024px)50vw,100vw" class="w-full h-full object-cover" />
+                                        sizes="(min-width:1024px)50vw,100vw" class="w-full h-full object-contain" />
                                 @endif
                             </div>
                         @endforeach
@@ -88,12 +75,11 @@
                         {{-- ◀ Arrows ▶ --}}
                         <button x-show="showArrows" @click="prev()" aria-label="Previous slide"
                             class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">‹</button>
-
                         <button x-show="showArrows" @click="next()" aria-label="Next slide"
                             class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">›</button>
 
                         {{-- ◀ Indicators ▶ --}}
-                        <div x-show="showIndicators" class="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
+                        <div x-show="showIndicators" class="absolute bottom-0 left-1/2 -translate-x-1/2 flex space-x-2">
                             @for ($j = 0; $j < $count; $j++)
                                 <button @click="current = {{ $j }}"
                                     :aria-current="current === {{ $j }} ? 'true' : 'false'"
@@ -109,10 +95,7 @@
                         <div class="w-full lg:w-1/2 p-8 flex flex-col justify-center">
                             <div class="pl-7 text-right font-light mb-[15px]">
                                 <h2
-                                    class="block text-[#666666]
-                                         text-[clamp(1.5rem,5vw,2.7rem)]
-                                         uppercase font-ropa-sans
-                                         leading-[1.2] tracking-normal">
+                                    class="block text-[#666666] text-[clamp(1.5rem,5vw,2.7rem)] uppercase font-ropa-sans leading-[1.2] tracking-normal">
                                     {{ $slider->heading }}
                                 </h2>
                             </div>

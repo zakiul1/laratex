@@ -15,12 +15,13 @@
         {!! apply_filters('frontend_ribbon', '') !!}
     </div>
 
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between py-4">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+        {{-- Top bar with tagline --}}
+        <div class="flex items-center justify-between my-8">
 
             {{-- Logo with reserved box to prevent CLS --}}
             <a href="{{ route('home') }}" class="flex items-center space-x-3">
-                <div class="w-8 sm:w-10 md:w-12 h-8 sm:h-10 md:h-12 overflow-hidden">
+                <div class="w-full sm:w-10 md:w-full h-auto sm:h-10 md:h-16 overflow-hidden">
                     @if ($logo)
                         <img src="{{ asset('storage/' . $logo) }}" alt="Logo" class="w-full h-full object-contain"
                             loading="eager" fetchpriority="high" />

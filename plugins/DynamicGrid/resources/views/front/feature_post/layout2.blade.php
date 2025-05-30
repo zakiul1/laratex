@@ -24,6 +24,9 @@
 
     // Excerpt length
     $limit = intval($opts['excerpt_words'] ?? 20);
+
+    // Responsive breakpoints
+    $breakpoints = [150 => 'thumbnail', 300 => 'medium', 1024 => 'large'];
 @endphp
 
 @if (!$main)
@@ -33,7 +36,9 @@
 @else
     {{-- Optional Heading --}}
     @if (!empty($opts['heading']))
-        <h2 class="text-2xl font-bold text-blue-800 mb-6">{{ $opts['heading'] }}</h2>
+        <h2 class="text-2xl font-bold text-blue-800 mb-6">
+            {{ $opts['heading'] }}
+        </h2>
     @endif
 
     @if ($opts['layout'] === 'layout2')
@@ -53,58 +58,28 @@
                     @php
                         $media = $item->featuredMedia->first();
                         $showImage = !empty($opts['show_image']) && $media;
+                        $title = $item->name ?? $item->title;
+                        $url = $isProductTax ? route('products.show', $item) : route('posts.show', $item);
+                        $excerpt2 = Str::words(
+                            strip_tags(BlockRenderer::render($item->description ?? $item->content)),
+                            $limit,
+                            '…',
+                        );
                     @endphp
 
                     <div class="bg-white flex flex-col">
                         @if ($showImage)
                             <div class="overflow-hidden rounded mb-4" style="aspect-ratio:4/3;">
-                                <a href="{{ $isProductTax ? route('products.show', $item) : route('posts.show', $item) }}"
-                                    class="block w-full h-full">
-                                    <picture>
-                                        {{-- AVIF if supported and generated --}}
-                                        @if (function_exists('imageavif') && $media->hasGeneratedConversion('thumbnail-avif'))
-                                            <source type="image/avif"
-                                                srcset="
-                                                {{ $media->getUrl('thumbnail-avif') }} 200w,
-                                                {{ $media->getUrl('medium-avif') }}    400w,
-                                                {{ $media->getUrl('large-avif') }}     1024w
-                                              "
-                                                sizes="(max-width:768px)100vw,33vw">
-                                        @endif
-
-                                        {{-- WebP if generated --}}
-                                        @if ($media->hasGeneratedConversion('thumbnail-webp'))
-                                            <source type="image/webp"
-                                                srcset="
-                                                {{ $media->getUrl('thumbnail-webp') }} 200w,
-                                                {{ $media->getUrl('medium-webp') }}    400w,
-                                                {{ $media->getUrl('large-webp') }}     1024w
-                                              "
-                                                sizes="(max-width:768px)100vw,33vw">
-                                        @endif
-
-                                        {{-- JPEG/PNG fallback --}}
-                                        <img src="{{ $media->getUrl('medium') }}"
-                                            srcset="
-                                            {{ $media->getUrl('thumbnail') }} 200w,
-                                            {{ $media->getUrl('medium') }}    400w,
-                                            {{ $media->getUrl('large') }}     1024w
-                                          "
-                                            sizes="(max-width:768px)100vw,33vw" width="400" height="300"
-                                            loading="lazy" class="w-full h-full object-cover rounded"
-                                            alt="{{ $item->name ?? $item->title }}">
-                                    </picture>
+                                <a href="{{ $url }}" class="block w-full h-full">
+                                    <x-responsive-image :media="$media" :breakpoints="$breakpoints"
+                                        sizes="(max-width:768px)100vw,33vw" width="400" height="300" loading="lazy"
+                                        class="w-full h-full object-cover rounded" alt="{{ $title }}" />
                                 </a>
                             </div>
                         @endif
 
-                        <h4 class="font-semibold text-lg mb-2 text-blue-800">
-                            {{ $item->name ?? $item->title }}
-                        </h4>
-
-                        <p class="flex-1 text-gray-600">
-                            {!! Str::words(strip_tags(BlockRenderer::render($item->description ?? $item->content)), $limit, '…') !!}
-                        </p>
+                        <h4 class="font-semibold text-lg mb-2 text-blue-800">{{ $title }}</h4>
+                        <p class="flex-1 text-gray-600">{{ $excerpt2 }}</p>
                     </div>
                 @endforeach
             </div>
@@ -127,61 +102,30 @@
                         @php
                             $media = $item->featuredMedia->first();
                             $showImage = !empty($opts['show_image']) && $media;
+                            $title2 = $item->name ?? $item->title;
+                            $url2 = $isProductTax ? route('products.show', $item) : route('posts.show', $item);
+                            $excerpt3 = Str::words(
+                                strip_tags(BlockRenderer::render($item->description ?? $item->content)),
+                                $limit,
+                                '…',
+                            );
                         @endphp
 
                         <div class="bg-white rounded shadow p-6 flex flex-col">
                             @if ($showImage)
                                 <div class="overflow-hidden rounded mb-4" style="aspect-ratio:4/3;">
-                                    <a href="{{ $isProductTax ? route('products.show', $item) : route('posts.show', $item) }}"
-                                        class="block w-full h-full">
-                                        <picture>
-                                            {{-- AVIF --}}
-                                            @if (function_exists('imageavif') && $media->hasGeneratedConversion('thumbnail-avif'))
-                                                <source type="image/avif"
-                                                    srcset="
-                                                    {{ $media->getUrl('thumbnail-avif') }} 200w,
-                                                    {{ $media->getUrl('medium-avif') }}    400w,
-                                                    {{ $media->getUrl('large-avif') }}     1024w
-                                                  "
-                                                    sizes="(max-width:768px)100vw,50vw">
-                                            @endif
-
-                                            {{-- WebP --}}
-                                            @if ($media->hasGeneratedConversion('thumbnail-webp'))
-                                                <source type="image/webp"
-                                                    srcset="
-                                                    {{ $media->getUrl('thumbnail-webp') }} 200w,
-                                                    {{ $media->getUrl('medium-webp') }}    400w,
-                                                    {{ $media->getUrl('large-webp') }}     1024w
-                                                  "
-                                                    sizes="(max-width:768px)100vw,50vw">
-                                            @endif
-
-                                            {{-- JPEG/PNG fallback --}}
-                                            <img src="{{ $media->getUrl('medium') }}"
-                                                srcset="
-                                                {{ $media->getUrl('thumbnail') }} 200w,
-                                                {{ $media->getUrl('medium') }}    400w,
-                                                {{ $media->getUrl('large') }}     1024w
-                                              "
-                                                sizes="(max-width:768px)100vw,50vw" width="400" height="300"
-                                                loading="lazy" class="w-full h-full object-cover rounded"
-                                                alt="{{ $item->name ?? $item->title }}">
-                                        </picture>
+                                    <a href="{{ $url2 }}" class="block w-full h-full">
+                                        <x-responsive-image :media="$media" :breakpoints="$breakpoints"
+                                            sizes="(max-width:768px)100vw,50vw" width="400" height="300"
+                                            loading="lazy" class="w-full h-full object-cover rounded"
+                                            alt="{{ $title2 }}" />
                                     </a>
                                 </div>
                             @endif
 
-                            <h4 class="font-semibold text-lg mb-2">{{ $item->name ?? $item->title }}</h4>
-
-                            <p class="flex-1 text-gray-600 mb-4">
-                                {!! Str::words(strip_tags(BlockRenderer::render($item->description ?? $item->content)), $limit, '…') !!}
-                            </p>
-
-                            <a href="{{ $isProductTax ? route('products.show', $item) : route('posts.show', $item) }}"
-                                class="mt-auto text-sm text-blue-600">
-                                Read More
-                            </a>
+                            <h4 class="font-semibold text-lg mb-2">{{ $title2 }}</h4>
+                            <p class="flex-1 text-gray-600 mb-4">{{ $excerpt3 }}</p>
+                            <a href="{{ $url2 }}" class="mt-auto text-sm text-blue-600">Read More</a>
                         </div>
                     @endforeach
                 </div>
@@ -194,61 +138,30 @@
                         @php
                             $media = $item->featuredMedia->first();
                             $showImage = !empty($opts['show_image']) && $media;
+                            $title3 = $item->name ?? $item->title;
+                            $url3 = $isProductTax ? route('products.show', $item) : route('posts.show', $item);
+                            $excerpt4 = Str::words(
+                                strip_tags(BlockRenderer::render($item->description ?? $item->content)),
+                                $limit,
+                                '…',
+                            );
                         @endphp
 
                         <div class="bg-white rounded shadow p-6 flex flex-col">
                             @if ($showImage)
                                 <div class="overflow-hidden rounded mb-4" style="aspect-ratio:4/3;">
-                                    <a href="{{ $isProductTax ? route('products.show', $item) : route('posts.show', $item) }}"
-                                        class="block w-full h-full">
-                                        <picture>
-                                            {{-- AVIF --}}
-                                            @if (function_exists('imageavif') && $media->hasGeneratedConversion('thumbnail-avif'))
-                                                <source type="image/avif"
-                                                    srcset="
-                                                    {{ $media->getUrl('thumbnail-avif') }} 200w,
-                                                    {{ $media->getUrl('medium-avif') }}    400w,
-                                                    {{ $media->getUrl('large-avif') }}     1024w
-                                                  "
-                                                    sizes="(max-width:768px)100vw,33vw">
-                                            @endif
-
-                                            {{-- WebP --}}
-                                            @if ($media->hasGeneratedConversion('thumbnail-webp'))
-                                                <source type="image/webp"
-                                                    srcset="
-                                                    {{ $media->getUrl('thumbnail-webp') }} 200w,
-                                                    {{ $media->getUrl('medium-webp') }}    400w,
-                                                    {{ $media->getUrl('large-webp') }}     1024w
-                                                  "
-                                                    sizes="(max-width:768px)100vw,33vw">
-                                            @endif
-
-                                            {{-- JPEG/PNG fallback --}}
-                                            <img src="{{ $media->getUrl('medium') }}"
-                                                srcset="
-                                                {{ $media->getUrl('thumbnail') }} 200w,
-                                                {{ $media->getUrl('medium') }}    400w,
-                                                {{ $media->getUrl('large') }}     1024w
-                                              "
-                                                sizes="(max-width:768px)100vw,33vw" width="400" height="300"
-                                                loading="lazy" class="w-full h-full object-cover rounded"
-                                                alt="{{ $item->name ?? $item->title }}">
-                                        </picture>
+                                    <a href="{{ $url3 }}" class="block w-full h-full">
+                                        <x-responsive-image :media="$media" :breakpoints="$breakpoints"
+                                            sizes="(max-width:768px)100vw,33vw" width="400" height="300"
+                                            loading="lazy" class="w-full h-full object-cover rounded"
+                                            alt="{{ $title3 }}" />
                                     </a>
                                 </div>
                             @endif
 
-                            <h4 class="font-semibold text-lg mb-2">{{ $item->name ?? $item->title }}</h4>
-
-                            <p class="flex-1 text-gray-600 mb-4">
-                                {!! Str::words(strip_tags(BlockRenderer::render($item->description ?? $item->content)), $limit, '…') !!}
-                            </p>
-
-                            <a href="{{ $isProductTax ? route('products.show', $item) : route('posts.show', $item) }}"
-                                class="mt-auto text-sm text-blue-600">
-                                Read More
-                            </a>
+                            <h4 class="font-semibold text-lg mb-2">{{ $title3 }}</h4>
+                            <p class="flex-1 text-gray-600 mb-4">{{ $excerpt4 }}</p>
+                            <a href="{{ $url3 }}" class="mt-auto text-sm text-blue-600">Read More</a>
                         </div>
                     @endforeach
                 </div>

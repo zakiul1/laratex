@@ -22,6 +22,7 @@
     }
 
     $items = $query->get();
+    $breakpoints = [150 => 'thumbnail', 300 => 'medium', 1024 => 'large'];
 @endphp
 
 @if ($items->isEmpty())
@@ -48,46 +49,16 @@
                     $opts['excerpt_words'] ?? 20,
                     '…',
                 );
+                $url = $isProductTax ? route('products.show', $item) : route('posts.show', $item);
             @endphp
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
                 @if ($showImage)
                     <div class="md:col-span-1">
-                        <a href="{{ $isProductTax ? route('products.show', $item) : route('posts.show', $item) }}"
-                            class="block overflow-hidden rounded-lg" style="aspect-ratio:4/3;">
-                            <picture>
-                                {{-- AVIF --}}
-                                @if (function_exists('imageavif') && $media->hasGeneratedConversion('thumbnail-avif'))
-                                    <source type="image/avif"
-                                        srcset="
-                                        {{ $media->getUrl('thumbnail-avif') }} 200w,
-                                        {{ $media->getUrl('medium-avif') }}    400w,
-                                        {{ $media->getUrl('large-avif') }}     1024w
-                                      "
-                                        sizes="(max-width:768px)100vw,33vw">
-                                @endif
-
-                                {{-- WebP --}}
-                                @if ($media->hasGeneratedConversion('thumbnail-webp'))
-                                    <source type="image/webp"
-                                        srcset="
-                                        {{ $media->getUrl('thumbnail-webp') }} 200w,
-                                        {{ $media->getUrl('medium-webp') }}    400w,
-                                        {{ $media->getUrl('large-webp') }}     1024w
-                                      "
-                                        sizes="(max-width:768px)100vw,33vw">
-                                @endif
-
-                                {{-- JPEG/PNG fallback --}}
-                                <img src="{{ $media->getUrl('medium') }}"
-                                    srcset="
-                                    {{ $media->getUrl('thumbnail') }} 200w,
-                                    {{ $media->getUrl('medium') }}    400w,
-                                    {{ $media->getUrl('large') }}     1024w
-                                  "
-                                    sizes="(max-width:768px)100vw,33vw" width="400" height="300" loading="lazy"
-                                    class="w-full h-full object-cover rounded-lg" alt="{{ $title }}">
-                            </picture>
+                        <a href="{{ $url }}" class="block overflow-hidden rounded-lg" style="aspect-ratio:4/3;">
+                            <x-responsive-image :media="$media" :breakpoints="$breakpoints" sizes="(max-width:768px)100vw,33vw"
+                                width="400" height="300" loading="lazy"
+                                class="w-full h-full object-cover rounded-lg" alt="{{ $title }}" />
                         </a>
                     </div>
                 @endif
@@ -97,8 +68,7 @@
                     <p class="text-gray-700">{{ $excerpt }}</p>
 
                     @if ($opts['button_type'] === 'read_more')
-                        <a href="{{ $isProductTax ? route('products.show', $item) : route('posts.show', $item) }}"
-                            class="inline-block mt-2 text-blue-600 font-medium">
+                        <a href="{{ $url }}" class="inline-block mt-2 text-blue-600 font-medium">
                             Read More
                         </a>
                     @elseif($opts['button_type'] === 'price' && $isProductTax && isset($item->price))

@@ -17,6 +17,7 @@
     }
 
     $items = $query->get();
+    $breakpoints = [150 => 'thumbnail', 300 => 'medium', 1024 => 'large'];
 @endphp
 
 @if ($items->isEmpty())
@@ -50,51 +51,19 @@
                 @endphp
 
                 <div class="flex flex-col md:flex-row md:space-x-6">
-                    {{-- Image (4:3 aspect ratio) --}}
+                    {{-- Image (square aspect ratio) --}}
                     <div class="w-full md:w-1/3 flex-shrink-0 mb-4 md:mb-0">
                         @if (!empty($opts['show_image']) && $media)
-                            <div class="overflow-hidden " style="aspect-ratio:1/1;">
+                            <div class="overflow-hidden rounded-lg" style="aspect-ratio:1/1;">
                                 <a href="{{ $url }}" class="block w-full h-full">
-                                    <picture>
-                                        {{-- AVIF if supported & generated --}}
-                                        @if (function_exists('imageavif') && $media->hasGeneratedConversion('thumbnail-avif'))
-                                            <source type="image/avif"
-                                                srcset="
-                                                {{ $media->getUrl('thumbnail-avif') }} 200w,
-                                                {{ $media->getUrl('medium-avif') }}    400w,
-                                                {{ $media->getUrl('large-avif') }}     800w
-                                              "
-                                                sizes="(max-width:768px)100vw,33vw">
-                                        @endif
-
-                                        {{-- WebP if generated --}}
-                                        @if ($media->hasGeneratedConversion('thumbnail-webp'))
-                                            <source type="image/webp"
-                                                srcset="
-                                                {{ $media->getUrl('thumbnail-webp') }} 200w,
-                                                {{ $media->getUrl('medium-webp') }}    400w,
-                                                {{ $media->getUrl('large-webp') }}     800w
-                                              "
-                                                sizes="(max-width:768px)100vw,33vw">
-                                        @endif
-
-                                        {{-- JPEG/PNG fallback --}}
-                                        <img src="{{ $media->getUrl('thumbnail') }}"
-                                            srcset="
-                                            {{ $media->getUrl('thumbnail') }} 200w,
-                                            {{ $media->getUrl('medium') }}    400w,
-                                            {{ $media->getUrl('large') }}     800w
-                                          "
-                                            sizes="(max-width:768px)100vw,33vw" width="400" height="300"
-                                            loading="lazy" class="w-full h-full object-contain"
-                                            alt="{{ $title }}">
-                                    </picture>
+                                    <x-responsive-image :media="$media" :breakpoints="$breakpoints"
+                                        sizes="(max-width:768px)100vw,33vw" width="400" height="400" loading="lazy"
+                                        class="w-full h-full object-contain" alt="{{ $title }}" />
                                 </a>
                             </div>
                         @else
-                            <div class="overflow-hidden rounded-lg bg-gray-100
-                                        flex items-center justify-center text-gray-400"
-                                style="aspect-ratio:4/3;">
+                            <div class="overflow-hidden rounded-lg bg-gray-100 flex items-center justify-center text-gray-400"
+                                style="aspect-ratio:1/1;">
                                 —
                             </div>
                         @endif
@@ -124,10 +93,10 @@
 
                         @if (($opts['button_type'] ?? '') === 'price')
                             <button type="button"
-                                class="get-price-btn mt-4 px-4 py-2 text-blue-600 font-medium
-                                       border-b-2 border-blue-600 hover:text-blue-800"
+                                class="get-price-btn mt-4 px-4 py-2 text-blue-600 font-medium border-b-2 border-blue-600 hover:text-blue-800"
                                 data-id="{{ $item->id }}" data-title="{{ e($title) }}"
-                                data-image="{{ $media->getUrl('thumbnail') }}" data-url="{{ $url }}">
+                                data-image="{{ $media ? $media->getUrl('thumbnail') : '' }}"
+                                data-url="{{ $url }}">
                                 Get Price
                             </button>
                         @endif

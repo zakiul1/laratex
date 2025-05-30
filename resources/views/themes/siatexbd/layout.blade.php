@@ -17,32 +17,48 @@
         <title>{{ config('app.name', 'Laravel') }}</title>
     @endif
 
-    {{-- ─── CLARITY: hide anything marked x-cloak until Alpine initializes ─────────────────── --}}
+    {{-- ─── HIDE x-cloak UNTIL ALPINE INIT ───────────────────────── --}}
     <style>
         [x-cloak] {
             display: none !important;
         }
     </style>
 
-    {{-- ─── STYLES & SCRIPTS ──────────────────────────────────────── --}}
-    <link rel="stylesheet" href="{{ asset('blockeditor/layout-frontend.css') }}">
+    {{-- ─── PRECONNECT ───────────────────────────────────────────── --}}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    {{-- ─── GOOGLE FONTS (PRELOAD + DEFER APPLY) ─────────────────── --}}
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Ropa+Sans&display=swap"
+        onload="this.rel='stylesheet'">
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ropa+Sans&display=swap">
+    </noscript>
+
+    {{-- ─── BLOCKEDITOR CSS (PRELOAD + DEFER APPLY) ──────────────── --}}
+    <link rel="preload" as="style" href="{{ asset('blockeditor/layout-frontend.css') }}"
+        onload="this.rel='stylesheet'">
+    <noscript>
+        <link rel="stylesheet" href="{{ asset('blockeditor/layout-frontend.css') }}">
+    </noscript>
+
+    {{-- ─── VITE ASSETS (deferred by spec) ────────────────────────── --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    {{-- note: Vite’s injected <script type="module"> is deferred by spec, so Alpine will run after DOM parse --}}
 
     @php
-        // pull any saved custom container width (in px), default to 1170
+        // pulled from theme settings
         $opts = $themeSettings->options ?? [];
         $containerWidth = data_get($opts, 'container_width', 1170);
     @endphp
 
-    {{-- ─── INITIAL CUSTOM CSS from DB ───────────────────────────── --}}
+    {{-- ─── INITIAL CUSTOM CSS FROM DB ───────────────────────────── --}}
     @if ($themeSettings->custom_css)
         <style data-live-preview id="initial-custom-css">
             {!! $themeSettings->custom_css !!}
         </style>
     @endif
 
-    {{-- ─── INITIAL CSS VARS & TYPOGRAPHY & CONTAINER ─────────────── --}}
+    {{-- ─── CSS VARS & TYPOGRAPHY & CONTAINER ─────────────────────── --}}
     <style data-live-preview id="initial-vars">
         :root {
             --primary-color: {{ $themeSettings->primary_color }};
@@ -107,7 +123,9 @@
     {{-- ─── LIVE-PREVIEW LISTENER ─────────────────────────────────── --}}
     <script>
         window.addEventListener('message', e => {
-            // ...your live-preview code...
+            const msg = e.data;
+            if (!msg || msg.type !== 'themePreview') return;
+            // …apply msg.primaryColor, msg.siteTitle, customCss, etc…
         });
     </script>
 </head>

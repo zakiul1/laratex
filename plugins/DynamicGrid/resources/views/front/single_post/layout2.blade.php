@@ -21,7 +21,7 @@
 @endphp
 
 @if ($items->isEmpty())
-    <div class="p-4 bg-yellow-50 text-yellow-800 rounded">
+    <div class="p-4 bg-yellow-50 text-yellow-800 ">
         No items found for “{{ $opts['taxonomy'] }}” & category {{ $opts['category_id'] }}.
     </div>
 @else
@@ -56,16 +56,16 @@
                     {{-- Image (square aspect ratio) --}}
                     <div class="w-full md:w-1/3 flex-shrink-0 mb-4 md:mb-0">
                         @if (!empty($opts['show_image']) && $media)
-                            <div class="overflow-hidden rounded-lg" style="aspect-ratio:1/1;">
+                            <div class="overflow-hidden" style="aspect-ratio:1/1;">
                                 <a href="{{ $url }}" class="block w-full h-full">
                                     <x-responsive-image :media="$media" :breakpoints="$breakpoints"
                                         sizes="(max-width:768px) 100vw, 33vw" width="400" height="400"
-                                        loading="lazy" class="w-full h-full object-contain rounded-lg"
+                                        loading="lazy" class="w-full h-full object-contain "
                                         alt="{{ $title }}" />
                                 </a>
                             </div>
                         @else
-                            <div class="overflow-hidden rounded-lg bg-gray-100
+                            <div class="overflow-hidden  bg-gray-100
                                         flex items-center justify-center text-gray-400"
                                 style="aspect-ratio:1/1;">
                                 —

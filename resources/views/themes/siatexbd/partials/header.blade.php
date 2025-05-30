@@ -44,8 +44,8 @@
                         @if ($item->children->isNotEmpty())
                             <ul
                                 class="absolute left-0 mt-2 w-48 bg-white border rounded shadow-lg
-                                     opacity-0 group-hover:opacity-100 transition
-                                     pointer-events-none group-hover:pointer-events-auto">
+                                       opacity-0 group-hover:opacity-100 transition
+                                       pointer-events-none group-hover:pointer-events-auto">
                                 @foreach ($item->children as $child)
                                     <li>
                                         <a href="{{ $child->url }}" class="block px-4 py-2 hover:bg-gray-100">
@@ -74,7 +74,9 @@
             </div>
 
             {{-- Mobile toggle --}}
-            <button @click="mobileOpen = !mobileOpen" class="lg:hidden text-gray-700 hover:text-gray-900">
+            <button @click="mobileOpen = !mobileOpen" aria-label="Toggle navigation menu" :aria-expanded="mobileOpen"
+                class="lg:hidden text-gray-700 hover:text-gray-900">
+                <span class="sr-only">Toggle navigation</span>
                 <x-lucide-menu class="w-6 h-6" />
             </button>
         </div>

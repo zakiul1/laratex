@@ -18,7 +18,7 @@
     );
 
     if (!empty($opts['product_amount'])) {
-        $query->take(intval($opts['product_amount']));
+        $query->take((int) $opts['product_amount']);
     }
 
     $items = $query->get();
@@ -54,14 +54,17 @@
                         <a href="{{ $isProductTax ? route('products.show', $item) : route('posts.show', $item) }}"
                             class="block overflow-hidden rounded-lg" style="aspect-ratio:4/3;">
                             <picture>
-                                {{-- AVIF --}}
-                                <source type="image/avif"
-                                    srcset="
-                                    {{ $media->getUrl('thumbnail-avif') }} 200w,
-                                    {{ $media->getUrl('medium-avif') }}    400w,
-                                    {{ $media->getUrl('large-avif') }}     1024w
-                                  "
-                                    sizes="(max-width:768px)100vw,33vw">
+                                {{-- AVIF (only if supported) --}}
+                                @if (function_exists('imageavif'))
+                                    <source type="image/avif"
+                                        srcset="
+                                        {{ $media->getUrl('thumbnail-avif') }} 200w,
+                                        {{ $media->getUrl('medium-avif') }}    400w,
+                                        {{ $media->getUrl('large-avif') }}     1024w
+                                      "
+                                        sizes="(max-width:768px)100vw,33vw">
+                                @endif
+
                                 {{-- WebP --}}
                                 <source type="image/webp"
                                     srcset="
@@ -70,7 +73,8 @@
                                     {{ $media->getUrl('large-webp') }}     1024w
                                   "
                                     sizes="(max-width:768px)100vw,33vw">
-                                {{-- Fallback --}}
+
+                                {{-- JPEG/PNG fallback --}}
                                 <img src="{{ $media->getUrl('medium') }}"
                                     srcset="
                                     {{ $media->getUrl('thumbnail') }} 200w,
@@ -93,7 +97,7 @@
                             class="inline-block mt-2 text-blue-600 font-medium">
                             Read More
                         </a>
-                    @elseif($opts['button_type'] === 'price' && $isProductTax && isset($item->price))
+                    @elseif ($opts['button_type'] === 'price' && $isProductTax && isset($item->price))
                         <span class="inline-block mt-2 text-lg font-semibold">
                             ${{ number_format($item->price, 2) }}
                         </span>

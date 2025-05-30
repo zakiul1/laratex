@@ -1,4 +1,5 @@
 {{-- resources/views/plugins/DynamicGrid/templates/services_overview.blade.php --}}
+
 @php
     use Illuminate\Support\Str;
     use App\Models\Post;
@@ -61,13 +62,16 @@
                                     class="block w-full h-full">
                                     <picture>
                                         {{-- AVIF --}}
-                                        <source type="image/avif"
-                                            srcset="
-                                            {{ $media->getUrl('thumbnail-avif') }} 200w,
-                                            {{ $media->getUrl('medium-avif') }}    400w,
-                                            {{ $media->getUrl('large-avif') }}     1024w
-                                          "
-                                            sizes="(max-width:768px)100vw,33vw">
+                                        @if (function_exists('imageavif'))
+                                            <source type="image/avif"
+                                                srcset="
+                                                {{ $media->getUrl('thumbnail-avif') }} 200w,
+                                                {{ $media->getUrl('medium-avif') }}    400w,
+                                                {{ $media->getUrl('large-avif') }}     1024w
+                                              "
+                                                sizes="(max-width:768px)100vw,33vw">
+                                        @endif
+
                                         {{-- WebP --}}
                                         <source type="image/webp"
                                             srcset="
@@ -76,7 +80,8 @@
                                             {{ $media->getUrl('large-webp') }}     1024w
                                           "
                                             sizes="(max-width:768px)100vw,33vw">
-                                        {{-- Fallback --}}
+
+                                        {{-- JPEG/PNG fallback --}}
                                         <img src="{{ $media->getUrl('medium') }}"
                                             srcset="
                                             {{ $media->getUrl('thumbnail') }} 200w,
@@ -128,13 +133,18 @@
                                     <a href="{{ $isProductTax ? route('products.show', $item) : route('posts.show', $item) }}"
                                         class="block w-full h-full">
                                         <picture>
-                                            <source type="image/avif"
-                                                srcset="
-                                                {{ $media->getUrl('thumbnail-avif') }} 200w,
-                                                {{ $media->getUrl('medium-avif') }}    400w,
-                                                {{ $media->getUrl('large-avif') }}     1024w
-                                              "
-                                                sizes="(max-width:768px)100vw,50vw">
+                                            {{-- AVIF --}}
+                                            @if (function_exists('imageavif'))
+                                                <source type="image/avif"
+                                                    srcset="
+                                                    {{ $media->getUrl('thumbnail-avif') }} 200w,
+                                                    {{ $media->getUrl('medium-avif') }}    400w,
+                                                    {{ $media->getUrl('large-avif') }}     1024w
+                                                  "
+                                                    sizes="(max-width:768px)100vw,50vw">
+                                            @endif
+
+                                            {{-- WebP --}}
                                             <source type="image/webp"
                                                 srcset="
                                                 {{ $media->getUrl('thumbnail-webp') }} 200w,
@@ -142,6 +152,8 @@
                                                 {{ $media->getUrl('large-webp') }}     1024w
                                               "
                                                 sizes="(max-width:768px)100vw,50vw">
+
+                                            {{-- JPEG/PNG fallback --}}
                                             <img src="{{ $media->getUrl('medium') }}"
                                                 srcset="
                                                 {{ $media->getUrl('thumbnail') }} 200w,
@@ -186,13 +198,18 @@
                                     <a href="{{ $isProductTax ? route('products.show', $item) : route('posts.show', $item) }}"
                                         class="block w-full h-full">
                                         <picture>
-                                            <source type="image/avif"
-                                                srcset="
-                                                {{ $media->getUrl('thumbnail-avif') }} 200w,
-                                                {{ $media->getUrl('medium-avif') }}    400w,
-                                                {{ $media->getUrl('large-avif') }}     1024w
-                                              "
-                                                sizes="(max-width:768px)100vw,33vw">
+                                            {{-- AVIF --}}
+                                            @if (function_exists('imageavif'))
+                                                <source type="image/avif"
+                                                    srcset="
+                                                    {{ $media->getUrl('thumbnail-avif') }} 200w,
+                                                    {{ $media->getUrl('medium-avif') }}    400w,
+                                                    {{ $media->getUrl('large-avif') }}     1024w
+                                                  "
+                                                    sizes="(max-width:768px)100vw,33vw">
+                                            @endif
+
+                                            {{-- WebP --}}
                                             <source type="image/webp"
                                                 srcset="
                                                 {{ $media->getUrl('thumbnail-webp') }} 200w,
@@ -200,6 +217,8 @@
                                                 {{ $media->getUrl('large-webp') }}     1024w
                                               "
                                                 sizes="(max-width:768px)100vw,33vw">
+
+                                            {{-- JPEG/PNG fallback --}}
                                             <img src="{{ $media->getUrl('medium') }}"
                                                 srcset="
                                                 {{ $media->getUrl('thumbnail') }} 200w,

@@ -57,12 +57,16 @@
                                 class="absolute inset-0">
                                 @if ($media)
                                     <picture>
-                                        {{-- AVIF first --}}
-                                        <source type="image/avif" srcset="{{ $media->getUrl('large-avif') }}"
-                                            sizes="(min-width:1024px)50vw,100vw">
-                                        {{-- then WebP --}}
+                                        {{-- only include AVIF if supported on this server --}}
+                                        @if (function_exists('imageavif'))
+                                            <source type="image/avif" srcset="{{ $media->getUrl('large-avif') }}"
+                                                sizes="(min-width:1024px)50vw,100vw">
+                                        @endif
+
+                                        {{-- WebP --}}
                                         <source type="image/webp" srcset="{{ $media->getUrl('large-webp') }}"
                                             sizes="(min-width:1024px)50vw,100vw">
+
                                         {{-- fallback JPEG/PNG --}}
                                         <img src="{{ $media->getUrl('large') }}" alt=""
                                             loading="{{ $i === 0 ? 'eager' : 'lazy' }}"
@@ -105,9 +109,9 @@
                             <div class="pl-7 text-right font-light mb-[15px]">
                                 <h2
                                     class="block text-[#666666]
-                                         text-[clamp(1.5rem,5vw,2.7rem)]
-                                         uppercase font-ropa-sans
-                                         leading-[1.2] tracking-normal">
+                                           text-[clamp(1.5rem,5vw,2.7rem)]
+                                           uppercase font-ropa-sans
+                                           leading-[1.2] tracking-normal">
                                     {{ $slider->heading }}
                                 </h2>
                             </div>

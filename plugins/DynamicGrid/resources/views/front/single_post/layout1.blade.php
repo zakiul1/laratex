@@ -1,4 +1,5 @@
 {{-- resources/views/plugins/DynamicGrid/templates/single_layout1.blade.php --}}
+
 @php
     use Illuminate\Support\Str;
 
@@ -51,31 +52,36 @@
                         <div class="w-full mb-4 overflow-hidden" style="aspect-ratio:4/3;">
                             <a href="{{ $url }}" class="block w-full h-full">
                                 <picture>
-                                    {{-- AVIF --}}
-                                    <source type="image/avif"
-                                        srcset="
-                                      {{ $media->getUrl('thumbnail-avif') }} 200w,
-                                      {{ $media->getUrl('medium-avif') }}    400w,
-                                      {{ $media->getUrl('large-avif') }}     1024w
-                                    "
-                                        sizes="(max-width:640px)100vw,400px">
+                                    {{-- only show AVIF if supported --}}
+                                    @if (function_exists('imageavif'))
+                                        <source type="image/avif"
+                                            srcset="
+                                            {{ $media->getUrl('thumbnail-avif') }} 200w,
+                                            {{ $media->getUrl('medium-avif') }}    400w,
+                                            {{ $media->getUrl('large-avif') }}     1024w
+                                          "
+                                            sizes="(max-width:640px)100vw,400px">
+                                    @endif
+
                                     {{-- WebP --}}
                                     <source type="image/webp"
                                         srcset="
-                                      {{ $media->getUrl('thumbnail-webp') }} 200w,
-                                      {{ $media->getUrl('medium-webp') }}    400w,
-                                      {{ $media->getUrl('large-webp') }}     1024w
-                                    "
+                                        {{ $media->getUrl('thumbnail-webp') }} 200w,
+                                        {{ $media->getUrl('medium-webp') }}    400w,
+                                        {{ $media->getUrl('large-webp') }}     1024w
+                                      "
                                         sizes="(max-width:640px)100vw,400px">
-                                    {{-- Fallback --}}
+
+                                    {{-- JPEG/PNG fallback --}}
                                     <img src="{{ $media->getUrl('thumbnail') }}"
                                         srcset="
-                                      {{ $media->getUrl('thumbnail') }} 200w,
-                                      {{ $media->getUrl('medium') }}    400w,
-                                      {{ $media->getUrl('large') }}     1024w
-                                    "
+                                        {{ $media->getUrl('thumbnail') }} 200w,
+                                        {{ $media->getUrl('medium') }}    400w,
+                                        {{ $media->getUrl('large') }}     1024w
+                                      "
                                         sizes="(max-width:640px)100vw,400px" width="400" height="300"
-                                        loading="lazy" class="w-full h-full object-cover" alt="{{ $title }}">
+                                        loading="lazy" class="w-full h-full object-cover rounded-lg"
+                                        alt="{{ $title }}">
                                 </picture>
                             </a>
                         </div>

@@ -56,14 +56,17 @@
                             <div class="overflow-hidden rounded-lg" style="aspect-ratio:4/3;">
                                 <a href="{{ $url }}" class="block w-full h-full">
                                     <picture>
-                                        {{-- AVIF --}}
-                                        <source type="image/avif"
-                                            srcset="
-                                            {{ $media->getUrl('thumbnail-avif') }} 200w,
-                                            {{ $media->getUrl('medium-avif') }}    400w,
-                                            {{ $media->getUrl('large-avif') }}     800w
-                                          "
-                                            sizes="(max-width:768px)100vw,33vw">
+                                        {{-- AVIF (only if supported) --}}
+                                        @if (function_exists('imageavif'))
+                                            <source type="image/avif"
+                                                srcset="
+                                                {{ $media->getUrl('thumbnail-avif') }} 200w,
+                                                {{ $media->getUrl('medium-avif') }}    400w,
+                                                {{ $media->getUrl('large-avif') }}     800w
+                                              "
+                                                sizes="(max-width:768px)100vw,33vw">
+                                        @endif
+
                                         {{-- WebP --}}
                                         <source type="image/webp"
                                             srcset="
@@ -72,7 +75,8 @@
                                             {{ $media->getUrl('large-webp') }}     800w
                                           "
                                             sizes="(max-width:768px)100vw,33vw">
-                                        {{-- Fallback --}}
+
+                                        {{-- JPEG/PNG fallback --}}
                                         <img src="{{ $media->getUrl('thumbnail') }}"
                                             srcset="
                                             {{ $media->getUrl('thumbnail') }} 200w,
@@ -88,7 +92,9 @@
                         @else
                             <div class="overflow-hidden rounded-lg bg-gray-100
                                      flex items-center justify-center text-gray-400"
-                                style="aspect-ratio:4/3;">—</div>
+                                style="aspect-ratio:4/3;">
+                                —
+                            </div>
                         @endif
                     </div>
 

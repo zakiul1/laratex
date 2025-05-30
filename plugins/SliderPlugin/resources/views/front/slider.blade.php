@@ -86,21 +86,20 @@
                         @endforeach
 
                         {{-- ◀ Arrows ▶ --}}
-                        <button x-show="showArrows" @click="prev()"
-                            class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">
-                            ‹
-                        </button>
-                        <button x-show="showArrows" @click="next()"
-                            class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">
-                            ›
-                        </button>
+                        <button x-show="showArrows" @click="prev()" aria-label="Previous slide"
+                            class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">‹</button>
+
+                        <button x-show="showArrows" @click="next()" aria-label="Next slide"
+                            class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">›</button>
 
                         {{-- ◀ Indicators ▶ --}}
                         <div x-show="showIndicators" class="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
                             @for ($j = 0; $j < $count; $j++)
-                                <button @click="current = {{ $j }}" class="w-4 h-1 rounded-full transition"
-                                    :class="current === {{ $j }} ? 'bg-gray-800' : 'bg-gray-400/50'">
-                                </button>
+                                <button @click="current = {{ $j }}"
+                                    :aria-current="current === {{ $j }} ? 'true' : 'false'"
+                                    aria-label="Go to slide {{ $j + 1 }}"
+                                    class="w-4 h-1 rounded-full transition"
+                                    :class="current === {{ $j }} ? 'bg-gray-800' : 'bg-gray-400/50'"></button>
                             @endfor
                         </div>
                     </div>

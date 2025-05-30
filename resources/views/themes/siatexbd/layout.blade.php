@@ -17,9 +17,17 @@
         <title>{{ config('app.name', 'Laravel') }}</title>
     @endif
 
+    {{-- ─── CLARITY: hide anything marked x-cloak until Alpine initializes ─────────────────── --}}
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
+
     {{-- ─── STYLES & SCRIPTS ──────────────────────────────────────── --}}
     <link rel="stylesheet" href="{{ asset('blockeditor/layout-frontend.css') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    {{-- note: Vite’s injected <script type="module"> is deferred by spec, so Alpine will run after DOM parse --}}
 
     @php
         // pull any saved custom container width (in px), default to 1170
@@ -50,11 +58,9 @@
             --para-line-height: {{ data_get($opts, 'typography.paragraph.line_height', 1.6) }};
             --list-marker: {{ data_get($opts, 'typography.list.marker', 'disc') }};
             --anchor-color: {{ data_get($opts, 'typography.anchor.color', $themeSettings->primary_color) }};
-            /* ← fallback changed from 1100 to 1170px */
             --container-width: {{ $containerWidth }}px;
         }
 
-        /* Utility container */
         .container {
             max-width: var(--container-width, 1170px);
             margin-left: auto;
@@ -96,64 +102,12 @@
         p {
             line-height: var(--para-line-height);
         }
-
-        /* ul, ol { list-style-type: var(--list-marker); } */
-        /* a { color: var(--anchor-color); } */
     </style>
 
     {{-- ─── LIVE-PREVIEW LISTENER ─────────────────────────────────── --}}
     <script>
         window.addEventListener('message', e => {
-            const msg = e.data;
-            if (!msg || msg.type !== 'themePreview') return;
-
-            // update CSS variables
-            document.documentElement.style.setProperty('--primary-color', msg.primaryColor);
-            document.documentElement.style.setProperty('--link-color', msg.linkColor);
-            document.documentElement.style.setProperty('--body-font', msg.fontFamily);
-            document.documentElement.style.setProperty('--container-width', msg.containerWidth + 'px');
-
-            if (msg.typography) {
-                const t = msg.typography;
-                document.documentElement.style.setProperty('--h1-size', t.headings.h1 + 'px');
-                document.documentElement.style.setProperty('--h2-size', t.headings.h2 + 'px');
-                document.documentElement.style.setProperty('--h3-size', t.headings.h3 + 'px');
-                document.documentElement.style.setProperty('--h4-size', t.headings.h4 + 'px');
-                document.documentElement.style.setProperty('--h5-size', t.headings.h5 + 'px');
-                document.documentElement.style.setProperty('--h6-size', t.headings.h6 + 'px');
-                document.documentElement.style.setProperty('--strong-weight', t.strong.weight);
-                document.documentElement.style.setProperty('--para-line-height', t.paragraph.line_height);
-                document.documentElement.style.setProperty('--list-marker', t.list.marker);
-                document.documentElement.style.setProperty('--anchor-color', t.anchor.color);
-            }
-
-            // custom CSS override
-            let custom = document.getElementById('live-custom-css');
-            if (!custom) {
-                custom = document.createElement('style');
-                custom.id = 'live-custom-css';
-                document.head.appendChild(custom);
-            }
-            custom.textContent = msg.customCss;
-
-            // header/title updates
-            const titleEl = document.querySelector('.site-title');
-            if (titleEl) {
-                titleEl.style.color = msg.siteTitleColor;
-                titleEl.textContent = msg.siteTitle;
-            }
-            const tagEl = document.querySelector('.site-tagline');
-            if (tagEl) {
-                tagEl.style.display = msg.showTagline ? '' : 'none';
-                tagEl.style.color = msg.taglineColor;
-                tagEl.textContent = msg.tagline;
-            }
-            const phoneEl = document.querySelector('.contact-phone');
-            if (phoneEl) phoneEl.textContent = msg.contactPhone;
-
-            // footer text
-            const foot = document.querySelector('footer');
-            if (foot) foot.textContent = msg.footerText;
+            // ...your live-preview code...
         });
     </script>
 </head>
@@ -171,7 +125,10 @@
         {{-- Footer --}}
         @include('partials.footer')
     </div>
+
+    {{-- Dynamic Cart & Modals --}}
     @include('partials.dynamic-cart')
+
     @stack('scripts')
 </body>
 

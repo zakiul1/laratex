@@ -31,7 +31,9 @@
 @else
     {{-- Optional Heading --}}
     @if (!empty($opts['heading']))
-        <h2 class="text-2xl font-bold text-blue-800 mb-6">{{ $opts['heading'] }}</h2>
+        <h2 class="text-2xl font-bold text-blue-800 mb-6">
+            {{ $opts['heading'] }}
+        </h2>
     @endif
 
     <div class="space-y-12 !ml-0">
@@ -54,8 +56,8 @@
                         <a href="{{ $isProductTax ? route('products.show', $item) : route('posts.show', $item) }}"
                             class="block overflow-hidden rounded-lg" style="aspect-ratio:4/3;">
                             <picture>
-                                {{-- AVIF (only if supported) --}}
-                                @if (function_exists('imageavif'))
+                                {{-- AVIF --}}
+                                @if (function_exists('imageavif') && $media->hasGeneratedConversion('thumbnail-avif'))
                                     <source type="image/avif"
                                         srcset="
                                         {{ $media->getUrl('thumbnail-avif') }} 200w,
@@ -66,13 +68,15 @@
                                 @endif
 
                                 {{-- WebP --}}
-                                <source type="image/webp"
-                                    srcset="
-                                    {{ $media->getUrl('thumbnail-webp') }} 200w,
-                                    {{ $media->getUrl('medium-webp') }}    400w,
-                                    {{ $media->getUrl('large-webp') }}     1024w
-                                  "
-                                    sizes="(max-width:768px)100vw,33vw">
+                                @if ($media->hasGeneratedConversion('thumbnail-webp'))
+                                    <source type="image/webp"
+                                        srcset="
+                                        {{ $media->getUrl('thumbnail-webp') }} 200w,
+                                        {{ $media->getUrl('medium-webp') }}    400w,
+                                        {{ $media->getUrl('large-webp') }}     1024w
+                                      "
+                                        sizes="(max-width:768px)100vw,33vw">
+                                @endif
 
                                 {{-- JPEG/PNG fallback --}}
                                 <img src="{{ $media->getUrl('medium') }}"
@@ -97,7 +101,7 @@
                             class="inline-block mt-2 text-blue-600 font-medium">
                             Read More
                         </a>
-                    @elseif ($opts['button_type'] === 'price' && $isProductTax && isset($item->price))
+                    @elseif($opts['button_type'] === 'price' && $isProductTax && isset($item->price))
                         <span class="inline-block mt-2 text-lg font-semibold">
                             ${{ number_format($item->price, 2) }}
                         </span>

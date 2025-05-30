@@ -27,18 +27,20 @@
     <div class="relative single-layout1 !ml-0">
         {{-- Optional heading --}}
         @if (!empty($opts['heading']))
-            <h2 class="text-4xl font-bold text-center mb-6">{{ $opts['heading'] }}</h2>
+            <h2 class="text-4xl font-bold text-center mb-6">
+                {{ $opts['heading'] }}
+            </h2>
         @endif
 
         {{-- Grid --}}
         <div
             class="grid
-                 grid-cols-{{ $opts['columns']['mobile'] }}
-                 sm:grid-cols-{{ $opts['columns']['tablet'] }}
-                 md:grid-cols-{{ $opts['columns']['medium'] }}
-                 lg:grid-cols-{{ $opts['columns']['desktop'] }}
-                 xl:grid-cols-{{ $opts['columns']['large'] }}
-                 gap-6">
+                   grid-cols-{{ $opts['columns']['mobile'] }}
+                   sm:grid-cols-{{ $opts['columns']['tablet'] }}
+                   md:grid-cols-{{ $opts['columns']['medium'] }}
+                   lg:grid-cols-{{ $opts['columns']['desktop'] }}
+                   xl:grid-cols-{{ $opts['columns']['large'] }}
+                   gap-6">
             @foreach ($items as $item)
                 @php
                     $media = $item->featuredMedia->first();
@@ -52,8 +54,8 @@
                         <div class="w-full mb-4 overflow-hidden" style="aspect-ratio:4/3;">
                             <a href="{{ $url }}" class="block w-full h-full">
                                 <picture>
-                                    {{-- only show AVIF if supported --}}
-                                    @if (function_exists('imageavif'))
+                                    {{-- AVIF (only if supported & generated) --}}
+                                    @if (function_exists('imageavif') && $media->hasGeneratedConversion('thumbnail-avif'))
                                         <source type="image/avif"
                                             srcset="
                                             {{ $media->getUrl('thumbnail-avif') }} 200w,
@@ -63,14 +65,16 @@
                                             sizes="(max-width:640px)100vw,400px">
                                     @endif
 
-                                    {{-- WebP --}}
-                                    <source type="image/webp"
-                                        srcset="
-                                        {{ $media->getUrl('thumbnail-webp') }} 200w,
-                                        {{ $media->getUrl('medium-webp') }}    400w,
-                                        {{ $media->getUrl('large-webp') }}     1024w
-                                      "
-                                        sizes="(max-width:640px)100vw,400px">
+                                    {{-- WebP (only if generated) --}}
+                                    @if ($media->hasGeneratedConversion('thumbnail-webp'))
+                                        <source type="image/webp"
+                                            srcset="
+                                            {{ $media->getUrl('thumbnail-webp') }} 200w,
+                                            {{ $media->getUrl('medium-webp') }}    400w,
+                                            {{ $media->getUrl('large-webp') }}     1024w
+                                          "
+                                            sizes="(max-width:640px)100vw,400px">
+                                    @endif
 
                                     {{-- JPEG/PNG fallback --}}
                                     <img src="{{ $media->getUrl('thumbnail') }}"
@@ -87,7 +91,9 @@
                         </div>
                     @endif
 
-                    <h3 class="font-medium text-lg my-2">{{ $title }}</h3>
+                    <h3 class="font-medium text-lg my-2">
+                        {{ $title }}
+                    </h3>
 
                     @if (!empty($opts['show_description']) && !empty($opts['excerpt_words']))
                         <p class="text-gray-600 mb-4">

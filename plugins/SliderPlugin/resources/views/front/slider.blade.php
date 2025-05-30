@@ -18,6 +18,7 @@
     use App\Models\Media;
 
     $sliders = Slider::where('is_active', true)->with('items')->get();
+    // your responsive-image breakpoints
     $breakpoints = [150 => 'thumbnail', 300 => 'medium', 1024 => 'large'];
 @endphp
 
@@ -37,7 +38,9 @@
                 showArrows: {{ $slider->show_arrows ? 'true' : 'false' }},
                 showIndicators: {{ $slider->show_indicators ? 'true' : 'false' }},
                 timer: null,
-                init() { if ({{ $slider->autoplay ? 'true' : 'false' }} && this.slides > 1) this.start() },
+                init() {
+                    if ({{ $slider->autoplay ? 'true' : 'false' }} && this.slides > 1) this.start()
+                },
                 start() {
                     this.pause();
                     this.timer = setInterval(() => this.next(), 5000)
@@ -53,7 +56,10 @@
                     {{-- ◀ Image Carousel ▶ --}}
                     <div class="relative p-6 w-full lg:w-1/2 overflow-hidden" style="aspect-ratio:16/9;">
                         @foreach ($items as $i => $item)
-                            @php $media = $item->media_id ? Media::find($item->media_id) : null; @endphp
+                            @php
+                                $media = $item->media_id ? Media::find($item->media_id) : null;
+                            @endphp
+
                             <div x-show="current === {{ $i }}" x-transition.opacity.duration.700ms
                                 class="absolute inset-0">
                                 @if ($media)
@@ -75,6 +81,7 @@
                         {{-- ◀ Arrows ▶ --}}
                         <button x-show="showArrows" @click="prev()" aria-label="Previous slide"
                             class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">‹</button>
+
                         <button x-show="showArrows" @click="next()" aria-label="Next slide"
                             class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">›</button>
 
@@ -95,7 +102,10 @@
                         <div class="w-full lg:w-1/2 p-8 flex flex-col justify-center">
                             <div class="pl-7 text-right font-light mb-[15px]">
                                 <h2
-                                    class="block text-[#666666] text-[clamp(1.5rem,5vw,2.7rem)] uppercase font-ropa-sans leading-[1.2] tracking-normal">
+                                    class="block text-[#666666]
+                                           text-[clamp(1.5rem,5vw,2.7rem)]
+                                           uppercase font-ropa-sans
+                                           leading-[1.2] tracking-normal">
                                     {{ $slider->heading }}
                                 </h2>
                             </div>

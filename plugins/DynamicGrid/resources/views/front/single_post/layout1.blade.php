@@ -51,19 +51,43 @@
 
                 <div class="bg-white rounded-lg flex flex-col items-center text-center">
                     @if (!empty($opts['show_image']) && $media)
-                        {{-- square aspect container --}}
+                        {{-- square aspect container (1:1) --}}
                         <div class="w-full mb-4 overflow-hidden" style="aspect-ratio:1/1;">
                             <a href="{{ $url }}" class="block w-full h-full">
-                                <x-responsive-image :media="$media" :breakpoints="$breakpoints"
-                                    sizes="(max-width:640px)100vw,400px" width="400" height="400" loading="lazy"
-                                    class="w-full h-full object-contain rounded-lg" alt="{{ $title }}" />
+                                <picture>
+                                    {{-- AVIF if supported & generated --}}
+                                    @if (function_exists('imageavif') && $media->hasGeneratedConversion('thumbnail-avif'))
+                                        <source type="image/avif"
+                                            srcset="
+                                                {{ $media->getUrl('thumbnail-avif') }} 150w,
+                                                {{ $media->getUrl('medium-avif') }}    300w,
+                                                {{ $media->getUrl('large-avif') }}     1024w
+                                            "
+                                            sizes="(max-width:640px)100vw,400px">
+                                    @endif
+
+                                    {{-- WebP if generated --}}
+                                    @if ($media->hasGeneratedConversion('thumbnail-webp'))
+                                        <source type="image/webp"
+                                            srcset="
+                                                {{ $media->getUrl('thumbnail-webp') }} 150w,
+                                                {{ $media->getUrl('medium-webp') }}    300w,
+                                                {{ $media->getUrl('large-webp') }}     1024w
+                                            "
+                                            sizes="(max-width:640px)100vw,400px">
+                                    @endif
+
+                                    {{-- JPEG/PNG fallback --}}
+                                    <x-responsive-image :media="$media" :breakpoints="$breakpoints"
+                                        sizes="(max-width:640px)100vw,400px" width="400" height="400"
+                                        loading="lazy" class="w-full h-full object-contain rounded-lg"
+                                        alt="{{ $title }}" />
+                                </picture>
                             </a>
                         </div>
                     @endif
 
-                    <h3 class="font-medium text-lg my-2">
-                        {{ $title }}
-                    </h3>
+                    <h3 class="font-medium text-lg my-2">{{ $title }}</h3>
 
                     @if (!empty($opts['show_description']) && !empty($opts['excerpt_words']))
                         <p class="text-gray-600 mb-4">
@@ -73,7 +97,8 @@
 
                     @if (($opts['button_type'] ?? '') === 'price')
                         <button type="button"
-                            class="get-price-btn mt-auto px-4 py-2 text-blue-600 font-medium border-b-2 border-blue-600 hover:text-blue-800"
+                            class="get-price-btn mt-auto px-4 py-2 text-blue-600 font-medium
+                                   border-b-2 border-blue-600 hover:text-blue-800"
                             data-id="{{ $item->id }}" data-title="{{ e($title) }}"
                             data-image="{{ $media->getUrl('thumbnail') }}" data-url="{{ $url }}">
                             Get Price

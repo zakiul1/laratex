@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
-use Spatie\MediaLibrary\MediaCollections\Models\Media as SpatieMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\Image\Enums\Fit;
 
 class MediaLibrary extends Model implements HasMedia
@@ -26,26 +26,45 @@ class MediaLibrary extends Model implements HasMedia
     }
 
     /**
-     * Define your media conversions.
+     * Define your media conversions, including properly sized crops
+     * and next-gen formats (WebP/AVIF).
      */
-    public function registerMediaConversions(SpatieMedia $media = null): void
+    public function registerMediaConversions(Media $media = null): void
     {
-        // Thumbnail: scale entire image into 150x150 box, pad with white
+        // 1) Thumbnail: crop to exactly 200×200
         $this
             ->addMediaConversion('thumbnail')
-            ->nonQueued()                     // generate immediately
-            ->fit(Fit::Contain, 150, 150)     // no crop, preserve aspect ratio
-            ->background('ffffff');           // white fill for empty space
+            ->fit(Fit::Crop, 200, 200)
+            ->nonQueued();
 
-        // Medium: max 300×300, maintain aspect ratio
+        // 2) Medium: crop to 400×300
         $this
             ->addMediaConversion('medium')
-            ->fit(Fit::Max, 300, 300)
-            ->sharpen(10);
+            ->fit(Fit::Crop, 400, 300)
+            ->quality(80)
+            ->nonQueued();
 
-        // Large: max 1024×1024, maintain aspect ratio
+        // 3) Large: max 1024×576 (keep aspect ratio)
         $this
             ->addMediaConversion('large')
-            ->fit(Fit::Max, 1024, 1024);
+            ->fit(Fit::Max, 1024, 576)
+            ->quality(80);
+
+        // 4) Generate next-gen WebP & AVIF for each size
+        foreach (['thumbnail', 'medium', 'large'] as $size) {
+            // WebP version
+            $this
+                ->addMediaConversion("{$size}-webp")
+                ->format('webp')
+                ->quality(80)
+                ->nonQueued();
+
+            // AVIF version
+            $this
+                ->addMediaConversion("{$size}-avif")
+                ->format('avif')
+                ->quality(60)
+                ->nonQueued();
+        }
     }
 }

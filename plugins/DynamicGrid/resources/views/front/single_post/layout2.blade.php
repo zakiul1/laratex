@@ -1,4 +1,5 @@
 {{-- resources/views/plugins/DynamicGrid/templates/single_layout2.blade.php --}}
+
 @php
     use Illuminate\Support\Str;
 
@@ -12,7 +13,7 @@
     });
 
     if (($opts['type'] ?? '') === 'single_post' && !empty($opts['product_amount'])) {
-        $query->take(intval($opts['product_amount']));
+        $query->take((int) $opts['product_amount']);
     }
 
     $items = $query->get();
@@ -54,9 +55,34 @@
                         @if (!empty($opts['show_image']) && $media)
                             <div class="overflow-hidden rounded-lg" style="aspect-ratio:4/3;">
                                 <a href="{{ $url }}" class="block w-full h-full">
-                                    <x-responsive-image :media="$media" alt="{{ $title }}"
-                                        class="w-full h-full object-cover" loading="lazy" width="400"
-                                        height="300" />
+                                    <picture>
+                                        {{-- AVIF --}}
+                                        <source type="image/avif"
+                                            srcset="
+                                            {{ $media->getUrl('thumbnail-avif') }} 200w,
+                                            {{ $media->getUrl('medium-avif') }}    400w,
+                                            {{ $media->getUrl('large-avif') }}     800w
+                                          "
+                                            sizes="(max-width:768px)100vw,33vw">
+                                        {{-- WebP --}}
+                                        <source type="image/webp"
+                                            srcset="
+                                            {{ $media->getUrl('thumbnail-webp') }} 200w,
+                                            {{ $media->getUrl('medium-webp') }}    400w,
+                                            {{ $media->getUrl('large-webp') }}     800w
+                                          "
+                                            sizes="(max-width:768px)100vw,33vw">
+                                        {{-- Fallback --}}
+                                        <img src="{{ $media->getUrl('thumbnail') }}"
+                                            srcset="
+                                            {{ $media->getUrl('thumbnail') }} 200w,
+                                            {{ $media->getUrl('medium') }}    400w,
+                                            {{ $media->getUrl('large') }}     800w
+                                          "
+                                            sizes="(max-width:768px)100vw,33vw" width="400" height="300"
+                                            loading="lazy" class="w-full h-full object-cover"
+                                            alt="{{ $title }}">
+                                    </picture>
                                 </a>
                             </div>
                         @else
@@ -93,8 +119,7 @@
                                 class="get-price-btn mt-4 px-4 py-2 text-blue-600 font-medium
                                      border-b-2 border-blue-600 hover:text-blue-800"
                                 data-id="{{ $item->id }}" data-title="{{ e($title) }}"
-                                data-image="{{ $media ? $media->getUrl('thumbnail') : '' }}"
-                                data-url="{{ $url }}">
+                                data-image="{{ $media->getUrl('thumbnail') }}" data-url="{{ $url }}">
                                 Get Price
                             </button>
                         @endif

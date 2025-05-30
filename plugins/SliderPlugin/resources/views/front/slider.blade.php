@@ -56,15 +56,25 @@
                             <div x-show="current === {{ $i }}" x-transition.opacity.duration.700ms
                                 class="absolute inset-0">
                                 @if ($media)
-                                    <x-responsive-image :media="$media" :breakpoints="[150 => 'thumbnail', 300 => 'medium', 1024 => 'large']"
-                                        class="w-full h-full object-cover" alt=""
-                                        loading="{{ $i === 0 ? 'eager' : 'lazy' }}"
-                                        fetchpriority="{{ $i === 0 ? 'high' : 'low' }}" width="1024" height="576" />
+                                    <picture>
+                                        {{-- AVIF first --}}
+                                        <source type="image/avif" srcset="{{ $media->getUrl('large-avif') }}"
+                                            sizes="(min-width:1024px)50vw,100vw">
+                                        {{-- then WebP --}}
+                                        <source type="image/webp" srcset="{{ $media->getUrl('large-webp') }}"
+                                            sizes="(min-width:1024px)50vw,100vw">
+                                        {{-- fallback JPEG/PNG --}}
+                                        <img src="{{ $media->getUrl('large') }}" alt=""
+                                            loading="{{ $i === 0 ? 'eager' : 'lazy' }}"
+                                            fetchpriority="{{ $i === 0 ? 'high' : 'low' }}" width="1024"
+                                            height="576" sizes="(min-width:1024px)50vw,100vw"
+                                            class="w-full h-full object-cover">
+                                    </picture>
                                 @else
-                                    <img src="{{ Storage::url($item->image_path) }}" class="w-full h-full object-cover"
-                                        alt="" loading="{{ $i === 0 ? 'eager' : 'lazy' }}"
-                                        fetchpriority="{{ $i === 0 ? 'high' : 'low' }}" width="1024"
-                                        height="576" />
+                                    <img src="{{ Storage::url($item->image_path) }}" alt=""
+                                        loading="{{ $i === 0 ? 'eager' : 'lazy' }}"
+                                        fetchpriority="{{ $i === 0 ? 'high' : 'low' }}" width="1024" height="576"
+                                        sizes="(min-width:1024px)50vw,100vw" class="w-full h-full object-cover" />
                                 @endif
                             </div>
                         @endforeach
@@ -94,7 +104,10 @@
                         <div class="w-full lg:w-1/2 p-8 flex flex-col justify-center">
                             <div class="pl-7 text-right font-light mb-[15px]">
                                 <h2
-                                    class="block text-[#666666] text-[clamp(1.5rem,5vw,2.7rem)] uppercase font-ropa-sans leading-[1.2] tracking-normal">
+                                    class="block text-[#666666]
+                                         text-[clamp(1.5rem,5vw,2.7rem)]
+                                         uppercase font-ropa-sans
+                                         leading-[1.2] tracking-normal">
                                     {{ $slider->heading }}
                                 </h2>
                             </div>

@@ -1,4 +1,5 @@
 {{-- resources/views/plugins/DynamicGrid/templates/services_overview.blade.php --}}
+
 @php
     use Illuminate\Support\Str;
     use App\Models\Post;
@@ -50,8 +51,36 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
                 @if ($showImage)
                     <div class="md:col-span-1">
-                        <x-responsive-image :media="$media" alt="{{ $title }}"
-                            class="w-full h-auto object-cover rounded" />
+                        <a href="{{ $isProductTax ? route('products.show', $item) : route('posts.show', $item) }}"
+                            class="block overflow-hidden rounded-lg" style="aspect-ratio:4/3;">
+                            <picture>
+                                {{-- AVIF --}}
+                                <source type="image/avif"
+                                    srcset="
+                                    {{ $media->getUrl('thumbnail-avif') }} 200w,
+                                    {{ $media->getUrl('medium-avif') }}    400w,
+                                    {{ $media->getUrl('large-avif') }}     1024w
+                                  "
+                                    sizes="(max-width:768px)100vw,33vw">
+                                {{-- WebP --}}
+                                <source type="image/webp"
+                                    srcset="
+                                    {{ $media->getUrl('thumbnail-webp') }} 200w,
+                                    {{ $media->getUrl('medium-webp') }}    400w,
+                                    {{ $media->getUrl('large-webp') }}     1024w
+                                  "
+                                    sizes="(max-width:768px)100vw,33vw">
+                                {{-- Fallback --}}
+                                <img src="{{ $media->getUrl('medium') }}"
+                                    srcset="
+                                    {{ $media->getUrl('thumbnail') }} 200w,
+                                    {{ $media->getUrl('medium') }}    400w,
+                                    {{ $media->getUrl('large') }}     1024w
+                                  "
+                                    sizes="(max-width:768px)100vw,33vw" width="400" height="300" loading="lazy"
+                                    class="w-full h-full object-cover rounded-lg" alt="{{ $title }}">
+                            </picture>
+                        </a>
                     </div>
                 @endif
 

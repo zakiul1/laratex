@@ -1,3 +1,4 @@
+{{-- resources/views/partials/front_header.blade.php --}}
 @php
     $opts = $themeSettings->options ?? [];
     $logo = $themeSettings->logo;
@@ -9,35 +10,41 @@
     $menuItems = apply_filters('front_header_menu', collect());
 @endphp
 
-<header x-data="{ mobileOpen: false }" class="bg-white ">
+<header x-data="{ mobileOpen: false }" class="bg-white">
     <div class="hidden md:block">
         {!! apply_filters('frontend_ribbon', '') !!}
     </div>
+
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between py-4">
 
-            {{-- Logo --}}
+            {{-- Logo with reserved box to prevent CLS --}}
             <a href="{{ route('home') }}" class="flex items-center space-x-3">
-                @if ($logo)
-                    <img src="{{ asset('storage/' . $logo) }}" alt="Logo" class="h-8 sm:h-10 md:h-12" />
-                @else
-                    <span class="text-xl md:text-2xl font-bold" style="color:{{ $titleColor }};">
-                        {{ $siteTitle }}
-                    </span>
-                @endif
+                <div class="w-8 sm:w-10 md:w-12 h-8 sm:h-10 md:h-12 overflow-hidden">
+                    @if ($logo)
+                        <img src="{{ asset('storage/' . $logo) }}" alt="Logo" class="w-full h-full object-contain"
+                            loading="eager" fetchpriority="high" />
+                    @else
+                        <span class="block w-full h-full flex items-center justify-center text-xl md:text-2xl font-bold"
+                            style="color: {{ $titleColor }};">
+                            {{ $siteTitle }}
+                        </span>
+                    @endif
+                </div>
             </a>
 
             {{-- Desktop nav --}}
-            <nav class="hidden lg:flex space-x-8  text-gray-700">
+            <nav class="hidden lg:flex space-x-8 text-gray-700">
                 @foreach ($menuItems as $item)
                     <div class="relative group">
                         <a href="{{ $item->url }}" class="hover:text-gray-900 transition">
                             {{ $item->title }}
                         </a>
                         @if ($item->children->isNotEmpty())
-                            {{-- simple dropdown on hover --}}
                             <ul
-                                class="absolute left-0 mt-2 w-48 bg-white border rounded shadow-lg opacity-0 group-hover:opacity-100 transition pointer-events-none group-hover:pointer-events-auto">
+                                class="absolute left-0 mt-2 w-48 bg-white border rounded shadow-lg
+                                     opacity-0 group-hover:opacity-100 transition
+                                     pointer-events-none group-hover:pointer-events-auto">
                                 @foreach ($item->children as $child)
                                     <li>
                                         <a href="{{ $child->url }}" class="block px-4 py-2 hover:bg-gray-100">

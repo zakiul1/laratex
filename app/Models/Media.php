@@ -3,11 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media as BaseMedia;
 use Spatie\Image\Enums\Fit;
-use Spatie\MediaLibrary\InteractsWithMedia;
-use Spatie\MediaLibrary\HasMedia;
-use App\Models\TermTaxonomy;
 
 class Media extends BaseMedia implements HasMedia
 {
@@ -19,7 +18,7 @@ class Media extends BaseMedia implements HasMedia
     public function registerMediaConversions(?BaseMedia $media = null): void
     {
         //
-        // 1) JPEG/PNG conversions (always generate synchronously)
+        // 1) JPEG/PNG conversions (always)
         //
         $this
             ->addMediaConversion('thumbnail')
@@ -69,10 +68,10 @@ class Media extends BaseMedia implements HasMedia
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(
-            TermTaxonomy::class,    // related model
-            'media_term_taxonomy',  // pivot table
-            'media_id',             // this model’s FK in pivot
-            'term_taxonomy_id'      // related model’s FK in pivot
+            TermTaxonomy::class,      // related model
+            'media_term_taxonomy',    // pivot table
+            'media_id',               // this model’s FK in pivot
+            'term_taxonomy_id'        // related model’s FK in pivot
         )
             ->wherePivot('object_type', 'media')
             ->withPivot('object_type')

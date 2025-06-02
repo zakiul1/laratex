@@ -102,11 +102,7 @@
                                 <button @click="current = {{ $j }}"
                                     :aria-current="current === {{ $j }} ? 'true' : 'false'"
                                     aria-label="Go to slide {{ $j + 1 }}"
-                                    class="
-                                      w-4 h-1 rounded-full
-                                      opacity-50 scale-100
-                                      transition-opacity transition-transform duration-200
-                                    "
+                                    class="w-4 h-1 rounded-full opacity-50 scale-100 transition-opacity transition-transform duration-200"
                                     :class="current === {{ $j }} ?
                                         'opacity-100 scale-125 bg-gray-800' :
                                         'opacity-50 scale-100 bg-gray-400/50'"
@@ -120,10 +116,17 @@
                         <div class="w-full lg:w-1/2 p-8 flex flex-col justify-center">
                             <h2
                                 class="
-                                    pl-7 text-right font-light mb-[15px] 
-                                    block text-[#666666] text-[clamp(1.5rem,5vw,2.7rem)] uppercase 
+                                    pl-7
+                                    text-right
+                                    font-light
+                                    mb-[15px]
+                                    block
+                                    text-[#666666]
+                                    text-[clamp(1.5rem,5vw,2.7rem)]
+                                    uppercase
                                     font-ropa-sans
-                                    leading-[1.2] tracking-normal
+                                    leading-[1.2]
+                                    tracking-normal
                                 ">
                                 {{ $slider->heading }}
                             </h2>

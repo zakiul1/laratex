@@ -1,15 +1,25 @@
 {{-- plugins/SliderPlugin/resources/views/front/slider.blade.php --}}
 
 @once
-    {{-- 1) Preconnect & load Ropa Sans --}}
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Ropa+Sans&display=swap" rel="stylesheet">
-    <style>
-        .font-ropa-sans {
-            font-family: 'Ropa Sans', sans-serif;
-        }
-    </style>
+    @push('head')
+        {{-- 1) PRECONNECT to Google Fonts --}}
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+        {{-- 2) PRELOAD the Google Fonts CSS as "style" --}}
+        <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Ropa+Sans&display=swap"
+            onload="this.rel='stylesheet'">
+        <noscript>
+            <link href="https://fonts.googleapis.com/css2?family=Ropa+Sans&display=swap" rel="stylesheet">
+        </noscript>
+
+        {{-- 3) Inline utility class for Ropa Sans --}}
+        <style>
+            .font-ropa-sans {
+                font-family: 'Ropa Sans', sans-serif;
+            }
+        </style>
+    @endpush
 @endonce
 
 @php
@@ -77,10 +87,14 @@
 
                         {{-- ◀ Arrows ▶ --}}
                         <button x-show="showArrows" @click="prev()" aria-label="Previous slide"
-                            class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">‹</button>
+                            class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">
+                            ‹
+                        </button>
 
                         <button x-show="showArrows" @click="next()" aria-label="Next slide"
-                            class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">›</button>
+                            class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">
+                            ›
+                        </button>
 
                         {{-- ◀ Indicators ▶ --}}
                         <div x-show="showIndicators" class="absolute bottom-0 left-1/2 -translate-x-1/2 flex space-x-2">
@@ -105,9 +119,12 @@
                     @if ($slider->layout === 'with-content')
                         <div class="w-full lg:w-1/2 p-8 flex flex-col justify-center">
                             <h2
-                                class="pl-7 text-right font-light mb-[15px] 
-                                block text-[#666666] text-[clamp(1.5rem,5vw,2.7rem)] uppercase font-ropa-sans
-                                leading-[1.2] tracking-normal">
+                                class="
+                                    pl-7 text-right font-light mb-[15px] 
+                                    block text-[#666666] text-[clamp(1.5rem,5vw,2.7rem)] uppercase 
+                                    font-ropa-sans
+                                    leading-[1.2] tracking-normal
+                                ">
                                 {{ $slider->heading }}
                             </h2>
                             <p class="mt-4 text-lg text-gray-600 text-right">

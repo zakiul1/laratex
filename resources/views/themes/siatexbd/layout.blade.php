@@ -34,7 +34,7 @@
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Ropa+Sans&display=swap"
         onload="this.rel='stylesheet'">
     <noscript>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ropa+Sans&display=swap">
+        <link href="https://fonts.googleapis.com/css2?family=Ropa+Sans&display=swap" rel="stylesheet">
     </noscript>
 
     {{-- ─── BLOCKEDITOR CSS (PRELOAD + DEFER APPLY) ──────────────── --}}
@@ -130,6 +130,9 @@
             // …apply msg.primaryColor, msg.siteTitle, customCss, etc…
         });
     </script>
+
+    {{-- ─── PLACE FOR CHILD-VIEW <head> ASSETS ────────────────────── --}}
+    @stack('head')
 </head>
 
 <body class="text-gray-900 dark:bg-neutral-950 dark:text-white">

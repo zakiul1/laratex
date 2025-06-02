@@ -11,19 +11,23 @@
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
 
             {{-- Breadcrumb --}}
-            <nav class="text-sm text-gray-500" aria-label="Breadcrumb">
+            <nav class="text-sm text-gray-700" aria-label="Breadcrumb">
                 <ol class="flex flex-wrap space-x-2">
-                    <li><a href="{{ route('home') }}" class="hover:underline">Home</a></li>
+                    <li>
+                        <a href="{{ route('home') }}" class="hover:underline text-gray-700">Home</a>
+                    </li>
                     <li>/</li>
                     @if ($category)
                         <li>
-                            <a href="{{ route('categories.show', $category->slug) }}" class="hover:underline">
+                            <a href="{{ route('categories.show', $category->slug) }}" class="hover:underline text-gray-700">
                                 {{ $category->name }}
                             </a>
                         </li>
                         <li>/</li>
                     @endif
-                    <li class="font-semibold" aria-current="page">{{ $product->name }}</li>
+                    <li class="font-semibold text-gray-900" aria-current="page">
+                        {{ $product->name }}
+                    </li>
                 </ol>
             </nav>
 
@@ -37,7 +41,9 @@
                         <div class="w-16 h-1 bg-red-600"></div>
 
                         @if ($category)
-                            <p class="text-sm uppercase text-gray-500">{{ $category->name }}</p>
+                            <p class="text-sm uppercase text-gray-700">
+                                {{ $category->name }}
+                            </p>
                         @endif
 
                         <h1 class="text-3xl md:text-[32px] font-bold text-blue-800">

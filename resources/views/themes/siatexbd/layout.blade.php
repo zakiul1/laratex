@@ -6,14 +6,14 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
 
-    {{-- ─── SEO META TAGS … ─────────────────────────────────── --}}
+    {{-- ─── SEO META TAGS ─────────────────────────────────────── --}}
     @if (isset($page))
         @include('components.frontend-seo', ['model' => $page])
-    @elseif(isset($post))
+    @elseif (isset($post))
         @include('components.frontend-seo', ['model' => $post])
-    @elseif(isset($category))
+    @elseif (isset($category))
         @include('components.frontend-seo', ['model' => $category])
-    @elseif(isset($product))
+    @elseif (isset($product))
         @include('components.frontend-seo', ['model' => $product])
     @else
         <title>{{ config('app.name', 'Laravel') }}</title>
@@ -26,35 +26,26 @@
         }
     </style>
 
-    {{-- ─── PRECONNECT ─────────────────────────────────────────── --}}
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    {{-- ─── PRECONNECT TO GOOGLE’S FONTS SERVERS ─────────────────── --}}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-    {{-- ─── INLINE @font-face for Ropa Sans w/ font-display:swap ─────────────────── --}}
-    <style>
-        @font-face {
-            font-family: 'Ropa Sans';
-            font-style: normal;
-            font-weight: 400;
-            font-display: swap;
-            /* Point to the same WOFF2 that Google hosts (or your local copy) */
-            src: url('https://fonts.gstatic.com/s/ropasans/v15/EYqxmaNOz...woff2') format('woff2');
-        }
+    {{-- ─── PRELOAD THE ACTUAL WOFF2 FILE AS “font” ────────────────── --}}
+    <link rel="preload" as="font"
+        href="https://fonts.gstatic.com/s/ropasans/v15/EYqxmaNOzOJrPxPtIxTF_l5P2_rwA.woff2" type="font/woff2"
+        crossorigin />
 
-        /* Now .font-ropa-sans will use that face without shifting */
-        .font-ropa-sans {
-            font-family: 'Ropa Sans', sans-serif;
-        }
-    </style>
+    {{-- ─── LOAD GOOGLE FONTS CSS (DECLARES @font-face FOR Ropa Sans) ─── --}}
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ropa+Sans&display=swap" />
 
-    {{-- ─── BLOCKEDITOR CSS (PRELOAD + APPLY) ──────────────────── --}}
+    {{-- ─── BLOCKEDITOR CSS (PRELOAD + APPLY) ──────────────────────── --}}
     <link rel="preload" as="style" href="{{ asset('blockeditor/layout-frontend.css') }}"
-        onload="this.rel='stylesheet'">
+        onload="this.rel='stylesheet'" />
     <noscript>
-        <link rel="stylesheet" href="{{ asset('blockeditor/layout-frontend.css') }}">
+        <link rel="stylesheet" href="{{ asset('blockeditor/layout-frontend.css') }}" />
     </noscript>
 
-    {{-- ─── VITE ASSETS ─────────────────────────────────────────── --}}
+    {{-- ─── VITE ASSETS ───────────────────────────────────────────── --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     @php
@@ -62,14 +53,14 @@
         $containerWidth = data_get($opts, 'container_width', 1200);
     @endphp
 
-    {{-- ─── INITIAL CUSTOM CSS ──────────────────────────────────── --}}
+    {{-- ─── INITIAL CUSTOM CSS ────────────────────────────────────── --}}
     @if ($themeSettings->custom_css)
         <style data-live-preview id="initial-custom-css">
             {!! $themeSettings->custom_css !!}
         </style>
     @endif
 
-    {{-- ─── CSS VARS & TYPOGRAPHY & CONTAINER ──────────────────── --}}
+    {{-- ─── CSS VARS & TYPOGRAPHY & CONTAINER ─────────────────────── --}}
     <style data-live-preview id="initial-vars">
         :root {
             --primary-color: {{ $themeSettings->primary_color }};
@@ -131,16 +122,16 @@
         }
     </style>
 
-    {{-- ─── LIVE PREVIEW LISTENER ───────────────────────────────── --}}
+    {{-- ─── LIVE PREVIEW LISTENER ─────────────────────────────────── --}}
     <script>
         window.addEventListener('message', e => {
             const msg = e.data;
             if (!msg || msg.type !== 'themePreview') return;
-            // …apply CSS vars, custom CSS, header/footer updates …
+            // …apply CSS vars, custom CSS, header/footer updates…
         });
     </script>
 
-    {{-- ─── CHILD-VIEW HEAD PUSHES ─────────────────────────────── --}}
+    {{-- ─── CHILD VIEWS CAN STILL PUSH INTO HEAD ───────────────────── --}}
     @stack('head')
 </head>
 
@@ -158,6 +149,7 @@
         @include('partials.footer')
     </div>
 
+    {{-- Any scripts pushed by child views (e.g. Alpine, your slider‐partial, etc.) --}}
     @stack('scripts')
 </body>
 

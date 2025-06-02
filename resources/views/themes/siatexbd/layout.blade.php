@@ -26,14 +26,41 @@
         }
     </style>
 
-    {{-- ─── PRECONNECT TO GOOGLE’S FONT SERVERS ─────────────────── --}}
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    {{-- ─── LOCAL @font-face DEFINITION FOR ROPA SANS ─────────────────── --}}
+    <style>
+        /* Regular */
+        @font-face {
+            font-family: 'Ropa Sans';
+            font-style: normal;
+            font-weight: 400;
+            font-display: swap;
+            src: url('{{ asset('fonts/ropasans/RopaSans-Regular.ttf') }}') format('truetype');
+            /* If you have WOFF2 versions, you can add:
+               src: url('{{ asset('fonts/ropasans/RopaSans-Regular.woff2') }}') format('woff2'),
+                    url('{{ asset('fonts/ropasans/RopaSans-Regular.ttf') }}') format('truetype');
+            */
+        }
 
-    {{-- ─── LOAD GOOGLE FONTS CSS FOR ROPA SANS (regular + italic) ─────────────────── --}}
-    <link href="https://fonts.googleapis.com/css2?family=Ropa+Sans:ital@0;1&display=swap" rel="stylesheet" />
+        /* Italic */
+        @font-face {
+            font-family: 'Ropa Sans';
+            font-style: italic;
+            font-weight: 400;
+            font-display: swap;
+            src: url('{{ asset('fonts/ropasans/RopaSans-Italic.ttf') }}') format('truetype');
+            /* Similarly, add WOFF2 if available:
+               src: url('{{ asset('fonts/ropasans/RopaSans-Italic.woff2') }}') format('woff2'),
+                    url('{{ asset('fonts/ropasans/RopaSans-Italic.ttf') }}') format('truetype');
+            */
+        }
 
-    {{-- ─── BLOCKEDITOR CSS (PRELOAD + APPLY) ──────────────────────── --}}
+        /* Utility class so you can easily apply “font-ropa-sans” in your components */
+        .font-ropa-sans {
+            font-family: 'Ropa Sans', sans-serif;
+        }
+    </style>
+
+    {{-- ─── BLOCKEDITOR CSS (PRELOAD + APPLY) ─────────────────────── --}}
     <link rel="preload" as="style" href="{{ asset('blockeditor/layout-frontend.css') }}"
         onload="this.rel='stylesheet'" />
     <noscript>

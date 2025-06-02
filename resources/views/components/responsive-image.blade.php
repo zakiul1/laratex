@@ -11,11 +11,12 @@
     @endif
 
     {{-- 3) Finally, fallback <img> --}}
-    <img src="{{ $fallback }}" sizes="{{ $sizes }}" {{-- Merge any other attributes passed to <x-responsive-image>, e.g. alt, loading, class, width, height, aria-* etc. --}}
+    <img src="{{ $fallback }}" sizes="{{ $sizes }}" {{-- Merge any other attributes passed to <x-responsive-image> --}}
         {{ $attributes->merge([
             'alt' => $attributes->get('alt', ''),
             'loading' => $attributes->get('loading', 'lazy'),
             'fetchpriority' => $attributes->get('fetchpriority', 'low'),
+            // If you want default dimensions, you can provide them here, otherwise remove:
             'width' => $attributes->get('width', 'auto'),
             'height' => $attributes->get('height', 'auto'),
             'class' => $attributes->get('class', ''),

@@ -28,18 +28,22 @@
             </nav>
 
             {{-- Product Detail Card --}}
-            <div class="bg-text-gray-200 p-12">
+            {{-- Note: fixed the background class from "bg-text-gray-200" to "bg-gray-200" --}}
+            <div class="bg-gray-200 p-12">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
 
                     {{-- Left Column --}}
                     <div class="space-y-4">
                         <div class="w-16 h-1 bg-red-600"></div>
+
                         @if ($category)
                             <p class="text-sm uppercase text-gray-500">{{ $category->name }}</p>
                         @endif
+
                         <h1 class="text-3xl md:text-[32px] font-bold text-blue-800">
                             {{ $product->name }}
                         </h1>
+
                         <p class="text-gray-700 leading-relaxed">
                             @if (!empty($product->excerpt))
                                 {!! nl2br(e($product->excerpt)) !!}
@@ -49,6 +53,7 @@
                                 No description available.
                             @endif
                         </p>
+
                         {{-- Get Price --}}
                         <button type="button" aria-label="Get price for {{ $product->name }}"
                             class="get-price-btn inline-block bg-blue-800 text-white px-6 py-3 hover:bg-blue-900 transition"
@@ -61,30 +66,17 @@
                     {{-- Right Column --}}
                     <div>
                         @if ($media)
-                            <div class="overflow-hidden " style="aspect-ratio:1/1;">
+                            <div class="overflow-hidden" style="aspect-ratio:1/1;">
                                 <a href="{{ $detailUrl }}" class="block w-full h-full">
-                                    <picture>
-                                        {{-- AVIF if supported & generated --}}
-                                        @if (function_exists('imageavif') && $media->hasGeneratedConversion('large-avif'))
-                                            <source type="image/avif" srcset="{{ $media->getUrl('large-avif') }}"
-                                                sizes="(max-width:768px)100vw,50vw">
-                                        @endif
-
-                                        {{-- WebP if generated --}}
-                                        @if ($media->hasGeneratedConversion('large-webp'))
-                                            <source type="image/webp" srcset="{{ $media->getUrl('large-webp') }}"
-                                                sizes="(max-width:768px)100vw,50vw">
-                                        @endif
-
-                                        {{-- JPEG/PNG fallback --}}
-                                        <img src="{{ $media->getUrl('large') }}"
-                                            srcset="
-                                            {{ $media->getUrl('medium') }} 400w,
-                                            {{ $media->getUrl('large') }}  800w
-                                          "
-                                            sizes="(max-width:768px)100vw,50vw" width="1024" height="576" loading="lazy"
-                                            class="w-full h-full object-contain" alt="{{ $product->name }}">
-                                    </picture>
+                                    <x-responsive-image :media="$media" :breakpoints="[
+                                        150 => 'thumbnail',
+                                        300 => 'medium',
+                                        480 => 'mobile',
+                                        768 => 'tablet',
+                                        1024 => 'large',
+                                    ]" {{-- on screens ≤768px, the image is treated as 100vw; otherwise 50vw --}}
+                                        sizes="(max-width:768px) 100vw, 50vw" width="1024" height="1024" loading="lazy"
+                                        class="w-full h-full object-contain" alt="{{ $product->name }}" />
                                 </a>
                             </div>
                         @else
@@ -93,6 +85,7 @@
                             </div>
                         @endif
                     </div>
+
                 </div>
             </div>
 

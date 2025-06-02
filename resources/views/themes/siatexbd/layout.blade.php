@@ -2,23 +2,48 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
 
-    {{-- ─── SEO META TAGS … ──────────────────────────────────── --}}
+    {{-- ─── SEO META TAGS ─────────────────────────────────────────── --}}
     @if (isset($page))
         @include('components.frontend-seo', ['model' => $page])
     @elseif (isset($post))
         @include('components.frontend-seo', ['model' => $post])
     @elseif (isset($category))
         @include('components.frontend-seo', ['model' => $category])
+    @elseif (isset($product))
+        @include('components.frontend-seo', ['model' => $product])
     @else
         <title>{{ config('app.name', 'Laravel') }}</title>
     @endif
 
-    {{-- ─── STYLES & SCRIPTS … ────────────────────────────────── --}}
-    <link rel="stylesheet" href="{{ asset('blockeditor/layout-frontend.css') }}">
+    {{-- ─── HIDE x-cloak UNTIL ALPINE INIT ─────────────────────────── --}}
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
+
+    {{-- ─── GOOGLE FONTS: PRECONNECT & PRELOAD ─────────────────────── --}}
+    {{-- By putting this here in the layout, the browser sees Ropa Sans immediately, before any slider H2 renders. --}}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Ropa+Sans&display=swap"
+        onload="this.rel='stylesheet'" />
+    <noscript>
+        <link href="https://fonts.googleapis.com/css2?family=Ropa+Sans&display=swap" rel="stylesheet" />
+    </noscript>
+
+    {{-- ─── BLOCKEDITOR CSS (PRELOAD + DEFER APPLY) ─────────────────── --}}
+    <link rel="preload" as="style" href="{{ asset('blockeditor/layout-frontend.css') }}"
+        onload="this.rel='stylesheet'" />
+    <noscript>
+        <link rel="stylesheet" href="{{ asset('blockeditor/layout-frontend.css') }}" />
+    </noscript>
+
+    {{-- ─── VITE ASSETS (deferred by spec) ─────────────────────────── --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     @php
@@ -26,14 +51,14 @@
         $containerWidth = data_get($opts, 'container_width', 1200);
     @endphp
 
-    {{-- ─── INITIAL CUSTOM CSS … ──────────────────────────────── --}}
+    {{-- ─── INITIAL CUSTOM CSS from DB ─────────────────────────────── --}}
     @if ($themeSettings->custom_css)
         <style data-live-preview id="initial-custom-css">
             {!! $themeSettings->custom_css !!}
         </style>
     @endif
 
-    {{-- ─── INITIAL CSS VARS & TYPOGRAPHY & CONTAINER … ───────── --}}
+    {{-- ─── INITIAL CSS VARS & TYPOGRAPHY & CONTAINER ──────────────── --}}
     <style data-live-preview id="initial-vars">
         :root {
             --primary-color: {{ $themeSettings->primary_color }};
@@ -95,21 +120,22 @@
         }
     </style>
 
-    {{-- ─── LIVE-PREVIEW LISTENER … ─────────────────────────────── --}}
+    {{-- ─── LIVE-PREVIEW LISTENER ─────────────────────────────────── --}}
     <script>
         window.addEventListener('message', e => {
             const msg = e.data;
             if (!msg || msg.type !== 'themePreview') return;
-            /* …apply CSS vars, custom CSS, header/footer updates… */
+
+            // …apply CSS vars, custom CSS, header/footer updates…
         });
     </script>
 
-    {{-- ─── THIS IS THE MISSING PIECE ──────────────────────────── --}}
+    {{-- ─── ALLOW CHILD VIEWS TO PUSH ANY ADDITIONAL <head> CONTENT ─── --}}
     @stack('head')
 </head>
 
-<body class="text-gray-900 dark:bg-neutral-950 dark:text-white">
-    <div class="min-h-screen flex flex-col">
+<body class=" text-gray-900 dark:bg-neutral-950 dark:text-white ">
+    <div class=" min-h-screen flex flex-col ">
         {{-- Site Header --}}
         @include('partials.header')
 

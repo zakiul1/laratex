@@ -1,9 +1,17 @@
 @extends('layout')
 
 @section('content')
-    <div class="">
-        {!! apply_filters('slider.header', '') !!}
-    </div>
+    @php
+        $finder = view()->getFinder();
+        $hints = $finder->getHints();
+    @endphp
+
+    @if (array_key_exists('slider-plugin-front', $hints) && view()->exists('slider-plugin-front::slider'))
+        @include('slider-plugin-front::slider')
+    @endif
+
+
+
 
 
     {{-- Page Content --}}

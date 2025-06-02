@@ -2,18 +2,7 @@
 
 @once
     @push('head')
-        {{-- 1) PRECONNECT to Google Fonts --}}
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-        {{-- 2) PRELOAD the Google Fonts CSS as "style" --}}
-        <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Ropa+Sans&display=swap"
-            onload="this.rel='stylesheet'">
-        <noscript>
-            <link href="https://fonts.googleapis.com/css2?family=Ropa+Sans&display=swap" rel="stylesheet">
-        </noscript>
-
-        {{-- 3) Inline utility class for Ropa Sans --}}
+        {{-- Inline utility class for Ropa Sans (layout already preloaded the font) --}}
         <style>
             .font-ropa-sans {
                 font-family: 'Ropa Sans', sans-serif;
@@ -28,7 +17,6 @@
     use App\Models\Media;
 
     $sliders = Slider::where('is_active', true)->with('items')->get();
-    // breakpoints array only used if you have <x-responsive-image> available
     $breakpoints = [150 => 'thumbnail', 300 => 'medium', 1024 => 'large'];
 @endphp
 
@@ -49,11 +37,11 @@
                 showIndicators: {{ $slider->show_indicators ? 'true' : 'false' }},
                 timer: null,
                 init() {
-                    if ({{ $slider->autoplay ? 'true' : 'false' }} && this.slides > 1) this.start()
+                    if ({{ $slider->autoplay ? 'true' : 'false' }} && this.slides > 1) this.start();
                 },
                 start() {
-                    this.pause()
-                    this.timer = setInterval(() => this.next(), 5000)
+                    this.pause();
+                    this.timer = setInterval(() => this.next(), 5000);
                 },
                 pause() { clearInterval(this.timer) },
                 next() { this.current = (this.current + 1) % this.slides },
@@ -90,7 +78,6 @@
                             class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">
                             ‹
                         </button>
-
                         <button x-show="showArrows" @click="next()" aria-label="Next slide"
                             class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">
                             ›
@@ -116,17 +103,17 @@
                         <div class="w-full lg:w-1/2 p-8 flex flex-col justify-center">
                             <h2
                                 class="
-                                    pl-7
-                                    text-right
-                                    font-light
-                                    mb-[15px]
-                                    block
-                                    text-[#666666]
-                                    text-[clamp(1.5rem,5vw,2.7rem)]
-                                    uppercase
-                                    font-ropa-sans
-                                    leading-[1.2]
-                                    tracking-normal
+                                  pl-7
+                                  text-right
+                                  font-light
+                                  mb-[15px]
+                                  block
+                                  text-[#666666]
+                                  text-[clamp(1.5rem,5vw,2.7rem)]
+                                  uppercase
+                                  font-ropa-sans
+                                  leading-[1.2]
+                                  tracking-normal
                                 ">
                                 {{ $slider->heading }}
                             </h2>
@@ -135,7 +122,6 @@
                             </p>
                         </div>
                     @endif
-
                 </div>
             </div>
         </section>

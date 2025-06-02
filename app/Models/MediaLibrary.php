@@ -25,7 +25,7 @@ class MediaLibrary extends Model implements HasMedia
     public function registerMediaConversions(Media $media = null): void
     {
         //
-        // JPEG/PNG (always)
+        // 1) JPEG/PNG conversions (always)
         //
 
         $this
@@ -45,7 +45,7 @@ class MediaLibrary extends Model implements HasMedia
             ->quality(80);
 
         //
-        // WebP (always)
+        // 2) WebP conversions (always)
         //
 
         $this
@@ -67,31 +67,5 @@ class MediaLibrary extends Model implements HasMedia
             ->format('webp')
             ->fit(Fit::Max, 1024, 576)
             ->quality(80);
-
-        //
-        // AVIF (only if PHP/Imagick/GD supports it)
-        //
-
-        if (function_exists('imageavif')) {
-            $this
-                ->addMediaConversion('thumbnail-avif')
-                ->format('avif')
-                ->fit(Fit::Crop, 200, 200)
-                ->quality(60)
-                ->nonQueued();
-
-            $this
-                ->addMediaConversion('medium-avif')
-                ->format('avif')
-                ->fit(Fit::Crop, 400, 300)
-                ->quality(60)
-                ->nonQueued();
-
-            $this
-                ->addMediaConversion('large-avif')
-                ->format('avif')
-                ->fit(Fit::Max, 1024, 576)
-                ->quality(60);
-        }
     }
 }

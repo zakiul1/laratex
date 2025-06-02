@@ -505,7 +505,7 @@
                         class="relative group rounded-lg overflow-hidden shadow-sm hover:shadow-md transition transform hover:-translate-y-1">
                         <input type="checkbox" x-model="selected" :value="item.id"
                             class="absolute top-3 left-3 z-10 h-5 w-5 rounded" />
-                        <img :src="item.medium" class="w-full h-40 object-cover" loading="lazy" />
+                        <img :src="item.medium" class="w-full h-auto object-contain" loading="lazy" />
                         <div class="p-3 text-sm truncate bg-gray-50" x-text="item.filename"></div>
                         <div
                             class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/60 transition">
@@ -522,7 +522,7 @@
                     <div class="flex items-center justify-between bg-white rounded-lg shadow-sm p-4 border border-gray-100">
                         <div class="flex items-center gap-4">
                             <input type="checkbox" x-model="selected" :value="item.id" class="h-5 w-5 rounded" />
-                            <img :src="item.thumbnail" class="w-16 h-16 object-cover rounded-lg" loading="lazy" />
+                            <img :src="item.thumbnail" class="w-16 h-16 object-contain rounded-lg" loading="lazy" />
                             <div>
                                 <div class="font-semibold text-gray-800" x-text="item.filename"></div>
                                 <div class="text-sm text-gray-500" x-text="getCategoryNames(item)"></div>
@@ -542,7 +542,7 @@
                     <div class="relative w-28 h-28 rounded-lg overflow-hidden shadow-sm">
                         <input type="checkbox" x-model="selected" :value="item.id"
                             class="absolute top-2 left-2 z-10 h-5 w-5 rounded" />
-                        <img :src="item.thumbnail" class="w-full h-full object-cover" loading="lazy" />
+                        <img :src="item.thumbnail" class="w-full h-full object-contain" loading="lazy" />
                     </div>
                 </template>
             </div>
@@ -611,7 +611,7 @@
                             <div class="file-preview-grid mt-2">
                                 <template x-for="(file, index) in selectedFiles" :key="index">
                                     <div class="file-preview relative group">
-                                        <img :src="file.url" class="w-full h-24 object-cover rounded-lg" />
+                                        <img :src="file.url" class="w-full h-24 object-contain rounded-lg" />
                                         <input type="checkbox" x-model="file.selected"
                                             class="absolute top-2 left-2 h-5 w-5 rounded" />
                                         <button @click="removeFile(index)"

@@ -2,11 +2,7 @@
 
 @once
     @push('head')
-        {{-- 
-            We no longer need any <link> or @font-face here, because the layout
-            already preloads the Ropa Sans WOFF2 and loads Google’s CSS. 
-            All we need is this small utility class. 
-        --}}
+        {{-- Utility class for Ropa Sans; the main layout already preloads the font --}}
         <style>
             .font-ropa-sans {
                 font-family: 'Ropa Sans', sans-serif;
@@ -20,15 +16,8 @@
     use Plugins\SliderPlugin\Models\Slider;
     use App\Models\Media;
 
-    // Grab all active sliders (with their items) in one query:
+    // Pull all active sliders (with their items) in one query
     $sliders = Slider::where('is_active', true)->with('items')->get();
-
-    // Breakpoints only used if <x-responsive-image> is available:
-    $breakpoints = [
-        150 => 'thumbnail',
-        300 => 'medium',
-        1024 => 'large',
-    ];
 @endphp
 
 @if ($sliders->isEmpty())
@@ -73,13 +62,15 @@
                             <div x-show="current === {{ $i }}" x-transition.opacity.duration.700ms
                                 class="absolute inset-0">
                                 @if ($media)
-                                    <x-responsive-image :media="$media" :breakpoints="$breakpoints"
+                                    {{-- Use the responsive-image component --}}
+                                    <x-responsive-image :media="$media" :breakpoints="[150 => 'thumbnail', 300 => 'medium', 1024 => 'large']"
                                         class="w-full h-full object-contain"
                                         alt="{{ $media->getCustomProperty('alt') ?? '' }}"
                                         loading="{{ $i === 0 ? 'eager' : 'lazy' }}"
                                         fetchpriority="{{ $i === 0 ? 'high' : 'low' }}"
                                         sizes="(min-width:1024px)50vw,100vw" width="1024" height="576" />
                                 @else
+                                    {{-- Fallback if no Media record --}}
                                     <img src="{{ Storage::url($item->image_path) }}" alt=""
                                         loading="{{ $i === 0 ? 'eager' : 'lazy' }}"
                                         fetchpriority="{{ $i === 0 ? 'high' : 'low' }}" width="1024" height="576"
@@ -90,9 +81,13 @@
 
                         {{-- ◀ Arrows ▶ --}}
                         <button x-show="showArrows" @click="prev()" aria-label="Previous slide"
-                            class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">‹</button>
+                            class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">
+                            ‹
+                        </button>
                         <button x-show="showArrows" @click="next()" aria-label="Next slide"
-                            class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">›</button>
+                            class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">
+                            ›
+                        </button>
 
                         {{-- ◀ Indicators ▶ --}}
                         <div x-show="showIndicators" class="absolute bottom-0 left-1/2 -translate-x-1/2 flex space-x-2">
@@ -104,7 +99,8 @@
                                     :class="current === {{ $j }} ?
                                         'opacity-100 scale-125 bg-gray-800' :
                                         'opacity-50 scale-100 bg-gray-400/50'"
-                                    style="will-change: opacity, transform;"></button>
+                                    style="will-change: opacity, transform;">
+                                </button>
                             @endfor
                         </div>
                     </div>
@@ -133,6 +129,7 @@
                             </p>
                         </div>
                     @endif
+
                 </div>
             </div>
         </section>

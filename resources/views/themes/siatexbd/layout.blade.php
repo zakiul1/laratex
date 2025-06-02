@@ -6,61 +6,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    {{-- ─── SEO META TAGS ────────────────────────────────────────── --}}
+    {{-- ─── SEO META TAGS … ──────────────────────────────────── --}}
     @if (isset($page))
         @include('components.frontend-seo', ['model' => $page])
     @elseif (isset($post))
         @include('components.frontend-seo', ['model' => $post])
     @elseif (isset($category))
         @include('components.frontend-seo', ['model' => $category])
-    @elseif (isset($product))
-        @include('components.frontend-seo', ['model' => $product])
     @else
         <title>{{ config('app.name', 'Laravel') }}</title>
     @endif
 
-    {{-- ─── HIDE x-cloak UNTIL ALPINE INIT ───────────────────────── --}}
-    <style>
-        [x-cloak] {
-            display: none !important;
-        }
-    </style>
-
-    {{-- ─── PRECONNECT ───────────────────────────────────────────── --}}
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-    {{-- ─── GOOGLE FONTS (PRELOAD + DEFER APPLY) ─────────────────── --}}
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Ropa+Sans&display=swap"
-        onload="this.rel='stylesheet'">
-    <noscript>
-        <link href="https://fonts.googleapis.com/css2?family=Ropa+Sans&display=swap" rel="stylesheet">
-    </noscript>
-
-    {{-- ─── BLOCKEDITOR CSS (PRELOAD + DEFER APPLY) ──────────────── --}}
-    <link rel="preload" as="style" href="{{ asset('blockeditor/layout-frontend.css') }}"
-        onload="this.rel='stylesheet'">
-    <noscript>
-        <link rel="stylesheet" href="{{ asset('blockeditor/layout-frontend.css') }}">
-    </noscript>
-
-    {{-- ─── VITE ASSETS (deferred by spec) ────────────────────────── --}}
+    {{-- ─── STYLES & SCRIPTS … ────────────────────────────────── --}}
+    <link rel="stylesheet" href="{{ asset('blockeditor/layout-frontend.css') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     @php
-        // pulled from theme settings
         $opts = $themeSettings->options ?? [];
-        $containerWidth = data_get($opts, 'container_width', 1170);
+        $containerWidth = data_get($opts, 'container_width', 1200);
     @endphp
 
-    {{-- ─── INITIAL CUSTOM CSS FROM DB ───────────────────────────── --}}
+    {{-- ─── INITIAL CUSTOM CSS … ──────────────────────────────── --}}
     @if ($themeSettings->custom_css)
         <style data-live-preview id="initial-custom-css">
             {!! $themeSettings->custom_css !!}
         </style>
     @endif
 
-    {{-- ─── CSS VARS & TYPOGRAPHY & CONTAINER ─────────────────────── --}}
+    {{-- ─── INITIAL CSS VARS & TYPOGRAPHY & CONTAINER … ───────── --}}
     <style data-live-preview id="initial-vars">
         :root {
             --primary-color: {{ $themeSettings->primary_color }};
@@ -80,7 +53,7 @@
         }
 
         .container {
-            max-width: var(--container-width, 1170px);
+            max-width: var(--container-width, 1200px);
             margin-left: auto;
             margin-right: auto;
         }
@@ -122,16 +95,16 @@
         }
     </style>
 
-    {{-- ─── LIVE-PREVIEW LISTENER ─────────────────────────────────── --}}
+    {{-- ─── LIVE-PREVIEW LISTENER … ─────────────────────────────── --}}
     <script>
         window.addEventListener('message', e => {
             const msg = e.data;
             if (!msg || msg.type !== 'themePreview') return;
-            // …apply msg.primaryColor, msg.siteTitle, customCss, etc…
+            /* …apply CSS vars, custom CSS, header/footer updates… */
         });
     </script>
 
-    {{-- ─── PLACE FOR CHILD-VIEW <head> ASSETS ────────────────────── --}}
+    {{-- ─── THIS IS THE MISSING PIECE ──────────────────────────── --}}
     @stack('head')
 </head>
 
@@ -148,9 +121,6 @@
         {{-- Footer --}}
         @include('partials.footer')
     </div>
-
-    {{-- Dynamic Cart & Modals --}}
-    @include('partials.dynamic-cart')
 
     @stack('scripts')
 </body>

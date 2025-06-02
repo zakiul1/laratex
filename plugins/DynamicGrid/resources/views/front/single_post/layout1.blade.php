@@ -18,23 +18,25 @@
 
     $items = $query->get();
 
-    // 1) Revised “breakpoints” including 480 and 768
+    //
+    // 1) Responsive “breakpoints” including mobile (480px) and tablet (768px):
+    //
     $breakpoints = [
         150 => 'thumbnail',
         300 => 'medium',
-        480 => 'mobile', // will generate a 480px‐wide image
-        768 => 'tablet', // will generate a 768px‐wide image
+        480 => 'mobile', // 480px‐wide image for phones
+        768 => 'tablet', // 768px‐wide image for small tablets
         1024 => 'large',
     ];
 
-    // 2) Dynamically build a “sizes” string based on grid columns
     //
-    //    Adjust the “max-width” values to match your Tailwind config:
-    //    – 640px = sm (mobile)
-    //    – 768px = md (tablet)
-    //    – 1024px = lg (medium)
-    //    – 1280px = xl (desktop)
-    //    After that, “large” is any width above 1280px.
+    // 2) Build a sizes string based on how many columns at each Tailwind breakpoint:
+    //
+    //    – sm (≤640px): 100vw  (each item spans full width on phones)
+    //    – md (≤768px):  (100 / columns_tablet) vw  (each item spans 1/Nth on small tablets)
+    //    – lg (≤1024px): (100 / columns_medium) vw (each item spans 1/Nth on medium screens)
+    //    – xl (≤1280px): (100 / columns_desktop) vw
+    //    – ≥1280px:      (100 / columns_large) vw
     //
     $sizes =
         '(max-width: 640px) 100vw, ' .
@@ -87,7 +89,7 @@
                             <a href="{{ $url }}" class="block w-full h-full">
                                 <x-responsive-image :media="$media" :breakpoints="$breakpoints" sizes="{{ $sizes }}"
                                     width="400" height="400" loading="lazy" class="w-full h-full object-contain"
-                                    alt="{{ $title }}" />
+                                    alt="{{ $title }}" {{-- <– now every <img> has a non-empty alt --}} />
                             </a>
                         </div>
                     @endif

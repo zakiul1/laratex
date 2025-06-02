@@ -18,12 +18,12 @@
 
     $items = $query->get();
 
-    // ── 1) Revised “breakpoints” to include mobile (480) and tablet (768) ──
+    // ── 1) Revised “breakpoints” to include mobile (480px) and tablet (768px) ──
     $breakpoints = [
         150 => 'thumbnail',
         300 => 'medium',
-        480 => 'mobile', // new: 480px‐wide version for phones
-        768 => 'tablet', // new: 768px‐wide version for small tablets
+        480 => 'mobile', // 480px‐wide version for phones
+        768 => 'tablet', // 768px‐wide version for small tablets
         1024 => 'large',
     ];
 @endphp
@@ -46,7 +46,7 @@
             @endif
         @endif
 
-        {{-- Single column on mobile; two columns at md (≥768px) --}}
+        {{-- Single column on mobile (≤768px); two columns at md (≥768px) --}}
         <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
             @foreach ($items as $item)
                 @php
@@ -66,14 +66,13 @@
                         @if (!empty($opts['show_image']) && $media)
                             <div class="overflow-hidden" style="aspect-ratio:1/1;">
                                 <a href="{{ $url }}" class="block w-full h-full">
-                                    <x-responsive-image :media="$media" :breakpoints="$breakpoints" {{-- 2) sizes: ≤768px→100vw; >768px→50vw --}}
+                                    <x-responsive-image :media="$media" :breakpoints="$breakpoints" {{-- 2) sizes: ≤768px → 100vw; >768px → 50vw --}}
                                         sizes="(max-width: 768px) 100vw, 50vw" width="400" height="400"
                                         loading="lazy" class="w-full h-full object-contain" alt="{{ $title }}" />
                                 </a>
                             </div>
                         @else
-                            <div class="overflow-hidden bg-gray-100
-                                        flex items-center justify-center text-gray-400"
+                            <div class="overflow-hidden bg-gray-100 flex items-center justify-center text-gray-400"
                                 style="aspect-ratio:1/1;">
                                 —
                             </div>
@@ -105,7 +104,7 @@
                         @if (($opts['button_type'] ?? '') === 'price')
                             <button type="button"
                                 class="get-price-btn mt-4 px-4 py-2 text-blue-600 font-medium
-                                           border-b-2 border-blue-600 hover:text-blue-800"
+                                       border-b-2 border-blue-600 hover:text-blue-800"
                                 data-id="{{ $item->id }}" data-title="{{ e($title) }}"
                                 data-image="{{ $media->getUrl('thumbnail') }}" data-url="{{ $url }}">
                                 Get Price

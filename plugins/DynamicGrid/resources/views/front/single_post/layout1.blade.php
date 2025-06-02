@@ -17,11 +17,42 @@
     }
 
     $items = $query->get();
-    $breakpoints = [150 => 'thumbnail', 300 => 'medium', 1024 => 'large'];
+
+    // 1) Revised “breakpoints” including 480 and 768
+    $breakpoints = [
+        150 => 'thumbnail',
+        300 => 'medium',
+        480 => 'mobile', // will generate a 480px‐wide image
+        768 => 'tablet', // will generate a 768px‐wide image
+        1024 => 'large',
+    ];
+
+    // 2) Dynamically build a “sizes” string based on grid columns
+    //
+    //    Adjust the “max-width” values to match your Tailwind config:
+    //    – 640px = sm (mobile)
+    //    – 768px = md (tablet)
+    //    – 1024px = lg (medium)
+    //    – 1280px = xl (desktop)
+    //    After that, “large” is any width above 1280px.
+    //
+    $sizes =
+        '(max-width: 640px) 100vw, ' .
+        '(max-width: 768px) ' .
+        round(100 / $opts['columns']['tablet'], 2) .
+        'vw, ' .
+        '(max-width: 1024px) ' .
+        round(100 / $opts['columns']['medium'], 2) .
+        'vw, ' .
+        '(max-width: 1280px) ' .
+        round(100 / $opts['columns']['desktop'], 2) .
+        'vw, ' .
+        round(100 / $opts['columns']['large'], 2) .
+        'vw';
 @endphp
 
 @if ($items->isEmpty())
-    <div class="p-4 bg-yellow-50 text-yellow-800 ">
+    <div class="p-4 bg-yellow-50 text-yellow-800">
         No items found for “{{ $opts['taxonomy'] }}” & category {{ $opts['category_id'] }}.
     </div>
 @else
@@ -49,14 +80,14 @@
                     $url = $isProductTax ? route('products.show', $item->slug) : route('posts.show', $item->slug);
                 @endphp
 
-                <div class="bg-white  flex flex-col items-center text-center">
+                <div class="bg-white flex flex-col items-center text-center">
                     @if (!empty($opts['show_image']) && $media)
                         {{-- 1:1 aspect container --}}
                         <div class="w-full mb-4 overflow-hidden" style="aspect-ratio:1/1;">
                             <a href="{{ $url }}" class="block w-full h-full">
-                                <x-responsive-image :media="$media" :breakpoints="$breakpoints"
-                                    sizes="(max-width:640px) 100vw, 400px" width="400" height="400" loading="lazy"
-                                    class="w-full h-full object-contain " alt="{{ $title }}" />
+                                <x-responsive-image :media="$media" :breakpoints="$breakpoints" sizes="{{ $sizes }}"
+                                    width="400" height="400" loading="lazy" class="w-full h-full object-contain"
+                                    alt="{{ $title }}" />
                             </a>
                         </div>
                     @endif

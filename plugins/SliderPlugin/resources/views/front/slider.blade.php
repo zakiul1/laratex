@@ -50,6 +50,7 @@
                 prev() { this.current = (this.current - 1 + this.slides) % this.slides }
             }" x-init="init()"
                 @mouseenter="pause()" @mouseleave="start()">
+
                 {{-- ◆ Notice: flex-col stacks on mobile; lg:flex-row makes image left, content right on desktop ◆ --}}
                 <div class="flex flex-col lg:flex-row overflow-hidden p-12 bg-[#f6f6f6]">
 
@@ -63,17 +64,25 @@
                             <div x-show="current === {{ $i }}" x-transition.opacity.duration.700ms
                                 class="absolute inset-0">
                                 @if ($media)
-                                    <x-responsive-image :media="$media" :breakpoints="[150 => 'thumbnail', 300 => 'medium', 1024 => 'large']"
+                                    <x-responsive-image :media="$media" :breakpoints="[
+                                        150 => 'thumbnail',
+                                        300 => 'medium',
+                                        480 => 'mobile',
+                                        768 => 'tablet',
+                                        1024 => 'large',
+                                    ]"
                                         class="w-full h-full object-contain"
                                         alt="{{ $media->getCustomProperty('alt') ?? '' }}"
                                         loading="{{ $i === 0 ? 'eager' : 'lazy' }}"
                                         fetchpriority="{{ $i === 0 ? 'high' : 'low' }}"
-                                        sizes="(min-width:1024px)50vw,100vw" width="1024" height="576" />
+                                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 60vw, 50vw" width="1024"
+                                        height="576" />
                                 @else
                                     <img src="{{ Storage::url($item->image_path) }}" alt=""
                                         loading="{{ $i === 0 ? 'eager' : 'lazy' }}"
-                                        fetchpriority="{{ $i === 0 ? 'high' : 'low' }}" width="1024" height="576"
-                                        sizes="(min-width:1024px)50vw,100vw" class="w-full h-full object-contain" />
+                                        fetchpriority="{{ $i === 0 ? 'high' : 'low' }}"
+                                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 60vw, 50vw" width="1024"
+                                        height="576" class="w-full h-full object-contain" />
                                 @endif
                             </div>
                         @endforeach
@@ -95,15 +104,14 @@
                                     :aria-current="current === {{ $j }} ? 'true' : 'false'"
                                     aria-label="Go to slide {{ $j + 1 }}"
                                     class="
-                                    w-4 h-1 rounded-full
-                                    opacity-50 scale-100
-                                    transition-opacity transition-transform duration-200
-                                  "
+                                        w-4 h-1 rounded-full
+                                        opacity-50 scale-100
+                                        transition-opacity transition-transform duration-200
+                                    "
                                     :class="current === {{ $j }} ?
                                         'opacity-100 scale-125 bg-gray-800' :
                                         'opacity-50 scale-100 bg-gray-400/50'"
-                                    style="will-change: opacity, transform;">
-                                </button>
+                                    style="will-change: opacity, transform;"></button>
                             @endfor
                         </div>
                     </div>
@@ -113,18 +121,18 @@
                         <div class="w-full lg:w-1/2 p-8 flex flex-col justify-center">
                             <h2
                                 class="
-                                pl-7
-                                text-right
-                                font-light
-                                mb-[15px]
-                                block
-                                text-[#666666]
-                                text-[clamp(1.5rem,5vw,2.7rem)]
-                                uppercase
-                                font-ropa-sans
-                                leading-[1.2]
-                                tracking-normal
-                              ">
+                                    pl-7
+                                    text-right
+                                    font-light
+                                    mb-[15px]
+                                    block
+                                    text-[#666666]
+                                    text-[clamp(1.5rem,5vw,2.7rem)]
+                                    uppercase
+                                    font-ropa-sans
+                                    leading-[1.2]
+                                    tracking-normal
+                                ">
                                 {{ $slider->heading }}
                             </h2>
                             <p class="mt-4 text-lg text-gray-600 text-right">

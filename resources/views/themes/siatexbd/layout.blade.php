@@ -26,17 +26,12 @@
         }
     </style>
 
-    {{-- ─── PRECONNECT TO GOOGLE’S FONTS SERVERS ─────────────────── --}}
+    {{-- ─── PRECONNECT TO GOOGLE’S FONT SERVERS ─────────────────── --}}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-    {{-- ─── PRELOAD THE ACTUAL WOFF2 FILE AS “font” ────────────────── --}}
-    <link rel="preload" as="font"
-        href="https://fonts.gstatic.com/s/ropasans/v15/EYqxmaNOzOJrPxPtIxTF_l5P2_rwA.woff2" type="font/woff2"
-        crossorigin />
-
-    {{-- ─── LOAD GOOGLE FONTS CSS (DECLARES @font-face FOR Ropa Sans) ─── --}}
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ropa+Sans&display=swap" />
+    {{-- ─── LOAD GOOGLE FONTS CSS FOR ROPA SANS (regular + italic) ─────────────────── --}}
+    <link href="https://fonts.googleapis.com/css2?family=Ropa+Sans:ital@0;1&display=swap" rel="stylesheet" />
 
     {{-- ─── BLOCKEDITOR CSS (PRELOAD + APPLY) ──────────────────────── --}}
     <link rel="preload" as="style" href="{{ asset('blockeditor/layout-frontend.css') }}"
@@ -149,7 +144,7 @@
         @include('partials.footer')
     </div>
 
-    {{-- Any scripts pushed by child views (e.g. Alpine, your slider‐partial, etc.) --}}
+    {{-- Any scripts pushed by child views --}}
     @stack('scripts')
 </body>
 

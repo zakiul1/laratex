@@ -79,18 +79,22 @@
                 @php
                     $media = $item->featuredMedia->first();
                     $title = $isProductTax ? $item->name : $item->title;
+
                     $url = $isProductTax ? route('products.show', $item->slug) : route('posts.show', $item->slug);
+
                 @endphp
 
                 <div class="bg-white flex flex-col items-center text-center">
                     @if (!empty($opts['show_image']) && $media)
                         {{-- 1:1 aspect container --}}
+
                         <div class="w-full mb-4 overflow-hidden" style="aspect-ratio:1/1;">
                             <a href="{{ $url }}" class="block w-full h-full">
                                 <x-responsive-image :media="$media" :breakpoints="$breakpoints" sizes="{{ $sizes }}"
                                     width="400" height="400" loading="lazy" class="w-full h-full object-contain"
-                                    alt="{{ $title }}" {{-- <– now every <img> has a non-empty alt --}} />
+                                    alt="{{ $title }}" />
                             </a>
+
                         </div>
                     @endif
 

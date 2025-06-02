@@ -44,18 +44,27 @@ class ResponsiveImage extends Component
     public ?string $fetchpriority;
 
     /**
+     * The alt text for the <img> tag.
+     *
+     * @var string|null
+     */
+    public ?string $alt;
+
+    /**
      * @param  SpatieMedia            $media
      * @param  array<int,string>|null $breakpoints
      * @param  string|null            $sizes
      * @param  string|null            $loading
      * @param  string|null            $fetchpriority
+     * @param  string|null            $alt
      */
     public function __construct(
         SpatieMedia $media,
         array $breakpoints = null,
         string $sizes = null,
         string $loading = null,
-        string $fetchpriority = null
+        string $fetchpriority = null,
+        string $alt = null             // ← new parameter
     ) {
         $this->media = $media;
 
@@ -80,12 +89,15 @@ class ResponsiveImage extends Component
         // 3) Loading / fetchpriority can be overridden per-instance
         $this->loading = $loading ?? null;
         $this->fetchpriority = $fetchpriority ?? null;
+
+        // 4) Capture the alt text for the <img>:
+        $this->alt = $alt;
     }
 
     public function render()
     {
         //
-        // 4) Build AVIF URLs (if they exist as "<conversion>-avif")
+        // 5) Build AVIF URLs (if they exist as "<conversion>-avif")
         //
         $avifUrls = [];
         foreach ($this->breakpoints as $width => $conversion) {
@@ -96,7 +108,7 @@ class ResponsiveImage extends Component
         }
 
         //
-        // 5) Build WebP URLs (if they exist as "<conversion>-webp")
+        // 6) Build WebP URLs (if they exist as "<conversion>-webp")
         //
         $webpUrls = [];
         foreach ($this->breakpoints as $width => $conversion) {
@@ -107,13 +119,13 @@ class ResponsiveImage extends Component
         }
 
         //
-        // 6) Sort both AVIF‐ and WebP‐URL arrays by width ascending
+        // 7) Sort both AVIF‐ and WebP‐URL arrays by width ascending
         //
         ksort($avifUrls);
         ksort($webpUrls);
 
         //
-        // 7) Build “srcset” strings from each associative array
+        // 8) Build “srcset” strings from each associative array
         //
         $avifSrcset = collect($avifUrls)
             ->map(fn($url, $w) => "{$url} {$w}w")
@@ -124,7 +136,7 @@ class ResponsiveImage extends Component
             ->implode(', ');
 
         //
-        // 8) Choose a fallback “src” for <img>:
+        // 9) Choose a fallback “src” for <img>:
         //    – If any AVIF exists, use the smallest‐width AVIF
         //    – Otherwise, if any WebP exists, use the smallest‐width WebP
         //    – Otherwise, fall back to the original file URL (JPEG/PNG/etc)
@@ -147,6 +159,7 @@ class ResponsiveImage extends Component
             'sizes' => $this->sizes,
             'loading' => $this->loading,
             'fetchpriority' => $this->fetchpriority,
+            'alt' => $this->alt,     // ← pass alt into the view
         ]);
     }
 }

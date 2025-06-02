@@ -13,6 +13,8 @@
         @include('components.frontend-seo', ['model' => $post])
     @elseif (isset($category))
         @include('components.frontend-seo', ['model' => $category])
+    @elseif (isset($product))
+        @include('components.frontend-seo', ['model' => $product])
     @else
         <title>{{ config('app.name', 'Laravel') }}</title>
     @endif

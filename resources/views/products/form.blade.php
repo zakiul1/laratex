@@ -21,8 +21,18 @@
         }
 
         // Categories for the checkbox list
-        $cats = $taxonomies->map(fn($t) => ['id' => $t->term_taxonomy_id, 'name' => $t->term->name]);
+        $cats = $taxonomies->map(
+            fn($t) => [
+                'id' => $t->term_taxonomy_id,
+                'name' => $t->term->name,
+            ],
+        );
+
         $selectedCats = old('taxonomy_ids', $isEdit ? $product->taxonomies->pluck('term_taxonomy_id')->toArray() : []);
+
+        // ─── NEW: Seed initial SEO values ───
+        // If old input exists (validation error), use old('seo'). Otherwise, if editing, decode from $product->seo. If new, default to [].
+        $seo = old('seo', $isEdit ? $product->seo : []);
     @endphp
 
     <!-- Block Editor Styles -->
@@ -49,7 +59,7 @@
 
         {{-- LEFT PANEL --}}
         <div class="lg:col-span-2 space-y-6">
-            {{-- Name --}}
+            {{-- Product Name --}}
             <div>
                 <label class="block text-sm font-medium">Product Name</label>
                 <input type="text" name="name" value="{{ old('name', $product->name ?? '') }}"
@@ -77,6 +87,60 @@
                     <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                 @enderror
             </div>
+
+            {{-- ─────────── NEW: SEO Settings ─────────── --}}
+            <div class="border rounded p-4 bg-white shadow">
+                <h3 class="font-semibold text-sm mb-2">SEO Settings</h3>
+                <div class="space-y-4">
+                    {{-- Meta Title --}}
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Meta Title</label>
+                        <input type="text" name="seo[title]" value="{{ old('seo.title', $seo['title'] ?? '') }}"
+                            class="w-full border rounded p-2 @error('seo.title') border-red-500 @enderror">
+                        @error('seo.title')
+                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Meta Description --}}
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Meta Description</label>
+                        <textarea name="seo[description]" class="w-full border rounded p-2 @error('seo.description') border-red-500 @enderror">{{ old('seo.description', $seo['description'] ?? '') }}</textarea>
+                        @error('seo.description')
+                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Meta Keywords --}}
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Meta Keywords</label>
+                        <input type="text" name="seo[keywords]"
+                            value="{{ old('seo.keywords', $seo['keywords'] ?? '') }}"
+                            class="w-full border rounded p-2 @error('seo.keywords') border-red-500 @enderror">
+                        @error('seo.keywords')
+                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Robots --}}
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Robots</label>
+                        <select name="seo[robots]"
+                            class="w-full border rounded p-2 @error('seo.robots') border-red-500 @enderror">
+                            @foreach (['Index & Follow', 'NoIndex & Follow', 'NoIndex & NoFollow', 'No Archive', 'No Snippet'] as $opt)
+                                <option value="{{ $opt }}"
+                                    {{ old('seo.robots', $seo['robots'] ?? '') === $opt ? 'selected' : '' }}>
+                                    {{ $opt }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('seo.robots')
+                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+            </div>
+            {{-- ──────────────────────────────────────────────────── --}}
         </div>
 
         {{-- RIGHT PANEL --}}
@@ -153,9 +217,11 @@
             <div>
                 <label class="block text-sm font-medium">Status</label>
                 <select name="status" class="w-full border rounded p-2 @error('status') border-red-500 @enderror">
-                    <option value="1" {{ old('status', $product->status ?? 1) == 1 ? 'selected' : '' }}>Active
+                    <option value="1" {{ old('status', $product->status ?? 1) == 1 ? 'selected' : '' }}>
+                        Active
                     </option>
-                    <option value="0" {{ old('status', $product->status ?? 0) == 0 ? 'selected' : '' }}>Inactive
+                    <option value="0" {{ old('status', $product->status ?? 0) == 0 ? 'selected' : '' }}>
+                        Inactive
                     </option>
                 </select>
                 @error('status')
@@ -171,7 +237,9 @@
                         <div class="relative w-24 h-24">
                             <img :src="img.url" class="w-full h-full object-cover rounded border">
                             <button type="button" @click="removeImage(i)"
-                                class="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 text-xs">×</button>
+                                class="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 text-xs">
+                                ×
+                            </button>
                         </div>
                     </template>
                     <button type="button" @click="openMedia()"
@@ -188,7 +256,8 @@
             </div>
 
             {{-- Submit --}}
-            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm px-6 py-3 rounded shadow">
+            <button type="submit"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm px-6 py-3 rounded shadow">
                 {{ $isEdit ? 'Update Product' : 'Create Product' }}
             </button>
         </div>

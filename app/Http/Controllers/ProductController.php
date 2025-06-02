@@ -6,6 +6,7 @@ use Aponahmed\HtmlBuilder\ElementFactory;
 use App\Models\Post;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Models\ProductMeta;     // ← ensure you import ProductMeta
 use App\Models\SiteSetting;
 use App\Models\Term;
 use App\Models\TermTaxonomy;
@@ -18,20 +19,16 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        // 1) Products query
+        // (unchanged)
         $query = Product::with(['taxonomies.term', 'featuredMedia']);
-
         if ($tid = $request->get('filter_category')) {
             $query->whereHas(
                 'taxonomies',
-                fn($q) =>
-                $q->where('term_taxonomy_id', $tid)
+                fn($q) => $q->where('term_taxonomy_id', $tid)
             );
         }
-
         $products = $query->latest()->paginate(10);
 
-        // 2) All product categories
         $allCats = TermTaxonomy::select('term_taxonomies.*')
             ->join('terms', 'term_taxonomies.term_id', 'terms.id')
             ->where('taxonomy', 'product')
@@ -39,19 +36,13 @@ class ProductController extends Controller
             ->orderBy('terms.name')
             ->get();
 
-        // 3) Load your “Products” page so Blade has $page
-        //    Adjust the slug or lookup however your pages are stored
         $page = Post::where('type', 'page')
-            ->where('slug', 'products')  // change 'products' to match your slug
+            ->where('slug', 'products')
             ->first();
-        // dd($page);             // or ->firstOrFail() if you want 404
 
-        // —OR, if you have a dedicated Page model:
-        // $page = Page::where('slug','products')->first();
-
-        // 4) Pass $page into the view
         return view('products.index', compact('products', 'allCats', 'page'));
     }
+
     public function create()
     {
         $taxonomies = TermTaxonomy::select('term_taxonomies.*')
@@ -66,6 +57,7 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
+        // ─────────────── Validation ───────────────
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|unique:products,slug',
@@ -79,6 +71,12 @@ class ProductController extends Controller
             'taxonomy_ids' => 'required|array',
             'taxonomy_ids.*' => 'integer|exists:term_taxonomies,term_taxonomy_id',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+
+            // ─── NEW: SEO validation rules ───
+            'seo.title' => 'nullable|string|max:255',
+            'seo.robots' => 'nullable|string|in:Index & Follow,NoIndex & Follow,NoIndex & NoFollow,No Archive,No Snippet',
+            'seo.description' => 'nullable|string',
+            'seo.keywords' => 'nullable|string',
         ]);
 
         // Slug collision-proofing
@@ -88,7 +86,7 @@ class ProductController extends Controller
         }
         $data['slug'] = $slug;
 
-        // 2) Create the product (including block-editor content)
+        // 1) Create the product
         $product = Product::create([
             'name' => $data['name'],
             'slug' => $data['slug'],
@@ -99,17 +97,17 @@ class ProductController extends Controller
             'status' => $data['status'],
         ]);
 
-        // 3) Sync featured images
+        // 2) Sync featured images
         $product->featuredMedia()->sync($data['featured_media_ids'] ?? []);
 
-        // 4) Sync categories with object_type = 'product'
+        // 3) Sync categories (pivot with object_type = 'product')
         $sync = [];
         foreach ($data['taxonomy_ids'] as $tid) {
             $sync[$tid] = ['object_type' => 'product'];
         }
         $product->taxonomies()->sync($sync);
 
-        // 5) Handle gallery uploads
+        // 4) Handle gallery image uploads
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $img) {
                 $path = $img->store('products/gallery', 'public');
@@ -119,6 +117,12 @@ class ProductController extends Controller
                 ]);
             }
         }
+
+        // ─── NEW: Save SEO meta (exactly like Post did) ───
+        $product->seoMeta()->updateOrCreate(
+            ['meta_key' => 'seo'],
+            ['meta_value' => json_encode($data['seo'] ?? [])]
+        );
 
         return redirect()
             ->route('products.index')
@@ -141,6 +145,7 @@ class ProductController extends Controller
 
     public function update(Request $request, Product $product)
     {
+        // ─────────────── Validation ───────────────
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => "nullable|string|unique:products,slug,{$product->id}",
@@ -154,20 +159,28 @@ class ProductController extends Controller
             'taxonomy_ids' => 'required|array',
             'taxonomy_ids.*' => 'integer|exists:term_taxonomies,term_taxonomy_id',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+
+            // ─── NEW: SEO validation rules ───
+            'seo.title' => 'nullable|string|max:255',
+            'seo.robots' => 'nullable|string|in:Index & Follow,NoIndex & Follow,NoIndex & NoFollow,No Archive,No Snippet',
+            'seo.description' => 'nullable|string',
+            'seo.keywords' => 'nullable|string',
         ]);
 
         // Slug collision-proofing
         $base = $slug = $data['slug'] ?? Str::slug($data['name']);
         for (
             $i = 1;
-            Product::where('slug', $slug)->where('id', '!=', $product->id)->exists();
+            Product::where('slug', $slug)
+                ->where('id', '!=', $product->id)
+                ->exists();
             $i++
         ) {
             $slug = "{$base}-{$i}";
         }
         $data['slug'] = $slug;
 
-        // 1) Update product (including block-editor content)
+        // 1) Update product
         $product->update([
             'name' => $data['name'],
             'slug' => $data['slug'],
@@ -199,6 +212,12 @@ class ProductController extends Controller
             }
         }
 
+        // ─── NEW: Update or create the “seo” meta row ───
+        $product->seoMeta()->updateOrCreate(
+            ['meta_key' => 'seo'],
+            ['meta_value' => json_encode($data['seo'] ?? [])]
+        );
+
         return redirect()
             ->route('products.index')
             ->with('success', 'Product updated successfully.');
@@ -206,6 +225,7 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
+        // (unchanged)
         $product->taxonomies()->detach();
 
         foreach ($product->images as $img) {
@@ -221,6 +241,7 @@ class ProductController extends Controller
 
     public function ajaxCategoryStore(Request $request)
     {
+        // (unchanged)
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'parent' => ['nullable', 'integer', 'exists:term_taxonomies,term_taxonomy_id'],
@@ -254,18 +275,15 @@ class ProductController extends Controller
 
     public function show(string $slug)
     {
-        // 1) Load product with relations
+        // (unchanged)
         $product = Product::with(['featuredMedia', 'taxonomies.term'])
             ->where('slug', $slug)
             ->firstOrFail();
 
-        // 2) Render block-editor JSON → HTML
         $contentHtml = ElementFactory::json2html($product->content ?: '[]');
 
-        // 3) Grab its primary category
         $category = optional($product->taxonomies->first())->term;
 
-        // 4) Featured products logic
         $featuredCategory = TermTaxonomy::with(['term', 'products.featuredMedia'])
             ->where('taxonomy', 'product')
             ->whereHas('term', fn($q) => $q->where('name', 'Featured Products'))
@@ -275,7 +293,6 @@ class ProductController extends Controller
             ? $featuredCategory->products
             : collect();
 
-        // 5) Determine active theme
         if (Schema::hasTable('site_settings')) {
             $settings = SiteSetting::firstOrCreate([]);
             $theme = $settings->active_theme ?: 'classic';
@@ -283,13 +300,11 @@ class ProductController extends Controller
             $theme = env('ACTIVE_THEME', 'classic');
         }
 
-        // 6) Pick the view
         $view = "themes.{$theme}.templates.product";
         if (!view()->exists($view)) {
             abort(404, "Template not found: {$view}");
         }
 
-        // 7) Return, passing contentHtml _as_ pageOutput
         return view($view, [
             'product' => $product,
             'category' => $category,
@@ -298,5 +313,4 @@ class ProductController extends Controller
             'pageOutput' => $contentHtml,
         ]);
     }
-
 }

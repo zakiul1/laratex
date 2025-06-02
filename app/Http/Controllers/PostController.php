@@ -62,11 +62,15 @@ class PostController extends Controller
         $allCategories = TermTaxonomy::with('term')->where('taxonomy', 'category')->get();
         $selected = [];
 
+        // Ensure the view has an empty $seo array on create
+        $seo = [];
+
         return view('posts.create', compact(
             'templates',
             'post',
             'allCategories',
-            'selected'
+            'selected',
+            'seo'
         ));
     }
 
@@ -121,7 +125,7 @@ class PostController extends Controller
         // 3) Create post
         $post = Post::create($validated);
 
-        // 4) Metas
+        // 4) Custom metas (non-SEO)
         if (!empty($validated['meta'])) {
             foreach ($validated['meta'] as $m) {
                 PostMeta::create([
@@ -131,12 +135,14 @@ class PostController extends Controller
                 ]);
             }
         }
+
+        // 5) Save the SEO payload as a single PostMeta row with meta_key = "seo"
         $post->seoMeta()->updateOrCreate(
             ['meta_key' => 'seo'],
             ['meta_value' => json_encode($validated['seo'] ?? [])]
         );
 
-        // 5) Categories (with default fallback)
+        // 6) Categories (with default fallback)
         $categoryIds = $validated['categories'] ?? [];
         if (empty($categoryIds)) {
             $term = Term::firstOrCreate(
@@ -162,16 +168,16 @@ class PostController extends Controller
         $allCategories = TermTaxonomy::with('term')->where('taxonomy', 'category')->get();
         $selected = $post->categories->pluck('term_taxonomy_id')->toArray();
 
-        // Custom metas
+        // Custom metas (non-SEO, non-featured_image)
         $customMeta = $post->meta()
             ->whereNotIn('meta_key', ['seo', 'featured_image'])
             ->get()
             ->map(fn($m) => ['key' => $m->meta_key, 'value' => $m->meta_value])
             ->toArray();
 
-        // Normalize SEO
+        // Normalize SEO into a PHP array and assign to $seo
         $rawSeo = optional($post->seoMeta)->meta_value;
-        $seoMeta = is_string($rawSeo)
+        $seo = is_string($rawSeo)
             ? json_decode($rawSeo, true)
             : (is_array($rawSeo) ? $rawSeo : []);
 
@@ -190,7 +196,7 @@ class PostController extends Controller
             'allCategories',
             'selected',
             'customMeta',
-            'seoMeta',
+            'seo',
             'initialFeatured'
         ));
     }
@@ -224,34 +230,41 @@ class PostController extends Controller
             'template' => 'nullable|string',
             'featured_media_ids' => 'nullable|array',
             'featured_media_ids.*' => 'integer|exists:media,id',
+
             'meta' => 'nullable|array',
             'meta.*.key' => 'required|string|min:1',
             'meta.*.value' => 'nullable|string',
+
             'seo.title' => 'nullable|string|max:255',
             'seo.robots' => 'nullable|string|in:Index & Follow,NoIndex & Follow,NoIndex & NoFollow,No Archive,No Snippet',
             'seo.description' => 'nullable|string',
             'seo.keywords' => 'nullable|string',
+
             'categories' => 'nullable|array',
             'categories.*' => 'integer|exists:term_taxonomies,term_taxonomy_id',
         ]);
 
-        // Featured images
+        // Featured images array
         $validated['featured_images'] = array_values(
             array_unique($validated['featured_media_ids'] ?? [], SORT_NUMERIC)
         );
 
+        // Update the “posts” table
         $post->update($validated);
 
-        // Metas
+        // Delete old custom metas, then re‐create them
         $post->meta()
             ->whereNotIn('meta_key', ['seo', 'featured_image'])
             ->delete();
+
         foreach ($validated['meta'] ?? [] as $m) {
             $post->meta()->updateOrCreate(
                 ['meta_key' => $m['key']],
                 ['meta_value' => $m['value']]
             );
         }
+
+        // Update or create the single “seo” PostMeta row
         $post->seoMeta()->updateOrCreate(
             ['meta_key' => 'seo'],
             ['meta_value' => json_encode($validated['seo'] ?? [])]

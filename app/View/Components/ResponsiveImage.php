@@ -16,15 +16,15 @@ class ResponsiveImage extends Component
 
     /**
      * An associative array of [width => conversionName].
-     * E.g. [150 => 'thumbnail', 300 => 'medium', 1024 => 'large'].
+     * Example: [150 => 'thumbnail', 300 => 'medium', 1024 => 'large'].
      *
      * @var array<int,string>
      */
     public array $breakpoints;
 
     /**
-     * @param SpatieMedia         $media
-     * @param array<int,string>|null $breakpoints
+     * @param  SpatieMedia             $media
+     * @param  array<int,string>|null  $breakpoints
      */
     public function __construct(SpatieMedia $media, array $breakpoints = null)
     {
@@ -41,7 +41,7 @@ class ResponsiveImage extends Component
     public function render()
     {
         //
-        // 1) Build AVIF URLs first (if they exist as "*-avif"):
+        // 1) Build AVIF URLs (if they exist as "<conversion>-avif")
         //
         $avifUrls = [];
         foreach ($this->breakpoints as $width => $conversion) {
@@ -51,16 +51,8 @@ class ResponsiveImage extends Component
             }
         }
 
-        // 1a) Optionally add "original-avif" if defined:
-        // $fullPath = $this->media->getPath();
-        // if ($this->media->hasGeneratedConversion('original-avif')) {
-        //     $info = @getimagesize($fullPath);
-        //     $origW = $info ? $info[0] : 2048;
-        //     $avifUrls[$origW] = $this->media->getUrl('original-avif');
-        // }
-
         //
-        // 2) Build WebP URLs next (if they exist as "*-webp"):
+        // 2) Build WebP URLs (if they exist as "<conversion>-webp")
         //
         $webpUrls = [];
         foreach ($this->breakpoints as $width => $conversion) {
@@ -70,21 +62,14 @@ class ResponsiveImage extends Component
             }
         }
 
-        // 2a) Optionally add "original-webp" if defined:
-        // if ($this->media->hasGeneratedConversion('original-webp')) {
-        //     $info = @getimagesize($this->media->getPath());
-        //     $origW = $info ? $info[0] : 2048;
-        //     $webpUrls[$origW] = $this->media->getUrl('original-webp');
-        // }
-
         //
-        // 3) Sort both arrays by width ascending:
+        // 3) Sort both AVIF‐ and WebP‐URL arrays by width ascending
         //
         ksort($avifUrls);
         ksort($webpUrls);
 
         //
-        // 4) Build srcset strings:
+        // 4) Build “srcset” strings from each associative array
         //
         $avifSrcset = collect($avifUrls)
             ->map(fn($url, $w) => "{$url} {$w}w")
@@ -95,21 +80,24 @@ class ResponsiveImage extends Component
             ->implode(', ');
 
         //
-        // 5) Choose a fallback for <img>: pick smallest AVIF if exists, otherwise smallest WebP.
+        // 5) Choose a fallback “src” for <img>:
+        //    – If any AVIF exists, use the smallest‐width AVIF
+        //    – Otherwise, if any WebP exists, use the smallest‐width WebP
+        //    – Otherwise, fall back to the original file URL (whatever format)
         //
         if (!empty($avifUrls)) {
-            $firstAvif = array_values($avifUrls)[0];
-            $fallback = $firstAvif;
+            // pick the first (smallest) AVIF
+            $fallback = array_values($avifUrls)[0];
         } elseif (!empty($webpUrls)) {
-            $firstWebp = array_values($webpUrls)[0];
-            $fallback = $firstWebp;
+            // pick the first (smallest) WebP
+            $fallback = array_values($webpUrls)[0];
         } else {
-            // If no conversions exist at all, fall back to the original file (whatever its format)
+            // no conversions—just use the original
             $fallback = $this->media->getUrl();
         }
 
         //
-        // 6) Define a “sizes” attribute suitable to your layout:
+        // 6) Define a “sizes” attribute appropriate for most responsive layouts:
         //
         $sizes = '(max-width: 640px) 150px, (max-width: 1024px) 300px, 1024px';
 

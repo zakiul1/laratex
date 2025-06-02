@@ -1,30 +1,29 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media as BaseMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\HasMedia;
 use Spatie\Image\Enums\Fit;
 
 class Media extends BaseMedia implements HasMedia
 {
     use InteractsWithMedia;
 
-    /**
-     * Register all of the conversions we need, in both JPEG/PNG and WebP formats.
-     */
     public function registerMediaConversions(?BaseMedia $media = null): void
     {
         //
-        // 1) JPEG/PNG conversions (always)
+        // 1) JPEG/PNG “thumbnail” conversion (if you still need it)
         //
         $this
             ->addMediaConversion('thumbnail')
             ->fit(Fit::Crop, 200, 200)
             ->nonQueued();
 
+        //
+        // 2) “medium” and “large” JPEG/PNG conversions (if you still need them)
+        //
         $this
             ->addMediaConversion('medium')
             ->fit(Fit::Crop, 400, 300)
@@ -38,7 +37,7 @@ class Media extends BaseMedia implements HasMedia
             ->nonQueued();
 
         //
-        // 2) WebP conversions (same sizes, but output as .webp)
+        // 3) “thumbnail-webp”, “medium-webp”, “large-webp” conversions
         //
         $this
             ->addMediaConversion('thumbnail-webp')
@@ -60,18 +59,28 @@ class Media extends BaseMedia implements HasMedia
             ->fit(Fit::Max, 1024, 576)
             ->quality(80)
             ->nonQueued();
+
+        //
+        // 4) If you also want AVIF, you can add “thumbnail-avif” etc. here
+        //    exactly as you did for webp
+        //
+        // $this
+        //     ->addMediaConversion('thumbnail-avif')
+        //     ->format('avif')
+        //     ->fit(Fit::Crop, 200, 200)
+        //     ->quality(60)
+        //     ->nonQueued();
+        //
+        // …and so on
     }
 
-    /**
-     * All the taxonomy categories this media item belongs to.
-     */
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(
-            TermTaxonomy::class,      // related model
-            'media_term_taxonomy',    // pivot table
-            'media_id',               // this model’s FK in pivot
-            'term_taxonomy_id'        // related model’s FK in pivot
+            TermTaxonomy::class,
+            'media_term_taxonomy',
+            'media_id',
+            'term_taxonomy_id'
         )
             ->wherePivot('object_type', 'media')
             ->withPivot('object_type')

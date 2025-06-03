@@ -100,11 +100,11 @@
                             </p>
                         @endif
 
-                        {{-- Read More button with aria-label for accessibility --}}
+                        {{-- Read More button (visibly just “Read More” but with hidden text behind it) --}}
                         <a href="{{ $url }}"
-                            class="inline-flex items-center text-blue-600 font-medium hover:underline"
-                            aria-label="Read more about {{ $title }}">
+                            class="inline-flex items-center text-blue-600 font-medium hover:underline">
                             Read More
+                            <span class="sr-only"> about {{ $title }}</span>
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 ml-1" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

@@ -1,4 +1,4 @@
-// dynamicGridCartStore.js
+// resources/js/dynamicGridCartStore.js
 import Alpine from "alpinejs";
 
 document.addEventListener("alpine:init", () => {
@@ -13,18 +13,20 @@ document.addEventListener("alpine:init", () => {
         errors: [],
 
         init() {
-            // Load existing cart from localStorage
+            // 1) Load existing cart from localStorage
             try {
                 const saved = localStorage.getItem("dynamicCartItems");
-                if (saved) this.items = JSON.parse(saved);
+                if (saved) {
+                    this.items = JSON.parse(saved);
+                }
             } catch (e) {
                 console.error("Failed to parse saved cart", e);
             }
+            // 2) Bind all .get-price-btn clicks _after_ DOM is ready
             this.bindButtons();
         },
 
         save() {
-            // Persist current items array
             localStorage.setItem(
                 "dynamicCartItems",
                 JSON.stringify(this.items)
@@ -32,6 +34,10 @@ document.addEventListener("alpine:init", () => {
         },
 
         bindButtons() {
+            // Remove any previous listeners and re‐bind
+            document.querySelectorAll(".get-price-btn").forEach((btn) => {
+                btn.replaceWith(btn.cloneNode(true));
+            });
             document.querySelectorAll(".get-price-btn").forEach((btn) => {
                 btn.addEventListener("click", () => {
                     const id = btn.dataset.id;
@@ -105,5 +111,5 @@ document.addEventListener("alpine:init", () => {
         },
     });
 
-    Alpine.store("dynamicCart").init();
+    // ← No direct call to Alpine.store("dynamicCart").init() here!
 });

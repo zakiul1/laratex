@@ -7,7 +7,7 @@
     $modelClass = $isProductTax ? \App\Models\Product::class : \App\Models\Post::class;
     $relation = $isProductTax ? 'taxonomies' : 'termTaxonomies';
 
-    // Build base query
+    // Build base query for items in this taxonomy+category
     $query = $modelClass::whereHas($relation, function ($q) use ($opts) {
         $q->where('taxonomy', $opts['taxonomy'])->where('term_id', $opts['category_id']);
     });
@@ -46,7 +46,7 @@
             @endif
         @endif
 
-        {{-- Single column on mobile (≤768px); two columns at md (≥768px) --}}
+        {{-- Grid: single column on mobile; two columns on md+ --}}
         <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
             @foreach ($items as $item)
                 @php
@@ -59,7 +59,7 @@
                     );
                     $url = $isProductTax ? route('products.show', $item->slug) : route('posts.show', $item->slug);
 
-                    // Force image display for single_post + layout2
+                    // Force‐show image for single_post + layout2
                     $forceShowImage = $opts['type'] === 'single_post' && $opts['layout'] === 'layout2';
                     $shouldShowImage = !empty($opts['show_image']) || $forceShowImage;
 
@@ -68,7 +68,7 @@
                 @endphp
 
                 <div class="flex flex-col md:flex-row md:space-x-6">
-                    {{-- Image column --}}
+                    {{-- IMAGE COLUMN --}}
                     <div class="w-full md:w-1/3 flex-shrink-0 mb-4 md:mb-0">
                         @if ($shouldShowImage && $media)
                             <div class="overflow-hidden" style="aspect-ratio:1/1;">
@@ -86,7 +86,7 @@
                         @endif
                     </div>
 
-                    {{-- Text column --}}
+                    {{-- TEXT COLUMN --}}
                     <div class="w-full md:w-2/3 space-y-2">
                         <h3 class="text-2xl text-[#0e4f7f]">
                             <a href="{{ $url }}" class="hover:text-blue-600 transition">
@@ -100,11 +100,10 @@
                             </p>
                         @endif
 
-                        {{-- Read More link with descriptive aria-label --}}
+                        {{-- VISIBLE DESCRIPTIVE LINK TEXT --}}
                         <a href="{{ $url }}"
-                            class="inline-flex items-center text-blue-600 font-medium hover:underline"
-                            aria-label="Read more about {{ $title }}">
-                            Read More
+                            class="inline-flex items-center text-blue-600 font-medium hover:underline">
+                            Read More about “{{ $title }}”
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 ml-1" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

@@ -98,7 +98,7 @@
                         </div>
                     @endif
 
-                    <h3 class="text-2xl  text-[#0e4f7f] my-2">{{ $title }}</h3>
+                    <h3 class="text-xl  text-[#0e4f7f] my-2">{{ $title }}</h3>
 
                     @if (!empty($opts['show_description']) && !empty($opts['excerpt_words']))
                         <p class="text-gray-600 mb-4">

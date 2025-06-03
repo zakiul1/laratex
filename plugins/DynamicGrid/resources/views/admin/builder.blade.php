@@ -1,3 +1,4 @@
+{{-- resources/views/plugins/DynamicGrid/admin/builder.blade.php --}}
 @extends('layouts.dashboard')
 
 @section('content')
@@ -136,7 +137,10 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Pass the PHP layouts array into JS
             const layouts = @json($layouts);
+
+            // Predefined button‐type options
             const buttonOptions = {
                 default: [{
                         value: 'none',
@@ -149,7 +153,7 @@
                     {
                         value: 'price',
                         label: 'Price'
-                    }
+                    },
                 ],
                 priceOnly: [{
                         value: 'none',
@@ -158,7 +162,7 @@
                     {
                         value: 'price',
                         label: 'Price'
-                    }
+                    },
                 ],
                 readMoreOnly: [{
                         value: 'none',
@@ -167,22 +171,26 @@
                     {
                         value: 'read_more',
                         label: 'Read More'
-                    }
+                    },
                 ],
             };
 
+            // Grab references to the select fields and wrappers
             const typeSelect = document.getElementById('type');
             const layoutSelect = document.getElementById('layout');
             const buttonType = document.getElementById('button_type');
 
+            // Wrapper elements for show/hide
             function toggle(id, show) {
                 document.getElementById(id).style.display = show ? '' : 'none';
             }
 
+            // Populate the button_type <select> based on chosen layout
             function populateButtons(opts) {
                 buttonType.innerHTML = '';
                 opts.forEach(o => {
                     const opt = new Option(o.label, o.value);
+                    // Retain old() selection if present
                     if (o.value === '{{ old('button_type', $config['button_type']) }}') {
                         opt.selected = true;
                     }
@@ -190,50 +198,48 @@
                 });
             }
 
+            // Show/hide logic whenever type or layout changes
             function handleTypeLayout() {
                 const t = typeSelect.value;
                 const l = layoutSelect.value;
 
-                // FEATURE_POST + LAYOUT2
-                if (t === 'feature_post' && l === 'layout2') {
+                // ------ 1) feature_post logic ------
+                if (t === 'feature_post') {
+                    // For both layout1 and layout2 of feature_post:
                     toggle('button_wrapper', false);
                     toggle('columns_wrapper', false);
                     toggle('post_id_wrapper', true);
                     toggle('show_image_wrapper', true);
-                    toggle('excerpt_wrapper', true);
+                    toggle('excerpt_wrapper', true); // excerpt is used for both feature layouts
                     return;
                 }
-                // FEATURE_POST + LAYOUT1
-                if (t === 'feature_post' && l === 'layout1') {
-                    toggle('button_wrapper', false);
-                    toggle('columns_wrapper', false);
-                    toggle('post_id_wrapper', true);
-                    toggle('show_image_wrapper', true);
-                    toggle('excerpt_wrapper', true);
-                    return;
-                }
-                // SINGLE_POST logic unchanged (except no description)
+
+                // ------ 2) single_post logic ------
                 if (t === 'single_post') {
+                    // Common hides/shows for any single_post
                     toggle('show_image_wrapper', false);
                     toggle('post_id_wrapper', false);
                     toggle('product_amount_wrapper', true);
                     toggle('columns_wrapper', false);
-                    toggle('excerpt_wrapper', false);
 
+                    // Now show/hide excerpt + button selection based on layout
                     if (l === 'layout1') {
+                        toggle('excerpt_wrapper', false);
                         toggle('button_wrapper', true);
                         populateButtons(buttonOptions.priceOnly);
                     } else if (l === 'layout2') {
+                        toggle('excerpt_wrapper', true);
                         toggle('button_wrapper', true);
                         populateButtons(buttonOptions.readMoreOnly);
                     } else {
+                        toggle('excerpt_wrapper', false);
                         toggle('button_wrapper', true);
                         populateButtons(buttonOptions.default);
                     }
                     return;
                 }
 
-                // WIDGET_POST or others
+                // ------ 3) all other “widget” or custom types ------
                 toggle('button_wrapper', true);
                 toggle('show_image_wrapper', true);
                 toggle('post_id_wrapper', true);
@@ -243,17 +249,22 @@
                 populateButtons(buttonOptions.default);
             }
 
+            // Whenever “Type” changes, rebuild the “Layout” options
             typeSelect.addEventListener('change', () => {
                 layoutSelect.innerHTML = '';
-                Object.entries(layouts[typeSelect.value] || {}).forEach(([k, label]) =>
-                    layoutSelect.add(new Option(label, k))
-                );
+                Object.entries(layouts[typeSelect.value] || {}).forEach(([k, label]) => {
+                    layoutSelect.add(new Option(label, k));
+                });
                 handleTypeLayout();
             });
+
+            // Whenever “Layout” changes, re-run show/hide logic
             layoutSelect.addEventListener('change', handleTypeLayout);
+
+            // Run once on page load
             handleTypeLayout();
 
-            // copy-to-clipboard
+            // Copy‐to‐Clipboard for the generated shortcode textarea
             document.getElementById('copy-btn')?.addEventListener('click', () => {
                 const ta = document.getElementById('shortcode');
                 ta.select();
@@ -263,7 +274,7 @@
                 setTimeout(() => btn.textContent = 'Copy', 1500);
             });
 
-            // AJAX Category Loader
+            // AJAX: load categories when taxonomy changes
             const taxonomyEl = document.getElementById('taxonomy');
             const categoryEl = document.getElementById('category');
             const baseUrl = "{{ url('admin/plugins/dynamicgrid/categories') }}";
@@ -285,8 +296,13 @@
                     let html = '<option value="">— Select Category —</option>';
                     if (cats.length) {
                         cats.forEach(c => {
-                            html +=
-                                `<option value="${c.id}"${c.id==oldCat?' selected':''}>${c.name}</option>`;
+                            html += `
+                                <option
+                                    value="${c.id}"
+                                    ${c.id == oldCat ? 'selected' : ''}
+                                >
+                                    ${c.name}
+                                </option>`;
                         });
                     } else {
                         html = '<option value="">— No categories —</option>';
@@ -298,6 +314,8 @@
             }
 
             taxonomyEl.addEventListener('change', e => loadCategories(e.target.value));
+
+            // On page load, if old('taxonomy') exists, fire one AJAX fetch
             @if (old('taxonomy'))
                 loadCategories("{{ old('taxonomy') }}");
             @endif

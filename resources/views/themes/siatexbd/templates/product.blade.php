@@ -32,11 +32,10 @@
             </nav>
 
             {{-- Product Detail Card --}}
-            {{-- Note: fixed the background class from "bg-text-gray-200" to "bg-gray-200" --}}
-            <div class="bg-gray-200 p-12">
+            <div class="bg-gray-100 p-12">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
 
-                    {{-- Left Column --}}
+                    {{-- Left Column (description + “Get Price” button) --}}
                     <div class="space-y-4">
                         <div class="w-16 h-1 bg-red-600"></div>
 
@@ -46,11 +45,11 @@
                             </p>
                         @endif
 
-                        <h1 class="text-3xl md:text-[32px] font-bold text-blue-800">
+                        <h1 class="text-3xl md:text-[32px] font-sans text-[#0e4f7f]">
                             {{ $product->name }}
                         </h1>
 
-                        <p class="text-gray-700 leading-relaxed">
+                        <p class="text-gray-700 text-justify leading-relaxed">
                             @if (!empty($product->excerpt))
                                 {!! nl2br(e($product->excerpt)) !!}
                             @elseif (!empty($product->description))
@@ -69,9 +68,9 @@
                         </button>
                     </div>
 
-                    {{-- Right Column --}}
-                    <div>
-                        @if ($media)
+                    {{-- Right Column (sticky image) --}}
+                    @if ($media)
+                        <div class="md:sticky md:top-4">
                             <div class="overflow-hidden" style="aspect-ratio:1/1;">
                                 <a href="{{ $detailUrl }}" class="block w-full h-full">
                                     <x-responsive-image :media="$media" :breakpoints="[
@@ -85,12 +84,14 @@
                                         class="w-full h-full object-contain" alt="{{ $product->name }}" />
                                 </a>
                             </div>
-                        @else
+                        </div>
+                    @else
+                        <div>
                             <div class="w-full h-80 flex items-center justify-center text-gray-400">
                                 —
                             </div>
-                        @endif
-                    </div>
+                        </div>
+                    @endif
 
                 </div>
             </div>

@@ -98,7 +98,7 @@
                         </div>
                     @endif
 
-                    <h3 class="font-medium text-lg my-2">{{ $title }}</h3>
+                    <h3 class="text-2xl  text-[#0e4f7f] my-2">{{ $title }}</h3>
 
                     @if (!empty($opts['show_description']) && !empty($opts['excerpt_words']))
                         <p class="text-gray-600 mb-4">
@@ -108,7 +108,7 @@
 
                     @if (($opts['button_type'] ?? '') === 'price')
                         <button type="button"
-                            class="get-price-btn mt-auto px-4 py-2 text-blue-600 font-medium
+                            class="get-price-btn mt-auto px-4 py-2 text-[#0e4f7f] font-medium
                                    border-b-2 border-blue-600 hover:text-blue-800"
                             data-id="{{ $item->id }}" data-title="{{ e($title) }}"
                             data-image="{{ $media->getUrl('thumbnail') }}" data-url="{{ $url }}">

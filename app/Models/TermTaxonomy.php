@@ -71,6 +71,10 @@ class TermTaxonomy extends Model
     {
         return $this->belongsTo(Term::class, 'term_id', 'id');
     }
+    public function parentTerm()
+    {
+        return $this->belongsTo(TermTaxonomy::class, 'parent')->with('term');
+    }
 
     /**
      * Parent taxonomy in the same table.

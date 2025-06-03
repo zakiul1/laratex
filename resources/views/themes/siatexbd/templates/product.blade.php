@@ -1,7 +1,12 @@
+{{-- resources/views/themes/siatexbd/templates/product.blade.php --}}
 @extends('themes.siatexbd.layout')
 
 @section('content')
     @php
+        use Illuminate\Support\Str;
+
+        // If your controller passed $category, it should be a TermTaxonomy instance or null.
+        // We’ll build media data for the product image as before.
         $media = $product->featuredMedia->first();
         $mediaUrl = $media ? $media->getUrl('large') : '';
         $detailUrl = route('products.show', $product->slug);
@@ -14,17 +19,23 @@
             <nav class="text-sm text-gray-700" aria-label="Breadcrumb">
                 <ol class="flex flex-wrap space-x-2">
                     <li>
-                        <a href="{{ route('home') }}" class="hover:underline text-gray-700">Home</a>
+                        <a href="{{ route('home') }}" class="hover:underline text-gray-700">
+                            Home
+                        </a>
                     </li>
                     <li>/</li>
-                    @if ($category)
+
+                    {{-- Only show category link if $category and its term exist --}}
+                    @if (isset($category) && $category?->term)
                         <li>
-                            <a href="{{ route('categories.show', $category->slug) }}" class="hover:underline text-gray-700">
-                                {{ $category->name }}
+                            <a href="{{ route('categories.show', $category->term->slug) }}"
+                                class="hover:underline text-gray-700">
+                                {{ $category->term->name }}
                             </a>
                         </li>
                         <li>/</li>
                     @endif
+
                     <li class="font-semibold text-gray-900" aria-current="page">
                         {{ $product->name }}
                     </li>
@@ -39,9 +50,9 @@
                     <div class="space-y-4">
                         <div class="w-16 h-1 bg-red-600"></div>
 
-                        @if ($category)
+                        @if (isset($category) && $category?->term)
                             <p class="text-sm uppercase text-gray-700">
-                                {{ $category->name }}
+                                {{ $category->term->name }}
                             </p>
                         @endif
 
@@ -79,7 +90,7 @@
                                         480 => 'mobile',
                                         768 => 'tablet',
                                         1024 => 'large',
-                                    ]" {{-- on screens ≤768px, the image is treated as 100vw; otherwise 50vw --}}
+                                    ]"
                                         sizes="(max-width:768px) 100vw, 50vw" width="1024" height="1024" loading="lazy"
                                         class="w-full h-full object-contain" alt="{{ $product->name }}" />
                                 </a>

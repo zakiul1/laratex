@@ -214,17 +214,27 @@ class CategoryController extends Controller
      */
     public function show($slug)
     {
-        $category = TermTaxonomy::with(['term', 'posts'])
-            ->where('taxonomy', 'category')
+        // 1) Load the requested taxonomy row, using taxonomy = 'product' instead of 'category'
+        $category = TermTaxonomy::with([
+            'term',
+            'children.term',
+            'parentTerm.term',
+            'posts',
+        ])
+            ->where('taxonomy', 'product')                          // ← was 'category'
             ->whereHas('term', fn($q) => $q->where('slug', $slug))
             ->firstOrFail();
 
-        $products = $category->posts;
-        $allCategories = TermTaxonomy::with('term', 'children')
-            ->where('taxonomy', 'category')
+        // 2) All “products” attached to that taxonomy
+        $products = $category->products;                            // now using products(), not posts()
+
+        // 3) Top‐level “product” taxonomies (parent = 0)
+        $allCategories = TermTaxonomy::with(['term', 'children.term'])
+            ->where('taxonomy', 'product')                          // ← was 'category'
             ->where('parent', 0)
             ->get();
 
+        // 4) Render your theme’s “category” template
         $theme = getActiveTheme();
         $themeView = "themes.{$theme}.templates.category";
 
@@ -234,4 +244,5 @@ class CategoryController extends Controller
 
         abort(404);
     }
+
 }

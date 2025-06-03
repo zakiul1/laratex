@@ -275,15 +275,20 @@ class ProductController extends Controller
 
     public function show(string $slug)
     {
-        // (unchanged)
+        // 1) Load the product by slug, eager‐load its featuredMedia and its taxonomies + term
         $product = Product::with(['featuredMedia', 'taxonomies.term'])
             ->where('slug', $slug)
             ->firstOrFail();
 
+        // 2) Convert content JSON to HTML if needed
         $contentHtml = ElementFactory::json2html($product->content ?: '[]');
 
-        $category = optional($product->taxonomies->first())->term;
+        // 3) Grab the full TermTaxonomy (so Blade can do $category->term->slug)
+        $categoryTaxonomy = $product->taxonomies->first();
+        //    • This is a TermTaxonomy instance (or null if none)
+        //    • Make sure Product::taxonomies() returns TermTaxonomy objects
 
+        // 4) Featured Products block (unchanged)
         $featuredCategory = TermTaxonomy::with(['term', 'products.featuredMedia'])
             ->where('taxonomy', 'product')
             ->whereHas('term', fn($q) => $q->where('name', 'Featured Products'))
@@ -293,6 +298,7 @@ class ProductController extends Controller
             ? $featuredCategory->products
             : collect();
 
+        // 5) Determine active theme
         if (Schema::hasTable('site_settings')) {
             $settings = SiteSetting::firstOrCreate([]);
             $theme = $settings->active_theme ?: 'classic';
@@ -305,12 +311,14 @@ class ProductController extends Controller
             abort(404, "Template not found: {$view}");
         }
 
+        // 6) Pass $categoryTaxonomy into the view as 'category'
         return view($view, [
             'product' => $product,
-            'category' => $category,
+            'category' => $categoryTaxonomy,
             'featuredCategory' => $featuredCategory,
             'featuredProducts' => $featuredProducts,
             'pageOutput' => $contentHtml,
         ]);
     }
+
 }

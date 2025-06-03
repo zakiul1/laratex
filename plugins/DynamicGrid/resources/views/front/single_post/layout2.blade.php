@@ -18,12 +18,12 @@
 
     $items = $query->get();
 
-    // ── Revised “breakpoints” to include mobile (480px) and tablet (768px) ──
+    // Responsive breakpoints for <x-responsive-image>
     $breakpoints = [
         150 => 'thumbnail',
         300 => 'medium',
-        480 => 'mobile', // 480px‐wide version for phones
-        768 => 'tablet', // 768px‐wide version for small tablets
+        480 => 'mobile',
+        768 => 'tablet',
         1024 => 'large',
     ];
 @endphp
@@ -58,15 +58,22 @@
                         '…',
                     );
                     $url = $isProductTax ? route('products.show', $item->slug) : route('posts.show', $item->slug);
+
+                    // Force image display for single_post + layout2
+                    $forceShowImage = $opts['type'] === 'single_post' && $opts['layout'] === 'layout2';
+                    $shouldShowImage = !empty($opts['show_image']) || $forceShowImage;
+
+                    // Only show excerpt if excerpt_words > 0
+                    $showExcerpt = isset($opts['excerpt_words']) && (int) $opts['excerpt_words'] > 0;
                 @endphp
 
                 <div class="flex flex-col md:flex-row md:space-x-6">
-                    {{-- Image (square aspect ratio) --}}
+                    {{-- Image column --}}
                     <div class="w-full md:w-1/3 flex-shrink-0 mb-4 md:mb-0">
-                        @if (!empty($opts['show_image']) && $media)
+                        @if ($shouldShowImage && $media)
                             <div class="overflow-hidden" style="aspect-ratio:1/1;">
                                 <a href="{{ $url }}" class="block w-full h-full">
-                                    <x-responsive-image :media="$media" :breakpoints="$breakpoints" {{-- 2) sizes: ≤768px → 100vw; >768px → 50vw --}}
+                                    <x-responsive-image :media="$media" :breakpoints="$breakpoints"
                                         sizes="(max-width: 768px) 100vw, 50vw" width="400" height="400"
                                         loading="lazy" class="w-full h-full object-contain" alt="{{ $title }}" />
                                 </a>
@@ -79,21 +86,24 @@
                         @endif
                     </div>
 
-                    {{-- Text --}}
+                    {{-- Text column --}}
                     <div class="w-full md:w-2/3 space-y-2">
-                        <h3 class="text-2xl  text-[#0e4f7f]">
+                        <h3 class="text-2xl text-[#0e4f7f]">
                             <a href="{{ $url }}" class="hover:text-blue-600 transition">
                                 {{ $title }}
                             </a>
                         </h3>
 
-                        {{-- Show excerpt if excerpt_words was provided --}}
-                        @if (!empty($opts['excerpt_words']))
-                            <p class="text-gray-600 leading-loose text-justify">{{ $excerpt }}</p>
+                        @if ($showExcerpt)
+                            <p class="text-gray-600 leading-loose text-justify">
+                                {{ $excerpt }}
+                            </p>
                         @endif
 
+                        {{-- Read More link with descriptive aria-label --}}
                         <a href="{{ $url }}"
-                            class="inline-flex items-center text-blue-600 font-medium hover:underline">
+                            class="inline-flex items-center text-blue-600 font-medium hover:underline"
+                            aria-label="Read more about {{ $title }}">
                             Read More
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 ml-1" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor">
@@ -104,8 +114,7 @@
 
                         @if (($opts['button_type'] ?? '') === 'price')
                             <button type="button"
-                                class="get-price-btn mt-4 px-4 py-2 text-blue-600 font-medium
-                                           border-b-2 border-blue-600 hover:text-blue-800"
+                                class="get-price-btn mt-4 px-4 py-2 text-blue-600 font-medium border-b-2 border-blue-600 hover:text-blue-800"
                                 data-id="{{ $item->id }}" data-title="{{ e($title) }}"
                                 data-image="{{ $media?->getUrl('thumbnail') }}" data-url="{{ $url }}">
                                 Get Price

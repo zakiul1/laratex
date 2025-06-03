@@ -46,7 +46,7 @@
             @endif
         @endif
 
-        {{-- Grid: single column on mobile; two columns on md+ --}}
+        {{-- Single column on mobile (≤768px); two columns at md (≥768px) --}}
         <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
             @foreach ($items as $item)
                 @php
@@ -100,10 +100,11 @@
                             </p>
                         @endif
 
-                        {{-- VISIBLE DESCRIPTIVE LINK TEXT --}}
+                        {{-- Read More button with aria-label for accessibility --}}
                         <a href="{{ $url }}"
-                            class="inline-flex items-center text-blue-600 font-medium hover:underline">
-                            Read More about “{{ $title }}”
+                            class="inline-flex items-center text-blue-600 font-medium hover:underline"
+                            aria-label="Read more about {{ $title }}">
+                            Read More
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 ml-1" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

@@ -35,10 +35,7 @@
             font-weight: 400;
             font-display: swap;
             src: url('{{ asset('fonts/ropasans/RopaSans-Regular.ttf') }}') format('truetype');
-            /* If you have WOFF2 versions, you can add:
-               src: url('{{ asset('fonts/ropasans/RopaSans-Regular.woff2') }}') format('woff2'),
-                    url('{{ asset('fonts/ropasans/RopaSans-Regular.ttf') }}') format('truetype');
-            */
+
         }
 
         /* Italic */

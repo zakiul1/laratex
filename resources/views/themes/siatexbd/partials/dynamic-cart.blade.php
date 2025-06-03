@@ -23,7 +23,7 @@
             <h2 class="text-xl font-bold mb-4">Your Cart</h2>
 
             {{-- ① Give this UL a ref so we can read/write its scrollTop --}}
-            <ul x-ref="cartList" class="space-y-2 max-h-60 overflow-auto text-sm">
+            <ul x-ref="cartList" class="space-y-2 max-h-60 overflow-auto text-sm p-4">
                 <template x-for="item in $store.dynamicCart.items" :key="item.id">
                     <li class="flex items-center justify-between">
                         <div class="flex items-center space-x-2">

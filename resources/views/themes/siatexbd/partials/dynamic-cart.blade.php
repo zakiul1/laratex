@@ -1,3 +1,4 @@
+{{-- resources/views/partials/dynamic-cart.blade.php --}}
 <div x-data>
     {{-- Cart Icon --}}
     <button @click="$store.dynamicCart.showCart = true" aria-label="Open shopping cart"
@@ -21,7 +22,7 @@
 
             <h2 class="text-xl font-bold mb-4">Your Cart</h2>
 
-            {{-- 👇 Add an x-ref here so we can read/write scrollTop --}}
+            {{-- ① Give this UL a ref so we can read/write its scrollTop --}}
             <ul x-ref="cartList" class="space-y-2 max-h-60 overflow-auto text-sm">
                 <template x-for="item in $store.dynamicCart.items" :key="item.id">
                     <li class="flex items-center justify-between">
@@ -30,15 +31,17 @@
                                 aria-hidden="true" />
                             <a :href="item.url" class="hover:underline" x-text="item.title"></a>
                         </div>
-                        {{-- Remove single item: capture scrollTop, remove, then restore --}}
+                        {{-- 
+                           ② On click, store the current scroll, remove the item, 
+                           then restore scrollTop after the DOM has updated 
+                        --}}
                         <button
                             @click="
-                                // 1) remember current scroll position
                                 let savedScroll = $refs.cartList.scrollTop;
-                                // 2) remove the item from Alpine store
                                 $store.dynamicCart.remove(item.id);
-                                // 3) once Alpine has updated the DOM, restore scrollPos
-                                $nextTick(() => { $refs.cartList.scrollTop = savedScroll; });
+                                setTimeout(() => {
+                                  $refs.cartList.scrollTop = savedScroll;
+                                }, 0);
                             "
                             :aria-label="`Remove ${item.title} from cart`" class="text-gray-500">
                             ✕

@@ -2,29 +2,49 @@
 @php
     use Illuminate\Support\Str;
 
-    // Retrieve the stored SEO meta for this model (or an empty array if none exists)
-    $meta = $model->seoMeta->meta ?? [];
+    // Since Product::getSeoAttribute() already returns an array,
+    // just grab that directly. If this is a Page or Category or Post,
+    // you might have a similar accessor.
+    $meta = $model->seo ?? [];
 
-    // 1) Compute the <title>: user‐entered SEO title, or fallback to model title, or app name
-    $title = $meta['title'] ?? ($model->title ?? config('app.name'));
+    //
+    // 1) Compute the <title>:
+    //
+    //    – If the user explicitly set 'title' inside the JSON blob, use it.
+    //    – Otherwise, fallback to $model->title or $model->name (if exists) or app name.
+    //
 
-    // 2) Compute a non‐empty <meta name="description">:
-    if (!empty($meta['description'])) {
-        // Use exactly the SEO description the user provided
-        $description = $meta['description'];
-    } elseif (!empty($model->excerpt)) {
-        // Fallback to the model’s excerpt (truncate to ~155 characters)
-        $description = Str::limit(strip_tags($model->excerpt), 155, '…');
+    if (!empty($meta['title'])) {
+        $seoTitle = $meta['title'];
+    } elseif (!empty($model->title)) {
+        $seoTitle = $model->title;
+    } elseif (!empty($model->name)) {
+        $seoTitle = $model->name;
     } else {
-        // Final fallback: strip HTML tags from description or content, then truncate
-        $raw = $model->description ?? ($model->content ?? '');
-        $description = Str::limit(strip_tags($raw), 155, '…');
+        $seoTitle = config('app.name', 'Laravel');
     }
 
-    // 3) Keywords (user‐entered SEO keywords, or empty)
-    $keywords = $meta['keywords'] ?? '';
+    //
+    // 2) Compute the <meta name="description">:
+    //
+    if (!empty($meta['description'])) {
+        $seoDescription = $meta['description'];
+    } elseif (!empty($model->excerpt)) {
+        $seoDescription = Str::limit(strip_tags($model->excerpt), 155, '…');
+    } else {
+        // Possible fields: description (for products), content (for posts/pages), etc.
+        $raw = $model->description ?? ($model->content ?? '');
+        $seoDescription = Str::limit(strip_tags($raw), 155, '…');
+    }
 
-    // 4) Map friendly “robots” labels to actual directives
+    //
+    // 3) Keywords tag:
+    //
+    $seoKeywords = $meta['keywords'] ?? '';
+
+    //
+    // 4) Robots directive:
+    //
     $robotMap = [
         'Index & Follow' => 'index, follow',
         'NoIndex & Follow' => 'noindex, follow',
@@ -32,11 +52,11 @@
         'No Archive' => 'noarchive',
         'No Snippet' => 'nosnippet',
     ];
-    $robots = $robotMap[$meta['robots'] ?? 'Index & Follow'];
+    $seoRobots = $robotMap[$meta['robots'] ?? 'Index & Follow'];
 @endphp
 
-{{-- Output the SEO tags --}}
-<title>{{ $title }}</title>
-<meta name="description" content="{{ $description }}">
-<meta name="keywords" content="{{ $keywords }}">
-<meta name="robots" content="{{ $robots }}">
+{{-- OUTPUT --}}
+<title>{{ $seoTitle }}</title>
+<meta name="description" content="{{ $seoDescription }}">
+<meta name="keywords" content="{{ $seoKeywords }}">
+<meta name="robots" content="{{ $seoRobots }}">

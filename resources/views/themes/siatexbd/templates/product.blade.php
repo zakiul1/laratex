@@ -36,6 +36,7 @@
                         <li>/</li>
                     @endif
 
+                    {{-- Main product title as the one and only <h1> on this page --}}
                     <li class="font-semibold text-gray-900" aria-current="page">
                         {{ $product->name }}
                     </li>
@@ -50,16 +51,24 @@
                     <div class="space-y-4">
                         <div class="w-16 h-1 bg-red-600"></div>
 
+                        {{-- If you want to display the category name as a heading, use <h2> instead of <h3>. --}}
                         @if (isset($category) && $category?->term)
-                            <p class="text-sm uppercase text-gray-700">
+                            <h2 class="font-medium text-lg my-2 uppercase text-gray-700">
                                 {{ $category->term->name }}
-                            </p>
+                            </h2>
                         @endif
 
-                        <h1 class="text-3xl md:text-[32px] font-sans text-[#0e4f7f]">
-                            {{ $product->name }}
-                        </h1>
+                        {{-- Product name is already in the breadcrumb as <h1>, so we do not repeat an <h1> here. --}}
+                        {{-- If you want a page‐section heading confirming “Product Details,” you could do: --}}
+                        {{-- <h2 class="text-3xl md:text-[32px] font-sans text-[#0e4f7f]">Product Details</h2> --}}
+                        {{-- But most likely the breadcrumb’s last <li> is sufficient. --}}
 
+                        {{-- If you really need the product title highlighted here again, use <h2> (not <h3>): --}}
+                        <h2 class="text-3xl md:text-[32px] font-sans text-[#0e4f7f]">
+                            {{ $product->name }}
+                        </h2>
+
+                        {{-- Description/Excerpt --}}
                         <p class="text-gray-700 text-justify leading-relaxed">
                             @if (!empty($product->excerpt))
                                 {!! nl2br(e($product->excerpt)) !!}
@@ -103,15 +112,13 @@
                             </div>
                         </div>
                     @endif
-
                 </div>
             </div>
 
-            {{-- Page Content (if any) --}}
+            {{-- Page Content (if any). If this content has its own headings, be sure they start at <h2> or lower. --}}
             <div class="prose max-w-none">
                 {!! apply_filters('the_content', $pageOutput) !!}
             </div>
-
         </div>
     </div>
 @endsection

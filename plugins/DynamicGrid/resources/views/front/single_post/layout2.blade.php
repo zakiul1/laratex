@@ -3,7 +3,7 @@
 @php
     use Illuminate\Support\Str;
 
-    $isProductTax = $opts['taxonomy'] === 'product';
+    $isProductTax = ($opts['taxonomy'] ?? '') === 'product';
     $modelClass = $isProductTax ? \App\Models\Product::class : \App\Models\Post::class;
     $relation = $isProductTax ? 'taxonomies' : 'termTaxonomies';
 
@@ -46,35 +46,29 @@
             @endif
         @endif
 
-        {{-- Single column on mobile (≤768px); two columns at md (≥768px) --}}
+        {{-- grid: one column mobile, two columns md+ --}}
         <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
             @foreach ($items as $item)
                 @php
                     $media = $item->featuredMedia->first();
                     $title = $isProductTax ? $item->name : $item->title;
-                    $excerpt = Str::words(
-                        strip_tags($item->description ?? $item->content),
-                        $opts['excerpt_words'] ?? 30,
-                        '…',
-                    );
+                    $contentSource = $isProductTax ? $item->description : $item->content;
+                    $excerpt = Str::words(strip_tags($contentSource), $opts['excerpt_words'] ?? 30, '…');
                     $url = $isProductTax ? route('products.show', $item->slug) : route('posts.show', $item->slug);
 
-                    // Force‐show image for single_post + layout2
                     $forceShowImage = $opts['type'] === 'single_post' && $opts['layout'] === 'layout2';
                     $shouldShowImage = !empty($opts['show_image']) || $forceShowImage;
-
-                    // Only show excerpt if excerpt_words > 0
                     $showExcerpt = isset($opts['excerpt_words']) && (int) $opts['excerpt_words'] > 0;
                 @endphp
 
-                <div class="flex flex-col md:flex-row md:space-x-6">
+                <div class="flex flex-row space-x-6">
                     {{-- IMAGE COLUMN --}}
-                    <div class="w-full md:w-1/3 flex-shrink-0 mb-4 md:mb-0">
+                    <div class="w-1/3 flex-shrink-0">
                         @if ($shouldShowImage && $media)
                             <div class="overflow-hidden" style="aspect-ratio:1/1;">
                                 <a href="{{ $url }}" class="block w-full h-full">
                                     <x-responsive-image :media="$media" :breakpoints="$breakpoints"
-                                        sizes="(max-width: 768px) 100vw, 50vw" width="400" height="400"
+                                        sizes="(max-width:768px) 100vw, 33vw" width="400" height="400"
                                         loading="lazy" class="w-full h-full object-contain" alt="{{ $title }}" />
                                 </a>
                             </div>
@@ -87,24 +81,25 @@
                     </div>
 
                     {{-- TEXT COLUMN --}}
-                    <div class="w-full md:w-2/3 space-y-2">
-                        <h3 class="text-2xl text-[#0e4f7f]">
+                    <div class="w-2/3 space-y-2">
+                        {{-- Responsive title --}}
+                        <h3 class="text-xl md:text-2xl text-[#0e4f7f]">
                             <a href="{{ $url }}" class="hover:text-blue-600 transition">
                                 {{ $title }}
                             </a>
                         </h3>
 
+                        {{-- Responsive excerpt --}}
                         @if ($showExcerpt)
-                            <p class="text-gray-600 leading-loose text-justify">
+                            <p class="text-sm md:text-base text-gray-600 leading-relaxed text-justify">
                                 {{ $excerpt }}
                             </p>
                         @endif
 
-                        {{-- Read More button (visibly just “Read More” but with hidden text behind it) --}}
+                        {{-- Read More link --}}
                         <a href="{{ $url }}"
-                            class="inline-flex items-center text-blue-600 font-medium hover:underline">
+                            class="inline-flex items-center text-blue-600 font-medium hover:underline text-sm md:text-base">
                             Read More
-                            <span class="sr-only"> about {{ $title }}</span>
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 ml-1" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -112,9 +107,10 @@
                             </svg>
                         </a>
 
+                        {{-- Optional Get Price button --}}
                         @if (($opts['button_type'] ?? '') === 'price')
                             <button type="button"
-                                class="get-price-btn mt-4 px-4 py-2 text-blue-600 font-medium border-b-2 border-blue-600 hover:text-blue-800"
+                                class="get-price-btn mt-4 px-4 py-2 text-blue-600 font-medium border-b-2 border-blue-600 hover:text-blue-800 text-sm md:text-base"
                                 data-id="{{ $item->id }}" data-title="{{ e($title) }}"
                                 data-image="{{ $media?->getUrl('thumbnail') }}" data-url="{{ $url }}">
                                 Get Price

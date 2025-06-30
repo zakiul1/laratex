@@ -6,9 +6,11 @@ use Aponahmed\HtmlBuilder\ElementFactory;
 use App\Models\Media;
 use App\Models\Post;
 use App\Models\PostMeta;
+use App\Models\SiteSetting;
 use App\Models\Term;
 use App\Models\TermTaxonomy;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -334,6 +336,50 @@ class PostController extends Controller
             'id' => $tt->term_taxonomy_id,
             'name' => $term->name,
             'parent' => $tt->parent,
+        ]);
+    }
+
+
+
+
+    public function show(string $slug)
+    {
+        // 1) Load the post by slug, eager‐load its taxonomies + term
+        $post = Post::with(['taxonomies.term'])
+            ->where('slug', $slug)
+            ->firstOrFail();
+
+        // 2) Convert its JSON‐stored content into HTML
+        $pageOutput = ElementFactory::json2html($post->content ?: '[]');
+
+        // 3) Grab the first category taxonomy for the “category” variable
+        $categoryTaxonomy = $post->taxonomies->first();
+
+        // 4) (Optional) If you want a “Featured Posts” block like your products:
+        $featuredCategory = TermTaxonomy::with(['term', 'posts']) // make sure TermTaxonomy::posts() exists
+            ->where('taxonomy', 'post')
+            ->whereHas('term', fn($q) => $q->where('name', 'Featured Posts'))
+            ->first();
+        $featuredPosts = $featuredCategory ? $featuredCategory->posts : collect();
+
+        // 5) Figure out which theme to use
+        if (Schema::hasTable('site_settings')) {
+            $settings = SiteSetting::firstOrCreate([]);
+            $theme = $settings->active_theme ?: 'classic';
+        } else {
+            $theme = env('ACTIVE_THEME', 'classic');
+        }
+
+        // 6) Render the theme‐specific blade
+        $view = "themes.{$theme}.templates.post";
+        abort_unless(view()->exists($view), 404, "Template not found: {$view}");
+
+        return view($view, [
+            'post' => $post,
+            'category' => $categoryTaxonomy,
+            'featuredCategory' => $featuredCategory,
+            'featuredPosts' => $featuredPosts,
+            'pageOutput' => $pageOutput,
         ]);
     }
 }

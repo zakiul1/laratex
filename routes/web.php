@@ -39,7 +39,7 @@ Route::get('storage/{path}', function ($path) {
     return response()->file($full);
 })->where('path', '.*');
 
-Route::get('/dashboard', [DashboardController::class, 'index'])
+Route::get('/aboroni', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 

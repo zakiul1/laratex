@@ -61,7 +61,7 @@
     <div class="relative single-layout1 !ml-0">
         {{-- Optional heading --}}
         @if (!empty($opts['heading']))
-            <h2 class="text-4xl font-bold text-center mb-6">
+            <h2 class="text-4xl font-bold text-center mb-14 mt-8">
                 {{ $opts['heading'] }}
             </h2>
         @endif

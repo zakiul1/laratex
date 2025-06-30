@@ -74,6 +74,11 @@ if ($media && method_exists($media, 'getUrl')) {
                             </td>
                             <td class="px-4 py-2">
                                 <div class="flex items-center gap-2">
+                                    <!-- View button -->
+                                    <a href="{{ route('products.show', $product->slug) }}" target="_blank"
+                                        class="text-xs px-3 py-1 rounded bg-green-600 hover:bg-green-700 text-white">
+                                        View
+                                    </a>
                                     <a href="{{ route('products.edit', $product) }}"
                                         class="text-xs px-3 py-1 rounded bg-yellow-500 hover:bg-yellow-600 text-white">
                                         Edit

@@ -52,7 +52,7 @@
                 @mouseenter="pause()" @mouseleave="start()">
 
                 {{-- ◆ Notice: flex-col stacks on mobile; lg:flex-row makes image left, content right on desktop ◆ --}}
-                <div class="flex flex-col lg:flex-row overflow-hidden p-12 bg-[#f6f6f6]">
+                <div class="flex flex-col lg:flex-row overflow-hidden p-14 bg-[#f6f6f6]">
 
                     {{-- ◀ IMAGE Carousel DIV (first, so it appears on the left at lg+) ▶ --}}
                     <div class="relative p-6 w-full lg:w-1/2 overflow-hidden" style="aspect-ratio:16/9;">

@@ -78,6 +78,8 @@
                 @enderror
             </div>
 
+
+
             {{-- Block Editor --}}
             <div id="customAreaBuilder" class="w-full border rounded"></div>
             <textarea id="layoutData" name="content" class="hidden">{{ old('content', $post->content ?? '') }}</textarea>
@@ -150,7 +152,7 @@
 
             {{-- Permalink --}}
             <div class="border rounded p-4 bg-white shadow">
-                <h3 class="font-semibold text-sm mb-2">Permalink</h3>
+                <h3 class="font-semibold text-sm mb-2">Slug</h3>
                 <input type="text" name="slug" value="{{ old('slug', $post->slug ?? '') }}"
                     placeholder="Optional. Auto-generated if blank."
                     class="w-full border rounded p-2 {{ $errors->has('slug') ? 'border-red-500' : '' }}">

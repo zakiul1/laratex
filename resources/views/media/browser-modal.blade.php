@@ -13,31 +13,49 @@
             </button>
         </header>
 
+        <!-- Filters: Category & Sort -->
+        <div class="px-4 py-2 flex items-center space-x-4 border-b border-gray-200">
+            <!-- Category Filter -->
+            <select x-model="filterCategory" @change="loadLibrary(1)"
+                class="rounded-lg border border-gray-300 px-3 py-2">
+                <option value="">All Categories</option>
+                <template x-for="cat in categories" :key="cat.id">
+                    <option :value="cat.id" x-text="cat.name"></option>
+                </template>
+            </select>
+
+            <!-- Sort Order -->
+            <select x-model="sortOrder" @change="loadLibrary(1)" class="rounded-lg border border-gray-300 px-3 py-2">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="name_asc">Name A–Z</option>
+                <option value="name_desc">Name Z–A</option>
+            </select>
+        </div>
+
         <!-- Tabs -->
         <div class="px-4 py-2 border-b border-gray-200 flex space-x-4">
             <button @click="tab = 'library'"
-                :class="tab === 'library'
-                    ?
+                :class="tab === 'library' ?
                     'border-b-2 border-blue-600 text-blue-600' :
                     'text-gray-600 hover:text-blue-600'"
                 class="px-4 py-2 font-medium transition-colors">
                 Library
             </button>
-            <button @click="tab = 'upload'"
-                :class="tab === 'upload'
-                    ?
+            {{--     <button @click="tab = 'upload'"
+                :class="tab === 'upload' ?
                     'border-b-2 border-blue-600 text-blue-600' :
                     'text-gray-600 hover:text-blue-600'"
                 class="px-4 py-2 font-medium transition-colors">
                 Upload
-            </button>
+            </button> --}}
         </div>
 
         <!-- Body -->
         <div class="p-6 flex-1 overflow-y-auto">
 
             <!-- LIBRARY TAB -->
-            <div x-show="tab === 'library'" class="space-y-6">
+            <div x-show="tab==='library'" class="space-y-6">
 
                 <!-- Selected & Insert -->
                 <div class="flex items-center justify-between">
@@ -46,17 +64,17 @@
                             <div class="w-16 h-16 relative flex-shrink-0 bg-white border rounded-lg shadow-sm">
                                 <img :src="img.thumbnail" class="w-full h-full object-contain p-1" />
                                 <button @click="toggleSelect(img)"
-                                    class="absolute -top-2 -right-2 bg-white rounded-full text-red-600 text-xs p-1 shadow hover:bg-red-100 transition-colors">
+                                    class="absolute -top-2 -right-2 bg-white rounded-full text-red-600 text-xs p-1 shadow hover:bg-red-100">
                                     ×
                                 </button>
                             </div>
                         </template>
-                        <template x-if="selectedIds.length === 0">
+                        <template x-if="selectedIds.length===0">
                             <span class="text-gray-400 italic">No images selected</span>
                         </template>
                     </div>
                     <button @click="insertSelected()" :disabled="selectedIds.length === 0"
-                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 transition-colors">
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50">
                         Insert Selected (<span x-text="selectedIds.length"></span>)
                     </button>
                 </div>
@@ -75,88 +93,34 @@
                             :class="selectedIds.includes(img.id) ?
                                 'border-blue-500 scale-105' :
                                 'border-gray-200 hover:border-blue-300'"
-                            class="w-[150px] h-[150px] overflow-hidden rounded-lg bg-white border-2 cursor-pointer transition-transform duration-200">
+                            class="w-[150px] h-[150px] overflow-hidden rounded-lg bg-white border-2 cursor-pointer transition-transform">
                             <img :src="img.thumbnail" class="w-full h-full object-cover" loading="lazy" />
                         </div>
                     </template>
 
-                    <template x-if="!isLoading && images.length === 0">
-                        <p class="col-span-full text-center text-gray-500 py-8">
-                            No media found.
-                        </p>
+                    <template x-if="!isLoading && images.length===0">
+                        <p class="col-span-full text-center text-gray-500 py-8">No media found.</p>
                     </template>
                 </div>
 
                 <!-- Pagination -->
-                <div x-show="!isLoading && images.length > 0" class="flex justify-center space-x-2 mt-4">
-                    <button @click="loadLibrary(currentPage - 1)" :disabled="currentPage === 1"
-                        class="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50 hover:bg-gray-300 transition-colors">
+                <div x-show="!isLoading && images.length>0" class="flex justify-center space-x-2 mt-4">
+                    <button @click="loadLibrary(currentPage-1)" :disabled="currentPage === 1"
+                        class="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50">
                         Previous
                     </button>
                     <span class="px-4 py-2 bg-gray-100 rounded-lg">
-                        Page <span x-text="currentPage"></span> of <span x-text="lastPage || 1"></span>
+                        Page <span x-text="currentPage"></span> of <span x-text="lastPage||1"></span>
                     </span>
-                    <button @click="loadLibrary(currentPage + 1)" :disabled="currentPage === lastPage"
-                        class="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50 hover:bg-gray-300 transition-colors">
+                    <button @click="loadLibrary(currentPage+1)" :disabled="currentPage === lastPage"
+                        class="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50">
                         Next
                     </button>
                 </div>
             </div>
 
-            <!-- UPLOAD TAB -->
-            <div x-show="tab === 'upload'" class="space-y-6">
-                <div x-show="showSuccess" class="p-4 bg-green-100 text-green-800 rounded-lg text-center">
-                    Upload complete! Switching to Library...
-                </div>
-                <div x-show="uploadError" class="bg-red-100 text-red-700 p-4 rounded-lg" x-text="uploadError"></div>
 
-                <!-- Dropzone -->
-                <div @dragover.prevent @drop.prevent="handleDrop($event)" @click="$refs.uploadInput.click()"
-                    class="border-2 border-dashed border-gray-300 p-8 text-center rounded-lg cursor-pointer hover:border-blue-400 transition-colors">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                    <p class="mt-2 text-gray-600">Click or drag files here to upload</p>
-                    <p class="text-sm text-gray-400">Supports multiple files (max 5MB each)</p>
-                    <input x-ref="uploadInput" type="file" multiple accept="image/*,video/*" class="hidden"
-                        @change="pickFiles($event)" />
-                </div>
 
-                <!-- Upload Queue -->
-                <div class="space-y-4">
-                    <template x-for="(file, idx) in uploads" :key="file.name">
-                        <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                            <div class="w-16 h-16 border rounded-lg overflow-hidden flex-shrink-0 bg-white">
-                                <img :src="file.previewUrl" class="w-full h-full object-contain p-1" />
-                            </div>
-                            <div class="flex-1 space-y-1">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm font-medium truncate" x-text="file.name"></span>
-                                    <template x-if="file.status === 'uploading' && file.lengthComputable">
-                                        <span class="text-xs text-gray-500" x-text="file.progress + '%'"></span>
-                                    </template>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                                    <div class="h-full bg-blue-600 transition-all duration-300"
-                                        :style="file.lengthComputable ? `width: ${file.progress}%` : ''"></div>
-                                </div>
-                            </div>
-                            <button @click="removeFile(idx)" class="text-red-600 hover:text-red-700">×</button>
-                        </div>
-                    </template>
-                </div>
-
-                <!-- Upload All Button -->
-                <div class="text-right">
-                    <button @click="uploadAll()"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                        :disabled="uploads.length === 0">
-                        Upload Files
-                    </button>
-                </div>
-            </div>
         </div>
     </div>
 </div>

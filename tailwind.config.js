@@ -2,11 +2,15 @@ import defaultTheme from "tailwindcss/defaultTheme";
 import forms from "@tailwindcss/forms";
 
 export default {
+    // Disable all dark-mode variants
+    darkMode: false,
+
     safelist: [
         "bg-yellow-600",
         "hover:bg-yellow-700",
         // add any other dynamic classes you build at runtime
     ],
+
     content: [
         // Laravel’s default pagination views (still needed if you use paginate())
         "./vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php",
@@ -22,6 +26,7 @@ export default {
         "./resources/js/**/*.jsx",
         "./resources/js/**/*.tsx",
     ],
+
     theme: {
         extend: {
             fontFamily: {
@@ -29,5 +34,6 @@ export default {
             },
         },
     },
+
     plugins: [forms],
 };

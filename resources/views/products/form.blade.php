@@ -192,26 +192,36 @@
                     <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                 @enderror
             </div>
+            {{-- Slug --}}
+            <div class="border rounded p-4 bg-white shadow">
+                <h3 class="font-semibold text-sm mb-2">Slug</h3>
+                <input type="text" name="slug" value="{{ old('slug', $product->slug ?? '') }}"
+                    placeholder="Optional. Auto-generated if blank."
+                    class="w-full border rounded p-2 {{ $errors->has('slug') ? 'border-red-500' : '' }}">
+                @error('slug')
+                    <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                @enderror
+            </div>
 
             {{-- Price --}}
-            <div>
+            {{--        <div>
                 <label class="block text-sm font-medium">Price</label>
                 <input type="text" name="price" value="{{ old('price', $product->price ?? '') }}"
                     class="w-full border rounded p-2 @error('price') border-red-500 @enderror">
                 @error('price')
                     <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                 @enderror
-            </div>
+            </div> --}}
 
             {{-- Stock --}}
-            <div>
+            {{--      <div>
                 <label class="block text-sm font-medium">Stock</label>
                 <input type="text" name="stock" value="{{ old('stock', $product->stock ?? '') }}"
                     class="w-full border rounded p-2 @error('stock') border-red-500 @enderror">
                 @error('stock')
                     <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                 @enderror
-            </div>
+            </div> --}}
 
             {{-- Status --}}
             <div>

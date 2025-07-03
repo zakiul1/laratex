@@ -212,37 +212,49 @@ class CategoryController extends Controller
     /**
      * Display the front-end category template.
      */
-    public function show($slug)
+    public function show(string $slug)
     {
-        // 1) Load the requested taxonomy row, using taxonomy = 'product' instead of 'category'
+        // 1) Load the requested taxonomy (category OR product), but never 'media'
         $category = TermTaxonomy::with([
             'term',
             'children.term',
             'parentTerm.term',
             'posts',
+            'products',
         ])
-            ->where('taxonomy', 'product')                          // ← was 'category'
+            ->whereNotIn('taxonomy', ['media'])             // ← exclude media here
             ->whereHas('term', fn($q) => $q->where('slug', $slug))
             ->firstOrFail();
 
-        // 2) All “products” attached to that taxonomy
-        $products = $category->products;                            // now using products(), not posts()
+        // 2) Always define both $products and $posts so neither is undefined in your view
+        $products = $category->taxonomy === 'product'
+            ? $category->products
+            : collect();
 
-        // 3) Top‐level “product” taxonomies (parent = 0)
+        $posts = $category->taxonomy === 'category'
+            ? $category->posts
+            : collect();
+
+        // 3) Build top‐level nav of ALL taxonomies except media
         $allCategories = TermTaxonomy::with(['term', 'children.term'])
-            ->where('taxonomy', 'product')                          // ← was 'category'
+            ->whereNotIn('taxonomy', ['media_category'])           // ← also exclude media here
             ->where('parent', 0)
             ->get();
+        //  dd($allCategories);
+        // 4) Render
+        $themeView = "themes." . getActiveTheme() . ".templates.category";
 
-        // 4) Render your theme’s “category” template
-        $theme = getActiveTheme();
-        $themeView = "themes.{$theme}.templates.category";
-
-        if (view()->exists($themeView)) {
-            return view($themeView, compact('category', 'products', 'allCategories'));
+        if (!view()->exists($themeView)) {
+            abort(404, "Template not found: {$themeView}");
         }
 
-        abort(404);
+        return view($themeView, compact(
+            'category',
+            'products',
+            'posts',
+            'allCategories'
+        ));
     }
+
 
 }

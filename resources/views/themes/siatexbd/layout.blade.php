@@ -11,10 +11,11 @@
         @include('components.frontend-seo', ['model' => $page])
     @elseif (isset($post))
         @include('components.frontend-seo', ['model' => $post])
-    @elseif (isset($category))
-        @include('components.frontend-seo', ['model' => $category])
+        {{-- product must come before category when both exist --}}
     @elseif (isset($product))
         @include('components.frontend-seo', ['model' => $product])
+    @elseif (isset($category))
+        @include('components.frontend-seo', ['model' => $category])
     @else
         <title>{{ config('app.name', 'Laravel') }}</title>
     @endif
@@ -35,7 +36,6 @@
             font-weight: 400;
             font-display: swap;
             src: url('{{ asset('fonts/ropasans/RopaSans-Regular.ttf') }}') format('truetype');
-
         }
 
         /* Italic */
@@ -45,10 +45,6 @@
             font-weight: 400;
             font-display: swap;
             src: url('{{ asset('fonts/ropasans/RopaSans-Italic.ttf') }}') format('truetype');
-            /* Similarly, add WOFF2 if available:
-               src: url('{{ asset('fonts/ropasans/RopaSans-Italic.woff2') }}') format('woff2'),
-                    url('{{ asset('fonts/ropasans/RopaSans-Italic.ttf') }}') format('truetype');
-            */
         }
 
         /* Utility class so you can easily apply “font-ropa-sans” in your components */
@@ -153,6 +149,7 @@
     {{-- ─── CHILD VIEWS CAN STILL PUSH INTO HEAD ───────────────────── --}}
     @stack('head')
 </head>
+
 
 <body class="text-gray-900 dark:bg-neutral-950 dark:text-white">
     <div class="min-h-screen flex flex-col">

@@ -1,6 +1,9 @@
 @extends('layouts.dashboard')
 
 @section('content')
+    @php
+        use App\Models\TermTaxonomy;
+    @endphp
     <div x-data="menuBuilder({{ json_encode($menu->items) }})" x-init="init" class="max-w-7xl mx-auto mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
         <!-- Left Panel -->
         <div class="space-y-4">
@@ -33,33 +36,57 @@
             </div>
 
             <!-- Categories (Collapsed by default + Search + Scrollable) -->
+
+
             <div x-data="{ openCategories: false, searchCategories: '' }" class="bg-white dark:bg-neutral-900 shadow rounded p-4">
                 <div @click="openCategories = !openCategories"
                     class="flex justify-between items-center cursor-pointer mb-3">
-                    <h3 class="font-semibold flex items-center gap-2 cursor-pointer">
+                    <h3 class="font-semibold flex items-center gap-2">
                         💂️ Categories
                     </h3>
                     <span x-text="openCategories ? '▾' : '▸'" class="text-xs text-gray-500"></span>
                 </div>
+
                 <div x-show="openCategories" x-collapse>
                     <input type="text" x-model="searchCategories" placeholder="Search categories..."
                         class="w-full mb-2 border rounded px-2 py-1 text-sm" />
+
                     <div class="max-h-60 overflow-y-auto space-y-1 divide-y divide-gray-200">
-                        @foreach (\App\Models\Category::all() as $category)
-                            <template x-if="'{{ strtolower($category->name) }}'.includes(searchCategories.toLowerCase())">
-                                <div class="flex justify-between text-sm py-1 items-center">
+                        @foreach (TermTaxonomy::with('term')->whereIn('taxonomy', ['category', 'product'])->get() as $tax)
+                            <template
+                                x-if="
+                                '{{ strtolower($tax->term->name) }}'
+                                .includes(searchCategories.toLowerCase())
+                            ">
+                                <div class="flex justify-between items-center text-sm py-1">
                                     <span class="flex items-center gap-1">
-                                        🏷️ {{ $category->name }}
+                                        🏷️ {{ $tax->term->name }}
+                                        <small class="text-xs text-gray-400">
+                                            ({{ $tax->taxonomy }})
+                                        </small>
                                     </span>
                                     <button type="button"
-                                        @click="addItem({ title: '{{ $category->name }}', type: 'category', reference_id: {{ $category->id }}, url: '{{ route('categories.show', $category->slug) }}' })"
-                                        class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 cursor-pointer">Add</button>
+                                        @click="
+                                        addItem({
+                                            title: '{{ addslashes($tax->term->name) }}',
+                                            type: '{{ $tax->taxonomy }}',
+                                            reference_id: {{ $tax->term_taxonomy_id }},
+                                            url: '{{ $tax->taxonomy === 'product'
+                                                ? route('products.show', $tax->term->slug)
+                                                : route('categories.show', $tax->term->slug) }}'
+                                        })
+                                    "
+                                        class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700">
+                                        Add
+                                    </button>
                                 </div>
                             </template>
                         @endforeach
                     </div>
                 </div>
             </div>
+
+
 
             <!-- Posts (Collapsed by default + Search + Scrollable Frame) -->
             <div x-data="{ openPosts: false, search: '' }" class="bg-white dark:bg-neutral-900 shadow rounded p-4">

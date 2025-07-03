@@ -3,45 +3,54 @@
     use App\Models\Category;
     use App\Models\Menu;
 
-    $footerWidgets = Widget::where('widget_area', 'footer')->where('status', true)->orderBy('order')->take(4)->get();
+    // Fetch all footer widgets in order
+    $widgets = Widget::where('widget_area', 'footer')->where('status', true)->orderBy('order')->get();
 
-    // Grab whatever the user set in Theme Customizer, or default to © YEAR APP_NAME
+    // Chunk them into rows of up to 4 widgets each
+    $rows = $widgets->chunk(3);
+
+    // Footer text fallback
     $footerText = data_get(
         $themeSettings->options,
         'footer_text',
-        '© ' . date('Y') . ' ' . config('app.name') . '. Powered by Zedaxe & Hostwires',
+        '© ' . date('Y') . ' All rights reserved SiATEX Bangladesh, Canada, USA - 1987-2025',
     );
 @endphp
 
-@if ($footerWidgets->isNotEmpty())
-    <footer class=" text-white font-[oswald]">
-        <div class="bg-[#262626] pb-12">
-            <div class="container mx-auto px-4 sm:px-6 lg:px-8  py-12">
+@if ($widgets->isNotEmpty())
+    <footer class="bg-gray-50 py-12 mt-12">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
 
-            </div>
-            <div class="container mx-auto px-0 sm:px-4 md:px-6 lg:px-8">
+            @foreach ($rows as $row)
                 @php
-                    $count = $footerWidgets->count();
-                    $smCols = min($count, 2);
-                    $mdCols = min($count, 3);
-                    $lgCols = min($count, 4);
-                    $gridColsClass = "grid grid-cols-1 sm:grid-cols-{$smCols} md:grid-cols-{$mdCols} lg:grid-cols-{$lgCols} gap-8 justify-items-center sm:justify-items-start";
+                    $n = $row->count();
+                    // decide how many columns on sm+; leave blank if 1
+                    if ($n >= 4) {
+                        $colsClass = 'sm:grid-cols-4';
+                    } elseif ($n === 3) {
+                        $colsClass = 'sm:grid-cols-3';
+                    } elseif ($n === 2) {
+                        $colsClass = 'sm:grid-cols-2';
+                    } else {
+                        $colsClass = '';
+                    }
                 @endphp
-                <div class="{{ $gridColsClass }}">
-                    @foreach ($footerWidgets as $widget)
-                        <div class="w-full">
-                            <h3 class="font-bold text-lg sm:text-xl mb-4 text-center sm:text-left">{{ $widget->title }}
+
+                <div class="grid grid-cols-1 {{ $colsClass }} gap-8 mb-8">
+                    @foreach ($row as $widget)
+                        <div>
+                            <h3 class="text-[#0F2F5A] font-semibold text-lg mb-4">
+                                {{ $widget->title }}
                             </h3>
 
                             {{-- Menu Widget --}}
                             @if ($widget->widget_type === 'menu')
-                                @php
-                                    $menu = Menu::with('items')->find($widget->content);
-                                @endphp
+                                @php $menu = Menu::with('items')->find($widget->content); @endphp
                                 @if ($menu && $menu->items->count())
-                                    <ul class="space-y-2 text-sm sm:text-base text-center sm:text-left">
+                                    <ul class="space-y-2 text-gray-700 text-sm">
                                         @foreach ($menu->items as $item)
-                                            <li>
+                                            <li class="flex items-start">
+                                                <span class="mr-2">›</span>
                                                 <a href="{{ url($item->url) }}" class="hover:underline">
                                                     {{ $item->title }}
                                                 </a>
@@ -51,8 +60,8 @@
                                 @endif
 
                                 {{-- Text Widget --}}
-                            @elseif ($widget->widget_type === 'text')
-                                <div class="text-sm sm:text-base space-y-1 text-center sm:text-left">
+                            @elseif($widget->widget_type === 'text')
+                                <div class="space-y-1 text-gray-700 text-sm">
                                     @foreach (explode("\n", $widget->content) as $line)
                                         @if (trim($line))
                                             <p>{{ trim($line) }}</p>
@@ -61,15 +70,15 @@
                                 </div>
 
                                 {{-- Category Widget --}}
-                            @elseif ($widget->widget_type === 'category')
+                            @elseif($widget->widget_type === 'category')
                                 @php
                                     $category = Category::where('slug', $widget->content)->with('children')->first();
                                 @endphp
-
                                 @if ($category && $category->children->count())
-                                    <ul class="space-y-2 text-sm sm:text-base text-center sm:text-left">
+                                    <ul class="space-y-2 text-gray-700 text-sm">
                                         @foreach ($category->children as $child)
-                                            <li>
+                                            <li class="flex items-start">
+                                                <span class="mr-2">›</span>
                                                 <a href="{{ url('category/' . $child->slug) }}" class="hover:underline">
                                                     {{ $child->name }}
                                                 </a>
@@ -81,18 +90,12 @@
                         </div>
                     @endforeach
                 </div>
-            </div>
-        </div>
+            @endforeach
 
-
-        <div class="bg-neutral-900 pt-4 pb-12">
-            <div class="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-between">
-                {{-- Dynamic footer text --}}
-                <div class="text-sm text-center sm:text-left">
+            <div class="border-t border-gray-200 pt-6">
+                <div class="text-gray-600 text-sm text-center">
                     {!! $footerText !!}
                 </div>
-
-
             </div>
         </div>
     </footer>

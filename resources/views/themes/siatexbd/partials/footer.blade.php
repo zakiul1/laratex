@@ -39,7 +39,7 @@
                 <div class="grid grid-cols-1 {{ $colsClass }} gap-8 mb-8">
                     @foreach ($row as $widget)
                         <div>
-                            <h3 class="text-[#0F2F5A] font-semibold text-lg mb-4">
+                            <h3 class="text-[#0e4f7f] font-semibold text-lg mb-4">
                                 {{ $widget->title }}
                             </h3>
 

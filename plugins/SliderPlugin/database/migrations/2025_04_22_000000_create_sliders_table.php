@@ -13,8 +13,12 @@ class CreateSlidersTable extends Migration
                 $t->id();
                 $t->string('name');
                 $t->string('slug')->unique();
-                $t->enum('layout', ['pure', 'with-content'])
-                    ->default('pure');
+
+                // added 'carousel' to the enum
+                $t->enum('layout', ['pure', 'with-content', 'carousel'])
+                    ->default('pure')
+                    ->comment('pure|with-content|carousel');
+
                 $t->string('location')
                     ->default('header')
                     ->comment('header|footer|sidebar');

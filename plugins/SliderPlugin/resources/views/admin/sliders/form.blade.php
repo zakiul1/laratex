@@ -66,6 +66,7 @@
                         class="w-full border rounded p-2 @error('layout') border-red-500 @enderror">
                         <option value="pure">Pure</option>
                         <option value="with-content">With Content</option>
+                        <option value="carousel">Carousel</option>
                     </select>
                     @error('layout')
                         <p class="text-red-600 text-sm">{{ $message }}</p>
@@ -147,7 +148,6 @@
                                 Select Media
                             </button>
 
-                            {{-- store chosen media id --}}
                             <input type="hidden" x-bind:name="'items[' + idx + '][media_id]'" x-model="item.media_id">
                         </div>
 
@@ -164,7 +164,7 @@
                                     x-model="item.content.subtitle" class="w-full border rounded p-2" />
                             </div>
                             <div class="md:col-span-2 space-y-2">
-                                <template x-for="(btn,bidx) in item.content.buttons" :key="bidx">
+                                <template x-for="(btn, bidx) in item.content.buttons" :key="bidx">
                                     <div class="flex items-center space-x-2">
                                         <input type="text"
                                             x-bind:name="'items[' + idx + '][content][buttons][' + bidx + '][text]'"
@@ -173,7 +173,7 @@
                                         <input type="url"
                                             x-bind:name="'items[' + idx + '][content][buttons][' + bidx + '][url]'"
                                             x-model="btn.url" placeholder="URL" class="flex-1 border rounded p-2" />
-                                        <button @click.prevent="removeButton(idx,bidx)" class="text-red-600">×</button>
+                                        <button @click.prevent="removeButton(idx, bidx)" class="text-red-600">×</button>
                                     </div>
                                 </template>
                                 <button @click.prevent="addButton(idx)" class="text-blue-600 hover:underline text-sm">+

@@ -29,38 +29,32 @@
             $count = $items->count();
         @endphp
 
-        <section class="{{ $slider->layout === 'with-content' ? 'py-12' : '' }}">
-            <div class="container mx-auto px-4 sm:px-6 lg:px-8" x-data="{
-                current: 0,
-                slides: {{ $count }},
-                showArrows: {{ $slider->show_arrows ? 'true' : 'false' }},
-                showIndicators: {{ $slider->show_indicators ? 'true' : 'false' }},
-                timer: null,
-                init() {
-                    if ({{ $slider->autoplay ? 'true' : 'false' }} && this.slides > 1) {
-                        this.start();
-                    }
-                },
-                start() {
-                    this.pause();
-                    this.timer = setInterval(() => this.next(), 5000);
-                },
-                pause() { clearInterval(this.timer) },
-                next() { this.current = (this.current + 1) % this.slides },
-                prev() { this.current = (this.current - 1 + this.slides) % this.slides }
-            }" x-init="init()"
-                @mouseenter="pause()" @mouseleave="start()">
-
-                {{-- ◆ Notice: flex-col stacks on mobile; lg:flex-row makes image left, content right on desktop ◆ --}}
-                <div class="flex flex-col lg:flex-row overflow-hidden p-14 bg-[#f6f6f6]">
-
-                    {{-- ◀ IMAGE Carousel DIV (first, so it appears on the left at lg+) ▶ --}}
-                    <div class="relative p-6 w-full lg:w-1/2 overflow-hidden" style="aspect-ratio:16/9;">
+        @if ($slider->layout === 'carousel')
+            <section class="py-6">
+                <div class="container mx-auto px-4 sm:px-6 lg:px-8" x-data="{
+                    current: 0,
+                    slides: {{ $count }},
+                    showArrows: {{ $slider->show_arrows ? 'true' : 'false' }},
+                    showIndicators: {{ $slider->show_indicators ? 'true' : 'false' }},
+                    timer: null,
+                    init() {
+                        if ({{ $slider->autoplay ? 'true' : 'false' }} && this.slides > 1) {
+                            this.start();
+                        }
+                    },
+                    start() {
+                        this.pause();
+                        this.timer = setInterval(() => this.next(), 5000);
+                    },
+                    pause() { clearInterval(this.timer) },
+                    next() { this.current = (this.current + 1) % this.slides },
+                    prev() { this.current = (this.current - 1 + this.slides) % this.slides }
+                }" x-init="init()"
+                    @mouseenter="pause()" @mouseleave="start()">
+                    {{-- IMAGE + ARROWS --}}
+                    <div class="relative overflow-hidden rounded-lg group" style="aspect-ratio:16/9;">
                         @foreach ($items as $i => $item)
-                            @php
-                                $media = $item->media_id ? Media::find($item->media_id) : null;
-                            @endphp
-
+                            @php $media = $item->media_id ? Media::find($item->media_id) : null; @endphp
                             <div x-show="current === {{ $i }}" x-transition.opacity.duration.700ms
                                 class="absolute inset-0">
                                 @if ($media)
@@ -75,73 +69,158 @@
                                         alt="{{ $media->getCustomProperty('alt') ?? '' }}"
                                         loading="{{ $i === 0 ? 'eager' : 'lazy' }}"
                                         fetchpriority="{{ $i === 0 ? 'high' : 'low' }}"
-                                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 60vw, 50vw" width="1024"
+                                        sizes="(max-width:640px)100vw,(max-width:1024px)80vw,50vw" width="1024"
                                         height="576" />
                                 @else
-                                    <img src="{{ Storage::url($item->image_path) }}" alt=""
+                                    <img src="{{ Storage::url($item->image_path) }}"
+                                        class="w-full h-full object-contain" alt=""
                                         loading="{{ $i === 0 ? 'eager' : 'lazy' }}"
                                         fetchpriority="{{ $i === 0 ? 'high' : 'low' }}"
-                                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 60vw, 50vw" width="1024"
-                                        height="576" class="w-full h-full object-contain" />
+                                        sizes="(max-width:640px)100vw,(max-width:1024px)80vw,50vw" width="1024"
+                                        height="576" />
                                 @endif
                             </div>
                         @endforeach
 
-                        {{-- ◀ Arrows ▶ --}}
+                        {{-- ← Left Arrow (hidden until hover) --}}
                         <button x-show="showArrows" @click="prev()" aria-label="Previous slide"
-                            class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">
+                            class="absolute left-2 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 p-2 rounded-full shadow hover:bg-white
+                                       opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                             ‹
                         </button>
+
+                        {{-- Right Arrow → --}}
                         <button x-show="showArrows" @click="next()" aria-label="Next slide"
-                            class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">
+                            class="absolute right-2 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 p-2 rounded-full shadow hover:bg-white
+                                       opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                             ›
                         </button>
-
-                        {{-- ◀ Indicators ▶ --}}
-                        <div x-show="showIndicators" class="absolute bottom-0 left-1/2 -translate-x-1/2 flex space-x-2">
-                            @for ($j = 0; $j < $count; $j++)
-                                <button @click="current = {{ $j }}"
-                                    :aria-current="current === {{ $j }} ? 'true' : 'false'"
-                                    aria-label="Go to slide {{ $j + 1 }}"
-                                    class="
-                                        w-4 h-1 rounded-full
-                                        opacity-50 scale-100
-                                        transition-opacity transition-transform duration-200
-                                    "
-                                    :class="current === {{ $j }} ?
-                                        'opacity-100 scale-125 bg-gray-800' :
-                                        'opacity-50 scale-100 bg-gray-400/50'"
-                                    style="will-change: opacity, transform;"></button>
-                            @endfor
-                        </div>
                     </div>
 
-                    {{-- ◀ HEADING & SLOGAN DIV (second, so it’s on the right at lg+) ▶ --}}
-                    @if ($slider->layout === 'with-content')
-                        <div class="w-full lg:w-1/2 p-8 flex flex-col justify-center">
-                            <h2
-                                class="
-                                    pl-7
-                                    text-right
-                                    font-light
-                                    mb-[15px]
-                                    block
-                                    text-[#666666]
-                                    text-[clamp(1.5rem,5vw,2.7rem)]
-                                    uppercase
-                                    font-ropa-sans
-                                    leading-[1.2]
-                                    tracking-normal
-                                ">
-                                {{ $slider->heading }}
-                            </h2>
-                            <p class="mt-4 text-lg text-gray-600 text-right">
-                                {{ $slider->slogan }}
-                            </p>
+                    {{-- INDICATORS BELOW IMAGE --}}
+                    <div x-show="showIndicators" class="mt-4 flex justify-center space-x-2">
+                        @for ($j = 0; $j < $count; $j++)
+                            <button @click="current = {{ $j }}"
+                                aria-label="Go to slide {{ $j + 1 }}"
+                                class="w-4 h-1 rounded-full transition-opacity transition-transform duration-200"
+                                :class="current === {{ $j }} ?
+                                    'opacity-100 scale-125 bg-gray-800' :
+                                    'opacity-50 scale-100 bg-gray-400/50'">
+                            </button>
+                        @endfor
+                    </div>
+                </div>
+            </section>
+        @else
+            <section class="{{ $slider->layout === 'with-content' ? 'py-12' : '' }}">
+                <div class="container mx-auto px-4 sm:px-6 lg:px-8" x-data="{
+                    current: 0,
+                    slides: {{ $count }},
+                    showArrows: {{ $slider->show_arrows ? 'true' : 'false' }},
+                    showIndicators: {{ $slider->show_indicators ? 'true' : 'false' }},
+                    timer: null,
+                    init() {
+                        if ({{ $slider->autoplay ? 'true' : 'false' }} && this.slides > 1) {
+                            this.start();
+                        }
+                    },
+                    start() {
+                        this.pause();
+                        this.timer = setInterval(() => this.next(), 5000);
+                    },
+                    pause() { clearInterval(this.timer) },
+                    next() { this.current = (this.current + 1) % this.slides },
+                    prev() { this.current = (this.current - 1 + this.slides) % this.slides }
+                }" x-init="init()"
+                    @mouseenter="pause()" @mouseleave="start()">
+
+                    <div class="flex flex-col lg:flex-row overflow-hidden p-14 bg-[#f6f6f6]">
+                        {{-- IMAGE & SLIDE --}}
+                        <div class="relative p-6 w-full lg:w-1/2 overflow-hidden group" style="aspect-ratio:16/9;">
+                            @foreach ($items as $i => $item)
+                                @php $media = $item->media_id ? Media::find($item->media_id) : null; @endphp
+                                <div x-show="current === {{ $i }}" x-transition.opacity.duration.700ms
+                                    class="absolute inset-0">
+                                    @if ($media)
+                                        <x-responsive-image :media="$media" :breakpoints="[
+                                            150 => 'thumbnail',
+                                            300 => 'medium',
+                                            480 => 'mobile',
+                                            768 => 'tablet',
+                                            1024 => 'large',
+                                        ]"
+                                            class="w-full h-full object-contain"
+                                            alt="{{ $media->getCustomProperty('alt') ?? '' }}"
+                                            loading="{{ $i === 0 ? 'eager' : 'lazy' }}"
+                                            fetchpriority="{{ $i === 0 ? 'high' : 'low' }}"
+                                            sizes="(max-width:640px)100vw,(max-width:1024px)60vw,50vw" width="1024"
+                                            height="576" />
+                                    @else
+                                        <img src="{{ Storage::url($item->image_path) }}"
+                                            class="w-full h-full object-contain" alt=""
+                                            loading="{{ $i === 0 ? 'eager' : 'lazy' }}"
+                                            fetchpriority="{{ $i === 0 ? 'high' : 'low' }}"
+                                            sizes="(max-width:640px)100vw,(max-width:1024px)60vw,50vw" width="1024"
+                                            height="576" />
+                                    @endif
+                                </div>
+                            @endforeach
+
+                            {{-- ← Left Arrow (hidden until hover) --}}
+                            <button x-show="showArrows" @click="prev()" aria-label="Previous slide"
+                                class="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white
+                                           opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                ‹
+                            </button>
+                            {{-- Right Arrow → --}}
+                            <button x-show="showArrows" @click="next()" aria-label="Next slide"
+                                class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white
+                                           opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                ›
+                            </button>
+
+                            {{-- ◀ Indicators (inside image) ▶ --}}
+                            <div x-show="showIndicators"
+                                class="absolute bottom-0 left-1/2 -translate-x-1/2 flex space-x-2 p-4">
+                                @for ($j = 0; $j < $count; $j++)
+                                    <button @click="current = {{ $j }}"
+                                        aria-label="Go to slide {{ $j + 1 }}"
+                                        class="w-4 h-1 rounded-full transition-opacity transition-transform duration-200"
+                                        :class="current === {{ $j }} ?
+                                            'opacity-100 scale-125 bg-gray-800' :
+                                            'opacity-50 scale-100 bg-gray-400/50'">
+                                    </button>
+                                @endfor
+                            </div>
                         </div>
-                    @endif
-                </div> {{-- /.flex --}}
-            </div> {{-- /.container --}}
-        </section>
+
+                        {{-- HEADING & SLOGAN (with-content) --}}
+                        @if ($slider->layout === 'with-content')
+                            <div class="w-full lg:w-1/2 p-8 flex flex-col justify-center">
+                                <h2
+                                    class="
+                                        pl-7
+                                        text-right
+                                        font-light
+                                        mb-[15px]
+                                        block
+                                        text-[#666666]
+                                        text-[clamp(1.5rem,5vw,2.7rem)]
+                                        uppercase
+                                        font-ropa-sans
+                                        leading-[1.2]
+                                        tracking-normal
+                                    ">
+                                    {{ $slider->heading }}
+                                </h2>
+                                <p class="mt-4 text-lg text-gray-600 text-right">
+                                    {{ $slider->slogan }}
+                                </p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </section>
+        @endif
     @endforeach
 @endif

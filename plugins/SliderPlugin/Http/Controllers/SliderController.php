@@ -48,7 +48,7 @@ class SliderController extends Controller
                     'id' => $it->id,
                     'existing_image_path' => $it->image_path,
                     'media_id' => $it->media_id,
-                    'media_preview_url' => $it->media ? $it->media->getUrl() : null,
+                    'media_preview_url' => $it->media?->getUrl(),
                     'content' => $it->content,
                 ];
             })->toArray();
@@ -63,7 +63,7 @@ class SliderController extends Controller
 
         $slider->update($data);
 
-        // remove all old slides
+        // remove all old slides and re-save
         $slider->items()->delete();
         $this->saveItems($request, $slider);
 
@@ -83,17 +83,18 @@ class SliderController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => "nullable|string|max:255|{$unique}",
-            'layout' => 'required|in:pure,with-content',
+            // include "carousel" in the allowed layouts:
+            'layout' => 'required|in:pure,with-content,carousel',
             'location' => 'required|in:header,footer,sidebar',
             'show_indicators' => 'sometimes|boolean',
             'show_arrows' => 'sometimes|boolean',
             'autoplay' => 'sometimes|boolean',
             'is_active' => 'sometimes|boolean',
-            // new fields:
             'heading' => 'nullable|string|max:255',
             'slogan' => 'nullable|string|max:255',
         ]);
 
+        // auto-generate slug if not provided
         if (empty($data['slug'])) {
             $base = Str::slug($data['name']);
             $slug = $base;
@@ -135,9 +136,8 @@ class SliderController extends Controller
             // 2) Media-library selection?
             elseif (!empty($item['media_id'])) {
                 $media_id = $item['media_id'];
-                // grab path if you want legacy image_path
                 if ($media = Media::find($media_id)) {
-                    $path = $media->path; // or $media->getUrl() depending on how you store
+                    $path = $media->path;
                 }
             }
             // 3) existing saved path
@@ -145,7 +145,7 @@ class SliderController extends Controller
                 $path = $item['existing_image_path'];
             }
 
-            // if after all that we have neither a path nor a media_id, skip
+            // if no image at all, skip
             if (!$path && !$media_id) {
                 continue;
             }

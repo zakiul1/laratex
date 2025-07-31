@@ -39,7 +39,7 @@
                 $buttons = $content['buttons'] ?? [];
             @endphp
 
-            <section class="relative w-full hero-75vh md:hero-85vh lg:hero-90vh overflow-hidden">
+            <section class="relative w-full hero-75vh md:hero-85vh lg:hero-90vh overflow-hidden mb-20">
                 {{-- background image --}}
                 <div class="absolute inset-0">
                     @if ($media)

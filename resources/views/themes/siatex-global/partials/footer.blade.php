@@ -39,7 +39,7 @@
                     @foreach ($row as $widget)
                         <div>
                             {{-- Widget title with red underline --}}
-                            <h3 class="text-white font-semibold text-lg mb-4 inline-block relative">
+                            <h3 class="text-white font-semibold text-xl mb-4 inline-block relative">
                                 {{ $widget->title }}
                                 <span class="absolute left-0 bottom-0 w-10 h-0.5 bg-red-500"></span>
                             </h3>

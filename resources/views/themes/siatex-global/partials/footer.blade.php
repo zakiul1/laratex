@@ -6,25 +6,24 @@
     // Fetch all footer widgets in order
     $widgets = Widget::where('widget_area', 'footer')->where('status', true)->orderBy('order')->get();
 
-    // Chunk them into rows of up to 4 widgets each
+    // Chunk them into rows of up to 3 widgets each
     $rows = $widgets->chunk(3);
 
     // Footer text fallback
     $footerText = data_get(
         $themeSettings->options,
         'footer_text',
-        '© ' . date('Y') . ' All rights reserved SiATEX Bangladesh, Canada, USA - 1987-2025',
+        '© ' . date('Y') . ' All Rights Reserved SIATEX Global.',
     );
 @endphp
 
 @if ($widgets->isNotEmpty())
-    <footer class="bg-gray-50 py-12 mt-12">
+    <footer class="bg-[#2D3038] text-gray-300 py-12 mt-12">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
 
             @foreach ($rows as $row)
                 @php
                     $n = $row->count();
-                    // decide how many columns on sm+; leave blank if 1
                     if ($n >= 4) {
                         $colsClass = 'sm:grid-cols-4';
                     } elseif ($n === 3) {
@@ -39,15 +38,16 @@
                 <div class="grid grid-cols-1 {{ $colsClass }} gap-8 mb-8">
                     @foreach ($row as $widget)
                         <div>
-                            <h3 class="text-[#0e4f7f] font-semibold text-lg mb-4">
+                            {{-- Widget title with red underline --}}
+                            <h3 class="text-white font-semibold text-lg mb-4 inline-block relative">
                                 {{ $widget->title }}
+                                <span class="absolute left-0 bottom-0 w-10 h-0.5 bg-red-500"></span>
                             </h3>
 
-                            {{-- Menu Widget --}}
                             @if ($widget->widget_type === 'menu')
                                 @php $menu = Menu::with('items')->find($widget->content); @endphp
                                 @if ($menu && $menu->items->count())
-                                    <ul class="space-y-2 text-gray-700 text-sm">
+                                    <ul class="space-y-2 text-gray-300 text-sm">
                                         @foreach ($menu->items as $item)
                                             <li class="flex items-start">
                                                 <span class="mr-2">›</span>
@@ -58,10 +58,8 @@
                                         @endforeach
                                     </ul>
                                 @endif
-
-                                {{-- Text Widget --}}
                             @elseif($widget->widget_type === 'text')
-                                <div class="space-y-1 text-gray-700 text-sm">
+                                <div class="space-y-2 text-gray-300 text-sm">
                                     @foreach (explode("\n", $widget->content) as $line)
                                         @if (trim($line))
                                             <p>{{ trim($line) }}</p>
@@ -69,13 +67,33 @@
                                     @endforeach
                                 </div>
 
-                                {{-- Category Widget --}}
+                                {{-- Social icons under the first text widget --}}
+                                @if ($loop->first)
+                                    <div class="flex space-x-4 mt-6">
+                                        <a href="#"
+                                            class="w-8 h-8 flex items-center justify-center bg-gray-700 rounded-full hover:bg-gray-600 transition">
+                                            <x-lucide-facebook class="w-4 h-4 text-white" />
+                                        </a>
+                                        <a href="#"
+                                            class="w-8 h-8 flex items-center justify-center bg-gray-700 rounded-full hover:bg-gray-600 transition">
+                                            <x-lucide-linkedin class="w-4 h-4 text-white" />
+                                        </a>
+                                        <a href="#"
+                                            class="w-8 h-8 flex items-center justify-center bg-gray-700 rounded-full hover:bg-gray-600 transition">
+                                            <x-lucide-twitter class="w-4 h-4 text-white" />
+                                        </a>
+                                        <a href="#"
+                                            class="w-8 h-8 flex items-center justify-center bg-gray-700 rounded-full hover:bg-gray-600 transition">
+                                            <x-lucide-instagram class="w-4 h-4 text-white" />
+                                        </a>
+                                    </div>
+                                @endif
                             @elseif($widget->widget_type === 'category')
                                 @php
                                     $category = Category::where('slug', $widget->content)->with('children')->first();
                                 @endphp
                                 @if ($category && $category->children->count())
-                                    <ul class="space-y-2 text-gray-700 text-sm">
+                                    <ul class="space-y-2 text-gray-300 text-sm">
                                         @foreach ($category->children as $child)
                                             <li class="flex items-start">
                                                 <span class="mr-2">›</span>
@@ -92,8 +110,9 @@
                 </div>
             @endforeach
 
-            <div class="border-t border-gray-200 pt-6">
-                <div class="text-gray-600 text-sm text-center">
+            {{-- Footer bottom --}}
+            <div class="border-t border-gray-700 pt-6">
+                <div class="text-center text-gray-500 text-sm">
                     {!! $footerText !!}
                 </div>
             </div>

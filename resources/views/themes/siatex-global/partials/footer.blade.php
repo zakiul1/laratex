@@ -7,7 +7,7 @@
     $widgets = Widget::where('widget_area', 'footer')->where('status', true)->orderBy('order')->get();
 
     // Chunk them into rows of up to 3 widgets each
-    $rows = $widgets->chunk(3);
+    $rows = $widgets->chunk(4);
 
     // Footer text fallback
     $footerText = data_get(

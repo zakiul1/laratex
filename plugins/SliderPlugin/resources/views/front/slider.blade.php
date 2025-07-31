@@ -29,7 +29,91 @@
             $count = $items->count();
         @endphp
 
-        @if ($slider->layout === 'carousel')
+        {{-- PURE HERO LAYOUT --}}
+        @if ($slider->layout === 'pure' && $count)
+            @php
+                // take the first slide for the pure hero
+                $item = $items->first();
+                $media = $item->media_id ? Media::find($item->media_id) : null;
+                $content = $item->content ?? [];
+                $buttons = $content['buttons'] ?? [];
+            @endphp
+
+            <section class="relative w-full hero-75vh md:hero-85vh lg:hero-90vh overflow-hidden">
+                {{-- background image --}}
+                <div class="absolute inset-0">
+                    @if ($media)
+                        <x-responsive-image :media="$media" :breakpoints="[
+                            150 => 'thumbnail',
+                            300 => 'medium',
+                            480 => 'mobile',
+                            768 => 'tablet',
+                            1024 => 'large',
+                        ]" class="w-full h-full object-cover"
+                            alt="{{ $media->getCustomProperty('alt') ?? '' }}" loading="eager" fetchpriority="high" />
+                    @else
+                        <img src="{{ Storage::url($item->image_path) }}" class="w-full h-full object-cover" alt=""
+                            loading="eager" fetchpriority="high" />
+                    @endif
+
+                    {{-- dark overlay --}}
+                    <div class="absolute inset-0 bg-black/50"></div>
+                </div>
+
+                {{-- content --}}
+                <div
+                    class="relative z-10 flex flex-col items-center justify-center text-center text-white h-full px-4 sm:px-6 lg:px-8">
+                    <h1 class="max-w-3xl text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+                        {{ $content['title'] ?? '' }}
+                    </h1>
+                    @if (!empty($content['subtitle']))
+                        <p class="mt-4 max-w-2xl text-lg sm:text-xl md:text-2xl">
+                            {{ $content['subtitle'] }}
+                        </p>
+                    @endif
+
+                    @if (count($buttons))
+                        <div class="mt-8 flex flex-wrap justify-center gap-4">
+                            @foreach ($buttons as $btn)
+                                @if ($loop->first)
+                                    {{-- Primary: blue → red on hover --}}
+                                    <a href="{{ $btn['url'] ?? '#' }}"
+                                        class="
+            cursor-pointer
+            px-6 py-3
+            bg-blue-600 text-white
+            font-semibold rounded shadow
+            transition-colors duration-200
+            hover:bg-red-500
+          ">
+                                        {{ $btn['text'] ?? 'Request a Quote' }}
+                                    </a>
+                                @else
+                                    {{-- Secondary: outline → solid blue on hover --}}
+                                    <a href="{{ $btn['url'] ?? '#' }}"
+                                        class="
+            cursor-pointer
+            px-6 py-3
+            border border-blue-600
+            text-blue-600
+            font-semibold rounded
+            transition-colors duration-200
+            hover:bg-blue-600 hover:text-white
+          ">
+                                        {{ $btn['text'] ?? 'Learn More' }}
+                                    </a>
+                                @endif
+                            @endforeach
+                        </div>
+                    @endif
+
+
+
+                </div>
+            </section>
+
+            {{-- CAROUSEL LAYOUT (unchanged) --}}
+        @elseif ($slider->layout === 'carousel')
             <section class="py-6">
                 <div class="container mx-auto px-4 sm:px-6 lg:px-8" x-data="{
                     current: 0,
@@ -82,7 +166,7 @@
                             </div>
                         @endforeach
 
-                        {{-- ← Left Arrow (hidden until hover) --}}
+                        {{-- ← Left Arrow --}}
                         <button x-show="showArrows" @click="prev()" aria-label="Previous slide"
                             class="absolute left-2 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 p-2 rounded-full shadow hover:bg-white
                                        opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -97,7 +181,7 @@
                         </button>
                     </div>
 
-                    {{-- INDICATORS BELOW IMAGE --}}
+                    {{-- INDICATORS --}}
                     <div x-show="showIndicators" class="mt-4 flex justify-center space-x-2">
                         @for ($j = 0; $j < $count; $j++)
                             <button @click="current = {{ $j }}"
@@ -111,6 +195,8 @@
                     </div>
                 </div>
             </section>
+
+            {{-- WITH-CONTENT LAYOUT (unchanged) --}}
         @else
             <section class="{{ $slider->layout === 'with-content' ? 'py-12' : '' }}">
                 <div class="container mx-auto px-4 sm:px-6 lg:px-8" x-data="{
@@ -166,7 +252,7 @@
                                 </div>
                             @endforeach
 
-                            {{-- ← Left Arrow (hidden until hover) --}}
+                            {{-- ← Left Arrow --}}
                             <button x-show="showArrows" @click="prev()" aria-label="Previous slide"
                                 class="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white
                                            opacity-0 group-hover:opacity-100 transition-opacity duration-200">

@@ -5,26 +5,32 @@ export default {
     // Disable all dark-mode variants
     darkMode: false,
 
+    // Anything here is always generated, even if not found in your content files
     safelist: [
         "bg-yellow-600",
         "hover:bg-yellow-700",
-        // add any other dynamic classes you build at runtime
+        "h-[75vh]",
+        "md:h-[85vh]",
+        "lg:h-[90vh]",
     ],
 
     content: [
-        // Laravel’s default pagination views (still needed if you use paginate())
+        // Laravel’s default pagination views
         "./vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php",
 
-        // Blade templates you control
+        // Your app’s Blade templates
         "./resources/views/**/*.blade.php",
 
-        // Any compiled Blade (only needed if you reference Blade in storage during dev)
+        // Any compiled Blade (during dev)
         "./storage/framework/views/*.php",
 
-        // Alpine/Vue/React components where you might use Tailwind classes
+        // Your JS components
         "./resources/js/**/*.vue",
         "./resources/js/**/*.jsx",
         "./resources/js/**/*.tsx",
+
+        // **SliderPlugin front‐end views** 👇
+        "./plugins/SliderPlugin/resources/views/**/*.blade.php",
     ],
 
     theme: {

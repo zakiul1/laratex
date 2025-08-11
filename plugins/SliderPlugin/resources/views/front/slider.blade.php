@@ -79,13 +79,13 @@
                                     {{-- Primary: blue → red on hover --}}
                                     <a href="{{ $btn['url'] ?? '#' }}"
                                         class="
-            cursor-pointer
-            px-6 py-3
-            bg-blue-600 text-white
-            font-semibold rounded shadow
-            transition-colors duration-200
-            hover:bg-red-500
-          ">
+                                                cursor-pointer
+                                                px-6 py-3
+                                                bg-blue-600 text-white
+                                                font-semibold rounded shadow
+                                                transition-colors duration-200
+                                                hover:bg-red-500
+                                            ">
                                         {{ $btn['text'] ?? 'Request a Quote' }}
                                     </a>
                                 @else

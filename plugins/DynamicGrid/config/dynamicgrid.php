@@ -7,6 +7,8 @@ return [
         'single_post' => [
             'layout1' => 'Catalog Grid Layout Price Button',
             'layout2' => 'Catalog Grid Layout Read More Button',
+            'layout3' => 'Bulk Blank T-shirt Manufacturing with High Capacity at Low Prices',
+
         ],
         'feature_post' => [
             'layout1' => 'Services-Overview',

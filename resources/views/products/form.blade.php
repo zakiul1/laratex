@@ -204,17 +204,17 @@
             </div>
 
             {{-- Price --}}
-            {{--        <div>
+            <div>
                 <label class="block text-sm font-medium">Price</label>
                 <input type="text" name="price" value="{{ old('price', $product->price ?? '') }}"
                     class="w-full border rounded p-2 @error('price') border-red-500 @enderror">
                 @error('price')
                     <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                 @enderror
-            </div> --}}
+            </div>
 
             {{-- Stock --}}
-            {{--      <div>
+            {{--       <div>
                 <label class="block text-sm font-medium">Stock</label>
                 <input type="text" name="stock" value="{{ old('stock', $product->stock ?? '') }}"
                     class="w-full border rounded p-2 @error('stock') border-red-500 @enderror">
@@ -224,6 +224,19 @@
             </div> --}}
 
             {{-- Status --}}
+
+            {{-- Product Style (Style No.) --}}
+            <div>
+                <label class="block text-sm font-medium">Product Style (Style No.)</label>
+                <input type="text" name="style" value="{{ old('style', $product->style ?? '') }}"
+                    placeholder="e.g. ST-1023A"
+                    class="w-full border rounded p-2 @error('style') border-red-500 @enderror">
+                @error('style')
+                    <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+
             <div>
                 <label class="block text-sm font-medium">Status</label>
                 <select name="status" class="w-full border rounded p-2 @error('status') border-red-500 @enderror">

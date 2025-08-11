@@ -131,7 +131,7 @@
 
                     <div class="p-6 flex flex-col product-info">
                         <div class="text-sm text-gray-600 mb-2 product-code">
-                            SHK: {{ $style }}
+                            {{ $style }}
                         </div>
 
                         <h3 class="text-lg leading-snug mb-3 min-h-[2.5rem] product-title">

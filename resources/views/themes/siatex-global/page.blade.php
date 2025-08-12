@@ -209,7 +209,7 @@
     {{-- ==== SECTION 2 (BELOW): Our Manufacturing Network (single row, no scroll) ==== --}}
     <section class="bg-[#f4f4f9] py-12 sm:py-16">
         <div class="max-w-7xl mx-auto px-4 container">
-            <h2 class="font-oswald text-[#333] text-2xl sm:text-3xl font-light tracking-wide text-center mb-10">
+            <h2 class="font-oswald text-[#104f83] text-2xl sm:text-3xl font-light tracking-wide text-center mb-10">
                 Our manufacturing network handles production for the brands:
             </h2>
 

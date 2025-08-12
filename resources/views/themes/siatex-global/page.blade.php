@@ -69,8 +69,9 @@
     </div> --}}
 
     {{-- ==== SECTION 1: Siatex Global (Carousel) ==== --}}
+
     <section class="bg-[#f4f4f9] font-[Poppins]">
-        <div class="max-w-7xl mx-auto px-4 py-10">
+        <div class="max-w-7xl mx-auto px-4 py-10 container">
             <header class="text-center mb-12">
                 <h2 class="font-oswald text-3xl md:text-5xl font-bold text-[#2c3e50]">Siatex Global</h2>
                 <p class="text-base md:text-lg text-[#333] mt-2">Your partner for custom athleticwear and sportswear
@@ -207,7 +208,7 @@
 
     {{-- ==== SECTION 2 (BELOW): Our Manufacturing Network (single row, no scroll) ==== --}}
     <section class="bg-[#f4f4f9] py-12 sm:py-16">
-        <div class="max-w-7xl mx-auto px-4">
+        <div class="max-w-7xl mx-auto px-4 container">
             <h2 class="font-oswald text-[#333] text-2xl sm:text-3xl font-light tracking-wide text-center mb-10">
                 Our manufacturing network handles production for the brands:
             </h2>

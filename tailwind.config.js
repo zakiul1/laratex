@@ -1,3 +1,4 @@
+// tailwind.config.js (ESM)
 import defaultTheme from "tailwindcss/defaultTheme";
 import forms from "@tailwindcss/forms";
 
@@ -5,7 +6,7 @@ export default {
     // Disable all dark-mode variants
     darkMode: false,
 
-    // Anything here is always generated, even if not found in your content files
+    // Always-generate classes
     safelist: [
         "bg-yellow-600",
         "hover:bg-yellow-700",
@@ -29,14 +30,15 @@ export default {
         "./resources/js/**/*.jsx",
         "./resources/js/**/*.tsx",
 
-        // **SliderPlugin front‐end views** 👇
+        // SliderPlugin front-end views
         "./plugins/SliderPlugin/resources/views/**/*.blade.php",
     ],
 
     theme: {
         extend: {
             fontFamily: {
-                sans: ["Figtree", ...defaultTheme.fontFamily.sans],
+                // Make Poppins the default "font-sans"
+                sans: ["Poppins", ...defaultTheme.fontFamily.sans],
             },
         },
     },

@@ -236,7 +236,7 @@
                         </button>
 
                         {{-- Even gutter: wrapper px-2/py-2, tiles px-1 --}}
-                        <div class="overflow-hidden bg-gray-100 px-2 py-4">
+                        <div class="overflow-hidden bg-gray-100 px-1 py-2">
                             <div class="flex transition-transform duration-300 ease-out will-change-transform"
                                 :style="'transform: translateX(-' + (index * (100 / visible)) + '%)'">
                                 <template x-for="(it, i) in items" :key="'rel-' + i">

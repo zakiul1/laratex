@@ -240,7 +240,7 @@
                             <div class="flex transition-transform duration-300 ease-out will-change-transform"
                                 :style="'transform: translateX(-' + (index * (100 / visible)) + '%)'">
                                 <template x-for="(it, i) in items" :key="'rel-' + i">
-                                    <a :href="it.link" class="block w-1/6 shrink-0 px-1">
+                                    <a :href="it.link" class="block w-1/6 shrink-0 px-2">
                                         <div
                                             class="h-[110px] md:h-[130px] xl:h-[150px] bg-white flex items-center justify-center shadow-sm ">
                                             <template x-if="it.img">

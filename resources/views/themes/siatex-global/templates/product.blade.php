@@ -270,103 +270,139 @@
             {{-- ================= /RELATED ================= --}}
 
             {{-- ================= TAILWIND VERSION OF YOUR MAIN/ASIDE SECTION ================= --}}
-            <section id="premium-custom-tshirts-guide" class="pt-10">
-                <div class=" ">
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-10 items-start">
 
-                        {{-- Article (8/12) --}}
-                        <article class="md:col-span-8 text-[#333] font-sans">
-                            {{-- Section 1 --}}
-                            <div class="pb-10">
-                                <h2 class="text-[28px] leading-tight text-[#222] mt-0">Customization options for premium
-                                    T-shirts</h2>
-                                <h3 class="text-xl text-[#444]">Fabrics and blends</h3>
-                                <ul class="list-disc pl-5">
-                                    <li><strong>Core cotton:</strong> 100% ringspun combed cotton...</li>
+            {{-- === BEGIN: Premium Custom T-Shirts (Tailwind, matches screenshot) === --}}
+            <section id="sticky-country-guide" class="font-sans leading-[1.6] text-[#333]">
+
+                {{-- Page header (max-w 1200, p-20) --}}
+                <div class="max-w-[1200px] mx-auto   pt-[24px] pb-[30px]">
+                    <h1 class="font-semibold leading-[1.6] text-[#222] mb-[10px]">
+                        Premium Custom T-Shirts
+                    </h1>
+                    <p class="text-[#555] m-0">
+                        Choosing the right offshore OEM garment manufacturer for bulk custom T-shirts is about precision,
+                        trust, and timing.
+                        If you’re scaling in {country}, you need a partner who can translate tech packs into
+                        production-ready results—on quality, on budget, and on schedule.
+                    </p>
+                </div>
+
+                {{-- Main grid (8/12 article + 4/12 aside) --}}
+                <div class="max-w-[1200px] mx-auto pb-[30px">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-[28px]">
+
+                        {{-- ARTICLE --}}
+                        <article class="md:col-span-8">
+
+                            {{-- Section: Customization options --}}
+                            <section class="pt-[24px]">
+                                <h2 class="font-semibold text-[#222] mb-[14px]">
+                                    Customization options for premium T-shirts
+                                </h2>
+
+                                <h3 class="font-semibold text-[#222] mb-[8px] text-[20px] text-[20px]">Fabrics and blends
+                                </h3>
+                                <ul class="list-disc pl-[20px] space-y-[4px]">
+                                    <li><strong>Core cotton:</strong> 100% ringspun combed cotton…</li>
                                     <li><strong>Sustainable choices:</strong> Organic cotton, Better Cotton, recycled
-                                        fibers...</li>
+                                        fibers…</li>
                                     <li><strong>Performance blends:</strong> Cotton-poly mixes, tri-blends, moisture-wicking
-                                        polyester...</li>
-                                    <li><strong>Specialty knits:</strong> Piqué, waffle, slub, enzyme-washed jerseys...</li>
+                                        polyester…</li>
+                                    <li><strong>Specialty knits:</strong> Piqué, waffle, slub, enzyme-washed jerseys…</li>
                                 </ul>
-                            </div>
+                            </section>
 
-                            {{-- Section 2 (even bg) --}}
-                            <div class="py-5 bg-[#f9f9f9] pb-10 pl-2">
-                                <h2 class="text-[28px] leading-tight text-[#222] mt-0">MOQs and lead times</h2>
-                                <ul class="list-disc pl-5">
-                                    <li><strong>Typical MOQs:</strong> Screen print: 300–500 units; DTG/DTF: 50–100;
-                                        custom-dye: 500–1,000+</li>
-                                    <li><strong>Lead times:</strong> Proto: 7–10 days; Fit: 10–14 days; Bulk: 30–45 days
-                                    </li>
-                                    <li>Dye/wash effects add 5–10 days; yarn-dyed require earlier booking</li>
-                                </ul>
-                            </div>
+                            {{-- Section: MOQs (title + gray block list) --}}
+                            <section class="pt-[28px]">
+                                <h2 class="font-semibold text-[#222] mb-[10px]">MOQs and lead times</h2>
+                                <div class="bg-[#f3f4f6] p-[16px]">
+                                    <ul class="list-disc pl-[20px] space-y-[4px]">
+                                        <li><strong>Typical MOQs:</strong> Screen print: 300–500 units; DTG/DTF: 50–100;
+                                            custom-dye: 500–1,000+</li>
+                                        <li><strong>Lead times:</strong> Proto: 7–10 days; Fit: 10–14 days; Bulk: 30–45 days
+                                        </li>
+                                        <li>Dye/wash effects add 5–10 days; yarn-dyed require earlier booking</li>
+                                    </ul>
+                                </div>
+                            </section>
 
-                            {{-- Section 3 --}}
-                            <div class="py-10">
-                                <h2 class="text-[28px] leading-tight text-[#222] mt-0">Sampling and quality control</h2>
-                                <h3 class="text-xl text-[#444]">Sampling roadmap</h3>
-                                <ul class="list-disc pl-5">
-                                    <li>Tech pack alignment with BOM, measurements, Pantone codes...</li>
-                                    <li>Proto, Fit, PP/PPS, Size set, Strike-off/lab dips</li>
+                            {{-- Section: Sampling --}}
+                            <section class="pt-[28px]">
+                                <h2 class="font-semibold text-[#222] mb-[8px]">Sampling and quality control
+                                </h2>
+
+                                <h3 class="font-semibold text-[#222] mb-[6px] text-[20px] ">Sampling roadmap</h3>
+                                <ul class="list-disc pl-[20px] space-y-[4px]">
+                                    <li>Tech pack alignment with BOM, measurements, Pantone codes…</li>
+                                    <li>Proto, Fit, PP/PPS, Size set, strike-off/lab dips</li>
                                 </ul>
-                                <h3 class="text-xl text-[#444]">In-line and final inspections</h3>
-                                <ul class="list-disc pl-5">
+
+                                <h3 class="font-semibold text-[#222] mt-[12px] mb-[6px] text-[20px]">In-line and final
+                                    inspections</h3>
+                                <ul class="list-disc pl-[20px] space-y-[4px]">
                                     <li>AQL inspections at key production stages</li>
-                                    <li>Measurement/performance tests: shrinkage, twist, colorfastness, adhesion...</li>
+                                    <li>Measurement/performance tests: shrinkage, twist, colorfastness, adhesion…</li>
                                     <li>Third-party QC and rework policies</li>
                                 </ul>
-                            </div>
+                            </section>
 
-                            {{-- Section 4 (even bg) --}}
-                            <div class="py-10 bg-[#f9f9f9] pl-2">
-                                <h2 class="text-[28px] leading-tight text-[#222] mt-0">Certifications and ethical practices
-                                </h2>
-                                <ul class="list-disc pl-5">
-                                    <li>OEKO-TEX Standard 100, BSCI/SEDEX, WRAP, ISO 9001/14001 on request</li>
-                                    <li>GOTS, GRS with chain-of-custody when specified</li>
-                                    <li>No child/forced labor, safe conditions, fair wages</li>
-                                    <li>Sustainability: water-based inks, low-impact dyes, recycling initiatives</li>
-                                </ul>
-                            </div>
+                            {{-- Section: Certifications (gray block) --}}
+                            <section class="pt-[28px]">
+                                <h2 class="font-semibold text-[#222] mb-[10px]">Certifications and ethical
+                                    practices</h2>
+                                <div class="bg-[#f3f4f6] p-[16px]">
+                                    <ul class="list-disc pl-[20px] space-y-[4px]">
+                                        <li>OEKO-TEX Standard 100, BSCI/SEDEX, WRAP, ISO 9001/14001 on request</li>
+                                        <li>GOTS, GRS with chain-of-custody when specified</li>
+                                        <li>No child/forced labor, safe conditions, fair wages</li>
+                                        <li>Sustainability: water-based inks, low-impact dyes, recycling initiatives</li>
+                                    </ul>
+                                </div>
+                            </section>
 
-                            {{-- Section 5 --}}
-                            <div class="py-5">
-                                <h2 class="text-[28px] leading-tight text-[#222] mt-0">Payment terms and global shipping
-                                </h2>
-                                <h3 class="text-xl text-[#444]">Payment and terms</h3>
-                                <ul class="list-disc pl-5">
+                            {{-- Section: Payment & shipping --}}
+                            <section class="pt-[28px]">
+                                <h2 class="font-semibold text-[#222] mb-[10px]">Payment terms and global
+                                    shipping</h2>
+
+                                <h3 class="font-semibold text-[#222] mb-[6px] text-[20px]">Payment and terms</h3>
+                                <ul class="list-disc pl-[20px] space-y-[4px]">
                                     <li>30% deposit, 70% balance before shipment</li>
                                     <li>Samples paid in full; PayPal/card for small orders</li>
                                     <li>EXW, FOB, CIF, DDP; USD/EUR quotes</li>
                                 </ul>
-                                <h3 class="text-xl text-[#444]">Shipping and logistics</h3>
-                                <ul class="list-disc pl-5">
+
+                                <h3 class="font-semibold text-[#222] mt-[12px] mb-[6px] text-[20px]">Shipping and logistics
+                                </h3>
+                                <ul class="list-disc pl-[20px] space-y-[4px]">
                                     <li>Courier, air, sea, or rail options</li>
                                     <li>Documentation: invoice, packing list, HS codes, CO, test reports</li>
                                     <li>Custom carton specs, compliance labeling, palletization</li>
                                 </ul>
-                            </div>
+                            </section>
 
-                            {{-- Section 6 (even bg) --}}
-                            <div class="py-5 bg-[#f9f9f9] pl-2">
-                                <h2 class="text-[28px] leading-tight text-[#222] mt-0">Tips for sourcing bulk custom
-                                    T-shirts</h2>
-                                <ul class="list-disc pl-5">
-                                    <li>Define must-haves, lock tech packs early</li>
-                                    <li>Pilot before scaling; approve golden samples</li>
-                                    <li>Plan calendars backward from launch date</li>
-                                    <li>Negotiate color/fabric consolidation</li>
-                                    <li>Budget for testing; factor total landed cost</li>
-                                </ul>
-                            </div>
-
-                            {{-- Section 7 --}}
-                            <div class="py-5">
-                                <h2 class="text-[28px] leading-tight text-[#222] mt-0">10 reasons to choose our company
+                            {{-- Section: Tips (gray block) --}}
+                            <section class="pt-[28px]">
+                                <h2 class="font-semibold text-[#222] mb-[10px]">
+                                    Tips for sourcing bulk custom T-shirts
                                 </h2>
-                                <ol class="list-decimal pl-5">
+                                <div class="bg-[#f3f4f6] p-[16px]">
+                                    <ul class="list-disc pl-[20px] space-y-[4px]">
+                                        <li>Define must-haves, lock tech packs early</li>
+                                        <li>Pilot before scaling; approve golden samples</li>
+                                        <li>Plan calendars backward from launch date</li>
+                                        <li>Negotiate color/fabric consolidation</li>
+                                        <li>Budget for testing; factor total landed cost</li>
+                                    </ul>
+                                </div>
+                            </section>
+
+                            {{-- Section: 10 reasons --}}
+                            <section class="pt-[28px] pb-[20px]">
+                                <h2 class="font-semibold text-[#222] mb-[12px]">
+                                    10 reasons to choose our company
+                                </h2>
+                                <ol class="list-decimal pl-[20px] space-y-[6px]">
                                     <li>OEM expertise for global brands</li>
                                     <li>Full customization from fabric to packaging</li>
                                     <li>Scale-friendly MOQs</li>
@@ -378,26 +414,40 @@
                                     <li>Global logistics capabilities</li>
                                     <li>Dedicated, responsive support</li>
                                 </ol>
-                            </div>
+                            </section>
+
                         </article>
 
-                        {{-- Aside (4/12) --}}
-                        <aside class="md:col-span-4 bg-[#f5f7fa] p-10 rounded-lg md:sticky md:top-5 h-fit">
-                            <h2 class="text-[28px] leading-tight text-[#222] mt-0">About Our Company</h2>
-                            <p>We are a trusted OEM garment manufacturer delivering high-quality, custom apparel worldwide
-                                for over 15 years.</p>
-                            <h3 class="text-xl text-[#444] mt-6">Contact Us</h3>
-                            <p><strong>Address:</strong> Niketon, Gulshan-1, Dhaka - 1212</p>
-                            <p><strong>Phone:</strong>
-                                (02) 222-285-548 </p>
-                            <p><strong>Email:</strong>
-                                sales@siatex.com
-                            </p>
-                            <p><strong>Website:</strong> www.siatex.com</p>
+                        {{-- ASIDE (sticky) --}}
+                        <aside class="md:col-span-4 md:sticky md:top-[20px] h-fit">
+                            <div class="bg-[#f5f7fa] shadow-sm rounded-[10px] p-[20px]">
+                                <h3 class="font-semibold text-[#222] mb-[12px] text-[20px]">About Our Company</h3>
+                                <p class="mb-[14px]">
+                                    We are a trusted OEM garment manufacturer delivering high-quality, custom apparel
+                                    worldwide for over 15 years.
+                                </p>
+
+                                <h4 class="font-semibold text-[#222] mb-[8px]">Contact Us</h4>
+
+                                <div class="space-y-[10px]">
+                                    <p class="m-0"><span class="font-semibold">Address:</span> Niketon, Gulshan-1,
+                                        Dhaka - 1212</p>
+                                    <p class="m-0"><span class="font-semibold">Phone:</span> (02) 222-285-548</p>
+                                    <p class="m-0"><span class="font-semibold">Email:</span> sales@siatex.com </p>
+                                    <p class="m-0"><span class="font-semibold">Website:</span> www.siatex.com</p>
+                                </div>
+                            </div>
                         </aside>
+
                     </div>
                 </div>
+
+                {{-- Page footer --}}
+
             </section>
+
+            {{-- === END === --}}
+
             {{-- ================= /TAILWIND MAIN/ASIDE ================= --}}
         </div>
     </div>
